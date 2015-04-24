@@ -1,5 +1,6 @@
 try
 {
+    console.log("weeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee !!!!")
     var restify = require('restify');
     var backendHandler = require('./DBBackendHandler.js');
     var stringify = require('stringify');
