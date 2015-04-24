@@ -7,11 +7,11 @@ var config = require('config');
 
 var hostIp = config.Host.Ip;
 var hostPort = config.Host.Port;
+var hostVersion = config.Host.Version;
 
 
 var server = restify.createServer({
-    name: hostIp,
-    version: '1.0.0'
+    name: 'DVP-CDRProcessor'
 });
 
 server.use(restify.acceptParser(server.acceptable));
@@ -34,7 +34,7 @@ var ProcessBatchCDR = function(cdrList)
     }
 };
 
-server.get('/DVP/API/:version/CallCDR/GetCallDetailsByRange/:startTime/:endTime/:companyId/:tenantId', function(req, res, next)
+server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetailsByRange/:startTime/:endTime/:companyId/:tenantId', function(req, res, next)
 {
     try
     {
@@ -60,7 +60,7 @@ server.get('/DVP/API/:version/CallCDR/GetCallDetailsByRange/:startTime/:endTime/
     return next();
 });
 
-server.get('/DVP/API/:version/CallCDR/GetCallDetails/:sessionId', function(req, res, next)
+server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetails/:sessionId', function(req, res, next)
 {
     try
     {
@@ -83,7 +83,7 @@ server.get('/DVP/API/:version/CallCDR/GetCallDetails/:sessionId', function(req, 
 });
 
 
-server.post('/FSJsonCDR', function(req,res,next)
+server.post('/DVP/API/' + hostVersion + '/CallCDR/ProcessCDR', function(req,res,next)
 {
     try
     {
