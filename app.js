@@ -3,9 +3,14 @@ var backendHandler = require('./DBBackendHandler.js');
 var stringify = require('stringify');
 var dbModel = require('./DVP-DBModels');
 var underscore = require('underscore');
+var config = require('config');
+
+var hostIp = config.Host.Ip;
+var hostPort = config.Host.Port;
+
 
 var server = restify.createServer({
-    name: '192.168.0.81',
+    name: hostIp,
     version: '1.0.0'
 });
 
@@ -202,6 +207,6 @@ server.post('/FSJsonCDR', function(req,res,next)
     return next();
 });
 
-server.listen(9093, '192.168.0.81', function () {
+server.listen(hostPort, hostIp, function () {
     console.log('%s listening at %s', server.name, server.url);
 });
