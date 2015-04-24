@@ -1,7 +1,7 @@
 var restify = require('restify');
 var backendHandler = require('./DBBackendHandler.js');
 var stringify = require('stringify');
-var dbModel = require('./DVP-DBModels');
+var dbModel = require('DVP-DBModels');
 var underscore = require('underscore');
 var config = require('config');
 
