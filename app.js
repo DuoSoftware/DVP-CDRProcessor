@@ -1,6 +1,4 @@
-try
-{
-    console.log("weeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee !!!!")
+
     var restify = require('restify');
     var backendHandler = require('./DBBackendHandler.js');
     var stringify = require('stringify');
@@ -63,6 +61,31 @@ try
         return next();
     });
 
+    server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetailsByAppId/:appId/:companyId/:tenantId', function(req, res, next)
+    {
+        try
+        {
+            var appId = req.params.appId;
+            var companyId = req.params.companyId;
+            var tenantId = req.params.tenantId;
+
+            backendHandler.GetCallRelatedLegsForAppId(appId, companyId, tenantId, function(err, legs)
+            {
+                var processedCdr = ProcessBatchCDR(legs);
+                var jsonString = JSON.stringify(processedCdr);
+
+                res.end(jsonString);
+            })
+
+        }
+        catch(ex)
+        {
+            res.end('{[}}');
+        }
+
+        return next();
+    });
+
     server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetails/:sessionId', function(req, res, next)
     {
         try
@@ -84,6 +107,8 @@ try
 
         return next();
     });
+
+
 
 
     server.post('/DVP/API/' + hostVersion + '/CallCDR/ProcessCDR', function(req,res,next)
@@ -111,6 +136,7 @@ try
             var direction = varSec['direction'];
             var switchName = cdrObj['switchname'];
             var callerContext = callerProfileSec['context'];
+            var appId = varSec['dvp_app_id'];
             var answerDate = undefined;
             var createdDate = undefined;
             var bridgeDate = undefined;
@@ -145,7 +171,11 @@ try
                 hangupDate = new Date(hangupTStamp);
             }
 
-
+            var tempAppId = -1;
+            if(appId)
+            {
+                tempAppId = parseInt(appId);
+            }
 
             var isAnswered = timesSec['answered_time'] != undefined;
             var duration = varSec['duration'];
@@ -184,7 +214,8 @@ try
                 ObjType: 'CALL',
                 ObjCategory: undefined,
                 CompanyId: 1,
-                TenantId: 3
+                TenantId: 3,
+                AppId: tempAppId
             });
 
             backendHandler.AddCDRRecord(cdr, function(err, result)
@@ -213,8 +244,5 @@ try
     server.listen(hostPort, hostIp, function () {
         console.log('%s listening at %s', server.name, server.url);
     });
-}
-catch(ex)
-{
-    console.log(ex);
-}
+
+

@@ -26,6 +26,32 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
     }
 };
 
+var GetCallRelatedLegsForAppId = function(appId, companyId, tenantId, callback)
+{
+    var callLegList = [];
+
+    try
+    {
+        dbModel.CallCDR.findAll({where :[{AppId : appId, CompanyId: companyId, TenantId: tenantId}]}).complete(function(err, callLeg)
+        {
+            if(callLeg.length > 200)
+            {
+                callback(new Error('Too much data to load - please narrow the search'), callLegList);
+            }
+            else
+            {
+                callback(err, callLeg);
+            }
+
+        })
+
+    }
+    catch(ex)
+    {
+        callback(err, callLegList);
+    }
+};
+
 var GetCallRelatedLegs = function(sessionId, callback)
 {
     var callLegList = [];
@@ -98,3 +124,4 @@ var AddCDRRecord = function(cdrInfo, callback)
 module.exports.AddCDRRecord = AddCDRRecord;
 module.exports.GetCallRelatedLegs = GetCallRelatedLegs;
 module.exports.GetCallRelatedLegsInDateRange = GetCallRelatedLegsInDateRange;
+module.exports.GetCallRelatedLegsForAppId = GetCallRelatedLegsForAppId;
