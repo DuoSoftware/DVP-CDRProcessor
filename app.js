@@ -5,6 +5,8 @@
     var dbModel = require('DVP-DBModels');
     var underscore = require('underscore');
     var config = require('config');
+    var nodeUuid = require('node-uuid');
+    var logger = require('DVP-Common/LogHandler/CommonLogHandler.js').logger;
 
     var hostIp = config.Host.Ip;
     var hostPort = config.Host.Port;
@@ -35,8 +37,11 @@
         }
     };
 
+    //server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetailsByRange/:startTime/:endTime/:companyId/:tenantId', function(req, res, next)
     server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetailsByRange/:startTime/:endTime/:companyId/:tenantId', function(req, res, next)
     {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
         try
         {
             var startTime = req.params.startTime;
@@ -44,8 +49,19 @@
             var companyId = req.params.companyId;
             var tenantId = req.params.tenantId;
 
+            logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
+
             backendHandler.GetCallRelatedLegsInDateRange(startTime, endTime, companyId, tenantId, function(err, legs)
             {
+                if(err)
+                {
+                    logger.error('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - Exception occurred on method GetCallRelatedLegsInDateRange', reqId, err);
+                }
+                else
+                {
+                    logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - Get call cdr details by date success', reqId);
+                }
+
                 var processedCdr = ProcessBatchCDR(legs);
                 var jsonString = JSON.stringify(processedCdr);
 
@@ -55,22 +71,38 @@
         }
         catch(ex)
         {
-            res.end('{[}}');
+            logger.error('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - Exception occurred', reqId, ex);
+            res.end(JSON.stringify(emptyArr));
         }
 
         return next();
     });
 
+    //server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetailsByAppId/:appId/:companyId/:tenantId', function(req, res, next)
     server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetailsByAppId/:appId/:companyId/:tenantId', function(req, res, next)
     {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+
         try
         {
             var appId = req.params.appId;
             var companyId = req.params.companyId;
             var tenantId = req.params.tenantId;
 
+            logger.debug('[DVP-CDRProcessor.GetCallDetailsByAppId] - [%s] - HTTP Request Received - Params - AppId : %s', reqId, appId);
+
             backendHandler.GetCallRelatedLegsForAppId(appId, companyId, tenantId, function(err, legs)
             {
+                if(err)
+                {
+                    logger.error('[DVP-CDRProcessor.GetCallDetailsByAppId] - [%s] - Exception occurred on method GetCallRelatedLegsForAppId', reqId, err);
+                }
+                else
+                {
+                    logger.debug('[DVP-CDRProcessor.GetCallDetailsByAppId] - [%s] - Get call related legs for app id success', reqId);
+                }
+
                 var processedCdr = ProcessBatchCDR(legs);
                 var jsonString = JSON.stringify(processedCdr);
 
@@ -80,20 +112,36 @@
         }
         catch(ex)
         {
-            res.end('{[}}');
+            logger.error('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - Exception occurred', reqId, ex);
+            res.end(JSON.stringify(emptyArr));
         }
 
         return next();
     });
 
+    //server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetails/:sessionId', function(req, res, next)
     server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetails/:sessionId', function(req, res, next)
     {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+
         try
         {
             var sessionId = req.params.sessionId;
 
+            logger.debug('[DVP-CDRProcessor.GetCallDetails] - [%s] - HTTP Request Received - Params - SessionId : %s', reqId, sessionId);
+
             backendHandler.GetCallRelatedLegs(sessionId, function(err, legs)
             {
+                if(err)
+                {
+                    logger.error('[DVP-CDRProcessor.GetCallDetails] - [%s] - Exception occurred on method GetCallRelatedLegs', reqId, err);
+                }
+                else
+                {
+                    logger.debug('[DVP-CDRProcessor.GetCallDetails] - [%s] - Get call details success', reqId);
+                }
+
                 var jsonString = JSON.stringify(legs);
 
                 res.end(jsonString);
@@ -102,25 +150,26 @@
         }
         catch(ex)
         {
-            res.end('{[}}');
+            logger.error('[DVP-CDRProcessor.GetCallDetails] - [%s] - Exception occurred', reqId, ex);
+            res.end(JSON.stringify(emptyArr));
         }
 
         return next();
     });
 
-
-
-
+    //server.post('/DVP/API/' + hostVersion + '/CallCDR/ProcessCDR', function(req,res,next)
     server.post('/DVP/API/' + hostVersion + '/CallCDR/ProcessCDR', function(req,res,next)
     {
+        var reqId = nodeUuid.v1();
+
         try
         {
+            logger.info('[DVP-CDRProcessor.ProcessCDR] - [%s] - FS CDR Request Received', reqId);
             var cdrObj = req.body;
 
             var rawCDR = JSON.stringify(cdrObj);
 
-            console.log(rawCDR);
-            console.log('\n\n\n\n');
+            logger.debug('[DVP-CDRProcessor.ProcessCDR] - [%s] - CDR Request Params : %s', reqId, rawCDR);
 
             var varSec = cdrObj['variables'];
             var callFlowSec = cdrObj['callflow'];
@@ -222,10 +271,12 @@
             {
                 if(err)
                 {
+                    logger.error('[DVP-CDRProcessor.ProcessCDR] - [%s] - Exception occurred on method AddCDRRecord', reqId, err);
                     res.end('{}');
                 }
                 else
                 {
+                    logger.debug('[DVP-CDRProcessor.ProcessCDR] - [%s] - CDR Record saved successfully - Result : %s', reqId, result);
                     res.end('{}');
                 }
             });
@@ -235,6 +286,7 @@
         }
         catch(ex)
         {
+            logger.error('[DVP-CDRProcessor.ProcessCDR] - [%s] - Exception occurred', reqId, ex);
             res.end("{}");
         }
 
