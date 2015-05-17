@@ -63,8 +63,8 @@
                 }
 
                 var processedCdr = ProcessBatchCDR(legs);
-                var jsonString = JSON.stringify(processedCdr);
-
+                var jsonString = messageFormatter.FormatMessage(err, "", undefined, processedCdr);
+                logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - API RESPONSE : %s', reqId, jsonString);
                 res.end(jsonString);
             })
 
@@ -72,7 +72,9 @@
         catch(ex)
         {
             logger.error('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - Exception occurred', reqId, ex);
-            res.end(JSON.stringify(emptyArr));
+            var jsonString = messageFormatter.FormatMessage(ex, "", undefined, emptyArr);
+            logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
         }
 
         return next();
@@ -104,8 +106,8 @@
                 }
 
                 var processedCdr = ProcessBatchCDR(legs);
-                var jsonString = JSON.stringify(processedCdr);
-
+                var jsonString = messageFormatter.FormatMessage(err, "", undefined, processedCdr);
+                logger.debug('[DVP-CDRProcessor.GetCallDetailsByAppId] - [%s] - API RESPONSE : %s', reqId, jsonString);
                 res.end(jsonString);
             })
 
@@ -113,7 +115,9 @@
         catch(ex)
         {
             logger.error('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - Exception occurred', reqId, ex);
-            res.end(JSON.stringify(emptyArr));
+            var jsonString = messageFormatter.FormatMessage(ex, "", undefined, emptyArr);
+            logger.debug('[DVP-CDRProcessor.GetCallDetailsByAppId] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
         }
 
         return next();
@@ -142,8 +146,8 @@
                     logger.debug('[DVP-CDRProcessor.GetCallDetails] - [%s] - Get call details success', reqId);
                 }
 
-                var jsonString = JSON.stringify(legs);
-
+                var jsonString = messageFormatter.FormatMessage(err, "", undefined, legs);
+                logger.debug('[DVP-CDRProcessor.GetCallDetails] - [%s] - API RESPONSE : %s', reqId, jsonString);
                 res.end(jsonString);
             })
 
@@ -151,7 +155,9 @@
         catch(ex)
         {
             logger.error('[DVP-CDRProcessor.GetCallDetails] - [%s] - Exception occurred', reqId, ex);
-            res.end(JSON.stringify(emptyArr));
+            var jsonString = messageFormatter.FormatMessage(ex, "", undefined, emptyArr);
+            logger.debug('[DVP-CDRProcessor.GetCallDetails] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
         }
 
         return next();

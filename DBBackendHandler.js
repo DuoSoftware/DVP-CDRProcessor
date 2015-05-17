@@ -96,7 +96,7 @@ var GetCallRelatedLegs = function(sessionId, callback)
                         }
                         else
                         {
-                            logger.info('[DVP-CDRProcessor.GetCallRelatedLegs] PGSQL Get call cdr records for call uuid query success');
+                            logger.debug('[DVP-CDRProcessor.GetCallRelatedLegs] PGSQL Get call cdr records for call uuid query success');
                         }
 
                         callback(err, callLegs);
