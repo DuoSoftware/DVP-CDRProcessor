@@ -1,0 +1,29 @@
+{
+  "name": "DVP-CDRProcessor",
+  "version": "1.0.0",
+  "description": "DVP-CDRProcessor\r ================",
+  "main": "app.js",
+  "dependencies": {
+    "config": "^1.12.0",
+    "node-uuid": "^1.4.3",
+    "stringify": "^3.1.0",
+    "restify": "^3.0.2",
+    "underscore": "^1.8.3",
+    "DVP-Common": "DuoSoftware/DVP-Common",
+    "DVP-DBModels": "DuoSoftware/DVP-DBModels"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DuoSoftware/DVP-CDRProcessor.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DuoSoftware/DVP-CDRProcessor/issues"
+  },
+  "homepage": "https://github.com/DuoSoftware/DVP-CDRProcessor"
+}
