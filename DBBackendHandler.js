@@ -6,31 +6,31 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
 
     try
     {
-        dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId}]}).complete(function(err, callLeg)
+        dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId}]}).then(function(callLeg)
         {
-            if(err)
-            {
-                logger.error('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
-            }
-            else
-            {
-                logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
-            }
+
+            logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
+
             if(callLeg.length > 200)
             {
                 callback(new Error('Too much data to load - please narrow the search'), callLegList);
             }
             else
             {
-                callback(err, callLeg);
+                callback(undefined, callLeg);
             }
 
+        }).catch(function(err)
+        {
+            logger.error('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
+
+            callback(err, callLegList);
         })
 
     }
     catch(ex)
     {
-        callback(err, callLegList);
+        callback(ex, callLegList);
     }
 };
 
@@ -40,16 +40,9 @@ var GetCallRelatedLegsForAppId = function(appId, companyId, tenantId, callback)
 
     try
     {
-        dbModel.CallCDR.findAll({where :[{AppId : appId, CompanyId: companyId, TenantId: tenantId}]}).complete(function(err, callLeg)
+        dbModel.CallCDR.findAll({where :[{AppId : appId, CompanyId: companyId, TenantId: tenantId}]}).then(function(callLeg)
         {
-            if(err)
-            {
-                logger.error('[DVP-CDRProcessor.GetCallRelatedLegsForAppId] PGSQL Get call cdr records for app id query failed', err);
-            }
-            else
-            {
-                logger.info('[DVP-CDRProcessor.GetCallRelatedLegsForAppId] PGSQL Get call cdr records for app id query success');
-            }
+            logger.info('[DVP-CDRProcessor.GetCallRelatedLegsForAppId] PGSQL Get call cdr records for app id query success');
 
             if(callLeg.length > 200)
             {
@@ -57,15 +50,19 @@ var GetCallRelatedLegsForAppId = function(appId, companyId, tenantId, callback)
             }
             else
             {
-                callback(err, callLeg);
+                callback(undefined, callLeg);
             }
 
+        }).catch(function(err)
+        {
+            logger.error('[DVP-CDRProcessor.GetCallRelatedLegsForAppId] PGSQL Get call cdr records for app id query failed', err);
+            callback(err, callLegList);
         })
 
     }
     catch(ex)
     {
-        callback(err, callLegList);
+        callback(ex, callLegList);
     }
 };
 
@@ -75,39 +72,35 @@ var GetCallRelatedLegs = function(sessionId, callback)
 
     try
     {
-        dbModel.CallCDR.find({where :[{Uuid: sessionId}]}).complete(function(err, callLeg)
+        dbModel.CallCDR.find({where :[{Uuid: sessionId}]}).then(function(callLeg)
         {
-            if(err)
-            {
-                logger.error('[DVP-CDRProcessor.GetCallRelatedLegs] PGSQL Get call cdr record for sessionId query failed', err);
-                callback(err, callLegList);
-            }
-            else
-            {
+
                 logger.info('[DVP-CDRProcessor.GetCallRelatedLegs] PGSQL Get call cdr record for sessionId query success');
                 if(callLeg.CallUuid)
                 {
                     var callId = callLeg.CallUuid;
-                    dbModel.CallCDR.findAll({where :[{CallUuid: callId}]}).complete(function(err, callLegs)
+                    dbModel.CallCDR.findAll({where :[{CallUuid: callId}]}).then(function(err, callLegs)
                     {
-                        if(err)
-                        {
-                            logger.error('[DVP-CDRProcessor.GetCallRelatedLegs] PGSQL Get call cdr records for call uuid query failed', err);
-                        }
-                        else
-                        {
-                            logger.debug('[DVP-CDRProcessor.GetCallRelatedLegs] PGSQL Get call cdr records for call uuid query success');
-                        }
+                        logger.debug('[DVP-CDRProcessor.GetCallRelatedLegs] PGSQL Get call cdr records for call uuid query success');
 
-                        callback(err, callLegs);
+                        callback(undefined, callLegs);
+
+                    }).catch(function(err)
+                    {
+                        logger.error('[DVP-CDRProcessor.GetCallRelatedLegs] PGSQL Get call cdr records for call uuid query failed', err);
+                        callback(err, callLegList);
                     });
                 }
                 else
                 {
                     callback(new Error('CallUuid not found in cdr'), callLegList);
                 }
-            }
 
+
+        }).catch(function(err)
+        {
+            logger.error('[DVP-CDRProcessor.GetCallRelatedLegs] PGSQL Get call cdr record for sessionId query failed', err);
+            callback(err, callLegList);
         })
 
     }
@@ -123,25 +116,15 @@ var AddCDRRecord = function(cdrInfo, callback)
     {
         cdrInfo
             .save()
-            .complete(function (err) {
-                try
-                {
-                    if (err)
-                    {
-                        logger.error('[DVP-CDRProcessor.AddCDRRecord] PGSQL ADD CDR RECORD query failed', err);
-                        callback(err, false);
-                    }
-                    else
-                    {
-                        logger.info('[DVP-CDRProcessor.AddCDRRecord] PGSQL ADD CDR RECORD query success');
-                        callback(undefined, true);
-                    }
-                }
-                catch (ex)
-                {
-                    callback(ex, false);
-                }
+            .then(function (rsp)
+            {
+                logger.info('[DVP-CDRProcessor.AddCDRRecord] PGSQL ADD CDR RECORD query success');
+                callback(undefined, true);
 
+            }).catch(function(err)
+            {
+                logger.error('[DVP-CDRProcessor.AddCDRRecord] PGSQL ADD CDR RECORD query failed', err);
+                callback(err, false);
             })
     }
     catch(ex)
