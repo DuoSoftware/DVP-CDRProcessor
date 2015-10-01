@@ -1,4 +1,4 @@
-var dbModel = require('DVP-DBModels');
+var dbModel = require('dvp-dbmodels');
 
 var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, callback)
 {

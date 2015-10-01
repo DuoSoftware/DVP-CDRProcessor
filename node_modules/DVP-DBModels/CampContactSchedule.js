@@ -9,7 +9,7 @@ module.exports = function(sequelize, DataTypes) {
             CampaignId: {type:DataTypes.INTEGER,unique: 'CampContactScheduleIndex'},
             CamScheduleId: {type:DataTypes.INTEGER,unique: 'CampContactScheduleIndex'},
             CamContactId:{type:DataTypes.INTEGER,unique: 'CampContactScheduleIndex'},
-            //ContactScheduleId:DataTypes.INTEGER
+            ExtraData:DataTypes.STRING,
             ContactScheduleId:{type:DataTypes.INTEGER, primaryKey:true,autoIncrement: true}
         }
     );

@@ -1,12 +1,11 @@
-
     var restify = require('restify');
     var backendHandler = require('./DBBackendHandler.js');
     var stringify = require('stringify');
-    var dbModel = require('DVP-DBModels');
+    var dbModel = require('dvp-dbmodels');
     var underscore = require('underscore');
     var config = require('config');
     var nodeUuid = require('node-uuid');
-    var logger = require('DVP-Common/LogHandler/CommonLogHandler.js').logger;
+    var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 
     var hostIp = config.Host.Ip;
     var hostPort = config.Host.Port;
