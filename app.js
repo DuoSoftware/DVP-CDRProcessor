@@ -37,7 +37,7 @@
     };
 
     //server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetailsByRange/:startTime/:endTime/:companyId/:tenantId', function(req, res, next)
-    server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetailsByRange/:startTime/:endTime/:companyId/:tenantId', function(req, res, next)
+    server.get('/DVP/API/:version/CallCDR/GetCallDetailsByRange/:startTime/:endTime/:companyId/:tenantId', function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
@@ -80,7 +80,7 @@
     });
 
     //server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetailsByAppId/:appId/:companyId/:tenantId', function(req, res, next)
-    server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetailsByAppId/:appId/:companyId/:tenantId', function(req, res, next)
+    server.get('/DVP/API/:version/CallCDR/GetCallDetailsByAppId/:appId/:companyId/:tenantId', function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
@@ -123,7 +123,7 @@
     });
 
     //server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetails/:sessionId', function(req, res, next)
-    server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetails/:sessionId', function(req, res, next)
+    server.get('/DVP/API/:version/CallCDR/GetCallDetails/:sessionId', function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
@@ -163,7 +163,7 @@
     });
 
     //server.post('/DVP/API/' + hostVersion + '/CallCDR/ProcessCDR', function(req,res,next)
-    server.post('/DVP/API/' + hostVersion + '/CallCDR/ProcessCDR', function(req,res,next)
+    server.post('/DVP/API/:version/CallCDR/ProcessCDR', function(req,res,next)
     {
         var reqId = nodeUuid.v1();
 
