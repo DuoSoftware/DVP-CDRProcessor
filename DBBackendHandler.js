@@ -1,4 +1,5 @@
 var dbModel = require('dvp-dbmodels');
+var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 
 var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, callback)
 {
