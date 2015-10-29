@@ -178,113 +178,125 @@
 
             var varSec = cdrObj['variables'];
             var callFlowSec = cdrObj['callflow'];
-            var timesSec = callFlowSec['times'];
-            var callerProfileSec = callFlowSec['caller_profile'];
 
-            var uuid = varSec['uuid'];
-            var callUuid = varSec['call_uuid'];
-            var bridgeUuid = varSec['bridge_uuid'];
-            var sipFromUser = callerProfileSec['caller_id_number'];
-            var sipToUser = callerProfileSec['destination_number'];
-            var hangupCause = varSec['hangup_cause'];
-            var direction = varSec['direction'];
-            var switchName = cdrObj['switchname'];
-            var callerContext = callerProfileSec['context'];
-            var appId = varSec['dvp_app_id'];
-            var answerDate = undefined;
-            var createdDate = undefined;
-            var bridgeDate = undefined;
-            var hangupDate = undefined;
-
-
-            var answeredTimeStamp = timesSec['answered_time'];
-            if(answeredTimeStamp)
+            if(callFlowSec && callFlowSec.length > 0)
             {
-                var ansTStamp = parseInt(answeredTimeStamp)/1000;
-                answerDate = new Date(ansTStamp);
-            }
 
-            var createdTimeStamp = timesSec['created_time'];
-            if(createdTimeStamp)
-            {
-                var createdTStamp = parseInt(createdTimeStamp)/1000;
-                createdDate = new Date(createdTStamp);
-            }
+                var timesSec = callFlowSec[0]['times'];
+                var callerProfileSec = callFlowSec[0]['caller_profile'];
 
-            var bridgedTimeStamp = timesSec['bridged_time'];
-            if(bridgedTimeStamp)
-            {
-                var bridgedTStamp = parseInt(bridgedTimeStamp)/1000;
-                bridgeDate = new Date(bridgedTStamp);
-            }
+                var uuid = varSec['uuid'];
+                var callUuid = varSec['call_uuid'];
+                var bridgeUuid = varSec['bridge_uuid'];
+                var sipFromUser = callerProfileSec['caller_id_number'];
+                var sipToUser = callerProfileSec['destination_number'];
+                var hangupCause = varSec['hangup_cause'];
+                var direction = varSec['direction'];
+                var switchName = cdrObj['switchname'];
+                var callerContext = callerProfileSec['context'];
+                var appId = varSec['dvp_app_id'];
+                var answerDate = undefined;
+                var createdDate = undefined;
+                var bridgeDate = undefined;
+                var hangupDate = undefined;
 
-            var hangupTimeStamp = timesSec['hangup_time'];
-            if(hangupTimeStamp)
-            {
-                var hangupTStamp = parseInt(hangupTimeStamp)/1000;
-                hangupDate = new Date(hangupTStamp);
-            }
 
-            var tempAppId = -1;
-            if(appId)
-            {
-                tempAppId = parseInt(appId);
-            }
-
-            var isAnswered = timesSec['answered_time'] != undefined;
-            var duration = varSec['duration'];
-            var billSec = varSec['billsec'];
-            var holdSec = varSec['hold_accum_seconds'];
-            var progressSec = varSec['progresssec'];
-            var answerSec = varSec['answersec'];
-            var waitSec = varSec['waitsec'];
-            var progressMediaSec = varSec['progress_mediasec'];
-            var flowBillSec = varSec['flow_billsec'];
-
-            var cdr = dbModel.CallCDR.build({
-                Uuid: uuid,
-                CallUuid: callUuid,
-                BridgeUuid: bridgeUuid,
-                SipFromUser: sipFromUser,
-                SipToUser: sipToUser,
-                HangupCause: hangupCause,
-                Direction: direction,
-                SwitchName: switchName,
-                CallerContext: callerContext,
-                IsAnswered: isAnswered,
-                CreatedTime: createdDate,
-                AnsweredTime: answerDate,
-                BridgedTime: bridgeDate,
-                HangupTime: hangupDate,
-                Duration: duration,
-                BillSec: billSec,
-                HoldSec: holdSec,
-                ProgressSec: progressSec,
-                AnswerSec: answerSec,
-                WaitSec: waitSec,
-                ProgressMediaSec: progressMediaSec,
-                FlowBillSec: flowBillSec,
-                ObjClass: 'CDR',
-                ObjType: 'CALL',
-                ObjCategory: undefined,
-                CompanyId: 1,
-                TenantId: 3,
-                AppId: tempAppId
-            });
-
-            backendHandler.AddCDRRecord(cdr, function(err, result)
-            {
-                if(err)
+                var answeredTimeStamp = timesSec['answered_time'];
+                if(answeredTimeStamp)
                 {
-                    logger.error('[DVP-CDRProcessor.ProcessCDR] - [%s] - Exception occurred on method AddCDRRecord', reqId, err);
-                    res.end('{}');
+                    var ansTStamp = parseInt(answeredTimeStamp)/1000;
+                    answerDate = new Date(ansTStamp);
                 }
-                else
+
+                var createdTimeStamp = timesSec['created_time'];
+                if(createdTimeStamp)
                 {
-                    logger.debug('[DVP-CDRProcessor.ProcessCDR] - [%s] - CDR Record saved successfully - Result : %s', reqId, result);
-                    res.end('{}');
+                    var createdTStamp = parseInt(createdTimeStamp)/1000;
+                    createdDate = new Date(createdTStamp);
                 }
-            });
+
+                var bridgedTimeStamp = timesSec['bridged_time'];
+                if(bridgedTimeStamp)
+                {
+                    var bridgedTStamp = parseInt(bridgedTimeStamp)/1000;
+                    bridgeDate = new Date(bridgedTStamp);
+                }
+
+                var hangupTimeStamp = timesSec['hangup_time'];
+                if(hangupTimeStamp)
+                {
+                    var hangupTStamp = parseInt(hangupTimeStamp)/1000;
+                    hangupDate = new Date(hangupTStamp);
+                }
+
+                var tempAppId = -1;
+                if(appId)
+                {
+                    tempAppId = parseInt(appId);
+                }
+
+                var isAnswered = timesSec['answered_time'] != undefined;
+                var duration = varSec['duration'];
+                var billSec = varSec['billsec'];
+                var holdSec = varSec['hold_accum_seconds'];
+                var progressSec = varSec['progresssec'];
+                var answerSec = varSec['answersec'];
+                var waitSec = varSec['waitsec'];
+                var progressMediaSec = varSec['progress_mediasec'];
+                var flowBillSec = varSec['flow_billsec'];
+
+                var cdr = dbModel.CallCDR.build({
+                    Uuid: uuid,
+                    CallUuid: callUuid,
+                    BridgeUuid: bridgeUuid,
+                    SipFromUser: sipFromUser,
+                    SipToUser: sipToUser,
+                    HangupCause: hangupCause,
+                    Direction: direction,
+                    SwitchName: switchName,
+                    CallerContext: callerContext,
+                    IsAnswered: isAnswered,
+                    CreatedTime: createdDate,
+                    AnsweredTime: answerDate,
+                    BridgedTime: bridgeDate,
+                    HangupTime: hangupDate,
+                    Duration: duration,
+                    BillSec: billSec,
+                    HoldSec: holdSec,
+                    ProgressSec: progressSec,
+                    AnswerSec: answerSec,
+                    WaitSec: waitSec,
+                    ProgressMediaSec: progressMediaSec,
+                    FlowBillSec: flowBillSec,
+                    ObjClass: 'CDR',
+                    ObjType: 'CALL',
+                    ObjCategory: undefined,
+                    CompanyId: 1,
+                    TenantId: 3,
+                    AppId: tempAppId
+                });
+
+                backendHandler.AddCDRRecord(cdr, function(err, result)
+                {
+                    if(err)
+                    {
+                        logger.error('[DVP-CDRProcessor.ProcessCDR] - [%s] - Exception occurred on method AddCDRRecord', reqId, err);
+                        res.end('{}');
+                    }
+                    else
+                    {
+                        logger.debug('[DVP-CDRProcessor.ProcessCDR] - [%s] - CDR Record saved successfully - Result : %s', reqId, result);
+                        res.end('{}');
+                    }
+                });
+            }
+            else
+            {
+                logger.error('[DVP-CDRProcessor.ProcessCDR] - [%s] - CDR Record Error - Call Flow Section Not Found - Result : %s', reqId);
+                res.end('{}');
+            }
+
+
 
             //Read App details and push it to the common app event processor
 
