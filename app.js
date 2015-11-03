@@ -189,9 +189,9 @@
                 var callUuid = varSec['call_uuid'];
                 var bridgeUuid = varSec['bridge_uuid'];
                 //var sipFromUser = callerProfileSec['caller_id_number'];
-                var sipFromUser = callerProfileSec['sip_from_user'];
+                var sipFromUser = varSec['sip_from_user'];
                 //var sipToUser = callerProfileSec['destination_number'];
-                var sipToUser = callerProfileSec['sip_to_user'];
+                var sipToUser = varSec['sip_to_user'];
                 var hangupCause = varSec['hangup_cause'];
                 var direction = varSec['direction'];
                 var switchName = cdrObj['switchname'];
