@@ -195,6 +195,9 @@
                 var switchName = cdrObj['switchname'];
                 var callerContext = callerProfileSec['context'];
                 var appId = varSec['dvp_app_id'];
+                var companyId = varSec['companyid'];
+                var tenantId = varSec['tenantid'];
+                var opCat = varSec['DVP_OPERATION_CAT'];
                 var answerDate = undefined;
                 var createdDate = undefined;
                 var bridgeDate = undefined;
@@ -270,9 +273,9 @@
                     FlowBillSec: flowBillSec,
                     ObjClass: 'CDR',
                     ObjType: 'CALL',
-                    ObjCategory: undefined,
-                    CompanyId: 1,
-                    TenantId: 3,
+                    ObjCategory: opCat,
+                    CompanyId: companyId,
+                    TenantId: tenantId,
                     AppId: tempAppId
                 });
 
