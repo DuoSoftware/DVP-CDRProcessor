@@ -232,10 +232,19 @@
                     hangupDate = new Date(hangupTStamp);
                 }
 
-                var tempAppId = -1;
-                if(appId)
+                if(!appId)
                 {
-                    tempAppId = parseInt(appId);
+                    appId = '-1';
+                }
+
+                if(!companyId)
+                {
+                    companyId = '-1';
+                }
+
+                if(!tenantId)
+                {
+                    tenantId = '-1';
                 }
 
                 var isAnswered = timesSec['answered_time'] != undefined;
@@ -276,7 +285,7 @@
                     ObjCategory: opCat,
                     CompanyId: companyId,
                     TenantId: tenantId,
-                    AppId: tempAppId
+                    AppId: appId
                 });
 
                 backendHandler.AddCDRRecord(cdr, function(err, result)
