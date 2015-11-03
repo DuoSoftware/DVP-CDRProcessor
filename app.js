@@ -188,8 +188,10 @@
                 var uuid = varSec['uuid'];
                 var callUuid = varSec['call_uuid'];
                 var bridgeUuid = varSec['bridge_uuid'];
-                var sipFromUser = callerProfileSec['caller_id_number'];
-                var sipToUser = callerProfileSec['destination_number'];
+                //var sipFromUser = callerProfileSec['caller_id_number'];
+                var sipFromUser = callerProfileSec['sip_from_user'];
+                //var sipToUser = callerProfileSec['destination_number'];
+                var sipToUser = callerProfileSec['sip_to_user'];
                 var hangupCause = varSec['hangup_cause'];
                 var direction = varSec['direction'];
                 var switchName = cdrObj['switchname'];
@@ -247,7 +249,7 @@
                     tenantId = '-1';
                 }
 
-                var isAnswered = timesSec['answered_time'] != undefined;
+                var isAnswered = bridgeUuid != undefined;
                 var duration = varSec['duration'];
                 var billSec = varSec['billsec'];
                 var holdSec = varSec['hold_accum_seconds'];
