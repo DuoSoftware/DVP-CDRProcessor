@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="0ac8d04d-3c81-49a0-91b0-8f6449bf88a9" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/DBBackendHandler.js" afterPath="$PROJECT_DIR$/DBBackendHandler.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/config/default.js" afterPath="$PROJECT_DIR$/config/default.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-    </list>
+    <list default="true" id="0ac8d04d-3c81-49a0-91b0-8f6449bf88a9" name="Default" comment="" />
     <ignored path="DVP-CDRProcessor.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
