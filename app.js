@@ -201,6 +201,7 @@
                 var tenantId = varSec['tenantid'];
                 var currentApp = varSec['current_application'];
                 var opCat = varSec['DVP_OPERATION_CAT'];
+                var actionCat = varSec['DVP_ACTION_CAT'];
                 var answerDate = undefined;
                 var createdDate = undefined;
                 var bridgeDate = undefined;
@@ -284,12 +285,17 @@
                     ProgressMediaSec: progressMediaSec,
                     FlowBillSec: flowBillSec,
                     ObjClass: 'CDR',
-                    ObjType: 'CALL',
-                    ObjCategory: opCat,
+                    ObjType: opCat,
+                    ObjCategory: 'DEFAULT',
                     CompanyId: companyId,
                     TenantId: tenantId,
                     AppId: appId
                 });
+
+                if(actionCat)
+                {
+                    cdr.ObjCategory = actionCat;
+                }
 
                 if(currentApp === 'voicemail')
                 {
