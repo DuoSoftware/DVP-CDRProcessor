@@ -3,9 +3,9 @@ module.exports = {
     "Type":"postgres",
     "User":"duo",
     "Password":"DuoS123",
-    "Port":8809,
-    "Host":"127.0.0.1",
-    "Database":"dvpdb"
+    "Port":5432,
+    "Host":"104.131.105.222",
+    "Database":"duo"
   },
   "Redis": {
     "IpAddress":"192.168.3.200",
