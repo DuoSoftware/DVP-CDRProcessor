@@ -199,6 +199,7 @@
                 var appId = varSec['dvp_app_id'];
                 var companyId = varSec['companyid'];
                 var tenantId = varSec['tenantid'];
+                var currentApp = varSec['current_application'];
                 var opCat = varSec['DVP_OPERATION_CAT'];
                 var answerDate = undefined;
                 var createdDate = undefined;
@@ -289,6 +290,11 @@
                     TenantId: tenantId,
                     AppId: appId
                 });
+
+                if(currentApp === 'voicemail')
+                {
+                    cdr.ObjCategory = 'VOICEMAIL';
+                }
 
                 backendHandler.AddCDRRecord(cdr, function(err, result)
                 {
