@@ -207,6 +207,16 @@
                 var bridgeDate = undefined;
                 var hangupDate = undefined;
 
+                if(!sipFromUser)
+                {
+                    sipFromUser = varSec['origination_caller_id_number'];
+                }
+
+                if(!sipToUser)
+                {
+                    sipToUser = varSec['dialed_user'];
+                }
+
 
                 var answeredTimeStamp = timesSec['answered_time'];
                 if(answeredTimeStamp)
