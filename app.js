@@ -311,6 +311,10 @@
                 {
                     cdr.ObjCategory = 'VOICEMAIL';
                 }
+                else if(currentApp === 'pickup')
+                {
+                    cdr.ObjCategory = 'PICKUP';
+                }
 
                 backendHandler.AddCDRRecord(cdr, function(err, result)
                 {

@@ -30,8 +30,8 @@
       <file leaf-file-name="app.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.54180604" vertical-offset="1478" max-vertical-offset="4165">
-              <caret line="220" column="51" selection-start-line="220" selection-start-column="51" selection-end-line="220" selection-end-column="51" />
+            <state vertical-scroll-proportion="0.54180604" vertical-offset="3059" max-vertical-offset="4233">
+              <caret line="313" column="48" selection-start-line="313" selection-start-column="48" selection-end-line="313" selection-end-column="48" />
               <folding>
                 <element signature="e#1269#3013#0" expanded="false" />
                 <element signature="e#3272#4917#0" expanded="false" />
@@ -312,7 +312,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="javascript">
           <url>file://$PROJECT_DIR$/app.js</url>
-          <line>314</line>
+          <line>318</line>
           <option name="timeStamp" value="27" />
         </line-breakpoint>
       </breakpoints>
@@ -752,8 +752,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/app.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.54180604" vertical-offset="1478" max-vertical-offset="4165">
-          <caret line="220" column="51" selection-start-line="220" selection-start-column="51" selection-end-line="220" selection-end-column="51" />
+        <state vertical-scroll-proportion="0.54180604" vertical-offset="3059" max-vertical-offset="4233">
+          <caret line="313" column="48" selection-start-line="313" selection-start-column="48" selection-end-line="313" selection-end-column="48" />
           <folding>
             <element signature="e#1269#3013#0" expanded="false" />
             <element signature="e#3272#4917#0" expanded="false" />
