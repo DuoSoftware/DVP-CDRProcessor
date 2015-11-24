@@ -315,6 +315,10 @@
                 {
                     cdr.ObjCategory = 'PICKUP';
                 }
+                else if(currentApp === 'intercept')
+                {
+                    cdr.ObjCategory = 'INTERCEPT';
+                }
 
                 backendHandler.AddCDRRecord(cdr, function(err, result)
                 {
