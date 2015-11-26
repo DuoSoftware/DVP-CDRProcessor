@@ -202,6 +202,7 @@
                 var currentApp = varSec['current_application'];
                 var opCat = varSec['DVP_OPERATION_CAT'];
                 var actionCat = varSec['DVP_ACTION_CAT'];
+                var advOpAction = varSec['DVP_ADVANCED_OP_ACTION'];
                 var answerDate = undefined;
                 var createdDate = undefined;
                 var bridgeDate = undefined;
@@ -311,11 +312,12 @@
                 {
                     cdr.ObjCategory = 'VOICEMAIL';
                 }
-                else if(currentApp === 'pickup')
+
+                if(advOpAction === 'PICKUP')
                 {
                     cdr.ObjCategory = 'PICKUP';
                 }
-                else if(currentApp === 'intercept')
+                else if(advOpAction === 'INTERCEPT')
                 {
                     cdr.ObjCategory = 'INTERCEPT';
                 }
