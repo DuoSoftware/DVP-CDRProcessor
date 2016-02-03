@@ -312,12 +312,12 @@
                 {
                     cdr.ObjCategory = 'VOICEMAIL';
                 }
-
-                if(advOpAction === 'PICKUP')
+                else if(advOpAction === 'pickup')
                 {
                     cdr.ObjCategory = 'PICKUP';
                 }
-                else if(advOpAction === 'INTERCEPT')
+
+                if(advOpAction === 'INTERCEPT')
                 {
                     cdr.ObjCategory = 'INTERCEPT';
                 }
