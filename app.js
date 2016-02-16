@@ -6,6 +6,9 @@
     var config = require('config');
     var nodeUuid = require('node-uuid');
     var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
+    var jwt = require('restify-jwt');
+    var secret = require('dvp-common/Authentication/Secret.js');
+    var authorization = require('dvp-common/Authentication/Authorization.js');
 
     var hostIp = config.Host.Ip;
     var hostPort = config.Host.Port;
@@ -19,6 +22,7 @@
     server.use(restify.acceptParser(server.acceptable));
     server.use(restify.queryParser());
     server.use(restify.bodyParser());
+    server.use(jwt({secret: secret.Secret}));
 
     var ProcessBatchCDR = function(cdrList)
     {
@@ -37,7 +41,7 @@
     };
 
     //server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetailsByRange/:startTime/:endTime/:companyId/:tenantId', function(req, res, next)
-    server.get('/DVP/API/:version/CallCDR/GetCallDetailsByRange/:startTime/:endTime/:companyId/:tenantId', function(req, res, next)
+    server.get('/DVP/API/:version/CallCDR/GetCallDetailsByRange/:startTime/:endTime', authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
@@ -45,8 +49,14 @@
         {
             var startTime = req.params.startTime;
             var endTime = req.params.endTime;
-            var companyId = req.params.companyId;
-            var tenantId = req.params.tenantId;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
 
             logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
 
@@ -80,7 +90,7 @@
     });
 
     //server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetailsByAppId/:appId/:companyId/:tenantId', function(req, res, next)
-    server.get('/DVP/API/:version/CallCDR/GetCallDetailsByAppId/:appId/:companyId/:tenantId', function(req, res, next)
+    server.get('/DVP/API/:version/CallCDR/GetCallDetailsByAppId/:appId', authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
@@ -88,8 +98,13 @@
         try
         {
             var appId = req.params.appId;
-            var companyId = req.params.companyId;
-            var tenantId = req.params.tenantId;
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
 
             logger.debug('[DVP-CDRProcessor.GetCallDetailsByAppId] - [%s] - HTTP Request Received - Params - AppId : %s', reqId, appId);
 
@@ -123,7 +138,7 @@
     });
 
     //server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetails/:sessionId', function(req, res, next)
-    server.get('/DVP/API/:version/CallCDR/GetCallDetails/:sessionId', function(req, res, next)
+    server.get('/DVP/API/:version/CallCDR/GetCallDetails/:sessionId', authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
@@ -133,6 +148,14 @@
             var sessionId = req.params.sessionId;
 
             logger.debug('[DVP-CDRProcessor.GetCallDetails] - [%s] - HTTP Request Received - Params - SessionId : %s', reqId, sessionId);
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
 
             backendHandler.GetCallRelatedLegs(sessionId, function(err, legs)
             {
