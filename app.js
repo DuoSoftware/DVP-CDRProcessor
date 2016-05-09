@@ -9,6 +9,7 @@
     var jwt = require('restify-jwt');
     var secret = require('dvp-common/Authentication/Secret.js');
     var authorization = require('dvp-common/Authentication/Authorization.js');
+    var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 
     var hostIp = config.Host.Ip;
     var hostPort = config.Host.Port;
@@ -90,7 +91,7 @@
     });
 
     //server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetailsByAppId/:appId/:companyId/:tenantId', function(req, res, next)
-    server.get('/DVP/API/:version/CallCDR/GetCallDetailsByAppId/:appId', authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    server.get('/DVP/API/:version/CallCDR/GetCallDetailsByAppId/:appId/:startTime/:endTime', authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
@@ -100,6 +101,8 @@
             var appId = req.params.appId;
             var companyId = req.user.company;
             var tenantId = req.user.tenant;
+            var startTime = req.params.startTime;
+            var endTime = req.params.endTime;
 
             if (!companyId || !tenantId)
             {
@@ -108,7 +111,7 @@
 
             logger.debug('[DVP-CDRProcessor.GetCallDetailsByAppId] - [%s] - HTTP Request Received - Params - AppId : %s', reqId, appId);
 
-            backendHandler.GetCallRelatedLegsForAppId(appId, companyId, tenantId, function(err, legs)
+            backendHandler.GetCallRelatedLegsForAppId(appId, companyId, tenantId, startTime, endTime, function(err, legs)
             {
                 if(err)
                 {
@@ -119,8 +122,8 @@
                     logger.debug('[DVP-CDRProcessor.GetCallDetailsByAppId] - [%s] - Get call related legs for app id success', reqId);
                 }
 
-                var processedCdr = ProcessBatchCDR(legs);
-                var jsonString = messageFormatter.FormatMessage(err, "", undefined, processedCdr);
+                //var processedCdr = ProcessBatchCDR(legs);
+                var jsonString = messageFormatter.FormatMessage(err, "", undefined, legs);
                 logger.debug('[DVP-CDRProcessor.GetCallDetailsByAppId] - [%s] - API RESPONSE : %s', reqId, jsonString);
                 res.end(jsonString);
             })

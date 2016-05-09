@@ -35,13 +35,13 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
     }
 };
 
-var GetCallRelatedLegsForAppId = function(appId, companyId, tenantId, callback)
+var GetCallRelatedLegsForAppId = function(appId, companyId, tenantId, startTime, endTime, callback)
 {
     var callLegList = [];
 
     try
     {
-        dbModel.CallCDR.findAll({where :[{AppId : appId, CompanyId: companyId, TenantId: tenantId}]}).then(function(callLeg)
+        dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, AppId : appId, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound'}]}).then(function(callLeg)
         {
             logger.info('[DVP-CDRProcessor.GetCallRelatedLegsForAppId] PGSQL Get call cdr records for app id query success');
 
@@ -76,26 +76,26 @@ var GetCallRelatedLegs = function(sessionId, callback)
         dbModel.CallCDR.find({where :[{Uuid: sessionId}]}).then(function(callLeg)
         {
 
-                logger.info('[DVP-CDRProcessor.GetCallRelatedLegs] PGSQL Get call cdr record for sessionId query success');
-                if(callLeg.CallUuid)
+            logger.info('[DVP-CDRProcessor.GetCallRelatedLegs] PGSQL Get call cdr record for sessionId query success');
+            if (callLeg.CallUuid)
+            {
+                var callId = callLeg.CallUuid;
+                dbModel.CallCDR.findAll({where: [{CallUuid: callId}]}).then(function (err, callLegs)
                 {
-                    var callId = callLeg.CallUuid;
-                    dbModel.CallCDR.findAll({where :[{CallUuid: callId}]}).then(function(err, callLegs)
-                    {
-                        logger.debug('[DVP-CDRProcessor.GetCallRelatedLegs] PGSQL Get call cdr records for call uuid query success');
+                    logger.debug('[DVP-CDRProcessor.GetCallRelatedLegs] PGSQL Get call cdr records for call uuid query success');
 
-                        callback(undefined, callLegs);
+                    callback(undefined, callLegs);
 
-                    }).catch(function(err)
-                    {
-                        logger.error('[DVP-CDRProcessor.GetCallRelatedLegs] PGSQL Get call cdr records for call uuid query failed', err);
-                        callback(err, callLegList);
-                    });
-                }
-                else
+                }).catch(function (err)
                 {
-                    callback(new Error('CallUuid not found in cdr'), callLegList);
-                }
+                    logger.error('[DVP-CDRProcessor.GetCallRelatedLegs] PGSQL Get call cdr records for call uuid query failed', err);
+                    callback(err, callLegList);
+                });
+            }
+            else
+            {
+                callback(new Error('CallUuid not found in cdr'), callLegList);
+            }
 
 
         }).catch(function(err)
