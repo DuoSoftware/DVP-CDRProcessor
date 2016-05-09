@@ -186,7 +186,7 @@
     });
 
     //server.post('/DVP/API/' + hostVersion + '/CallCDR/ProcessCDR', function(req,res,next)
-    server.post('/DVP/API/:version/CallCDR/ProcessCDR', function(req,res,next)
+    server.post('/DVP/API/:version/CallCDR/ProcessCDR', authorization({resource:"cdr", action:"read"}), function(req,res,next)
     {
         var reqId = nodeUuid.v1();
 
