@@ -80,7 +80,7 @@ var GetCallRelatedLegs = function(sessionId, callback)
             if (callLeg.CallUuid)
             {
                 var callId = callLeg.CallUuid;
-                dbModel.CallCDR.findAll({where: [{CallUuid: callId}]}).then(function (err, callLegs)
+                dbModel.CallCDR.findAll({where: [{CallUuid: callId}]}).then(function (callLegs)
                 {
                     logger.debug('[DVP-CDRProcessor.GetCallRelatedLegs] PGSQL Get call cdr records for call uuid query success');
 
