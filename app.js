@@ -41,15 +41,15 @@
         }
     };
 
-    //server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetailsByRange/:startTime/:endTime/:companyId/:tenantId', function(req, res, next)
-    server.get('/DVP/API/:version/CallCDR/GetCallDetailsByRange/:startTime/:endTime', authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    //query_string : ?startTime=2016-05-09&endTime=2016-05-12
+    server.get('/DVP/API/:version/CallCDR/GetCallDetailsByRange', authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
         try
         {
-            var startTime = req.params.startTime;
-            var endTime = req.params.endTime;
+            var startTime = req.query.startTime;
+            var endTime = req.query.endTime;
 
             var companyId = req.user.company;
             var tenantId = req.user.tenant;
@@ -90,19 +90,19 @@
         return next();
     });
 
-    //server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetailsByAppId/:appId/:companyId/:tenantId', function(req, res, next)
-    server.get('/DVP/API/:version/CallCDR/GetCallDetailsByAppId/:appId/:startTime/:endTime', authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    //query_string : ?appId=4&startTime=2016-05-09&endTime=2016-05-12
+    server.get('/DVP/API/:version/CallCDR/GetCallDetailsByApp', authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
 
         try
         {
-            var appId = req.params.appId;
+            var appId = req.query.appId;
             var companyId = req.user.company;
             var tenantId = req.user.tenant;
-            var startTime = req.params.startTime;
-            var endTime = req.params.endTime;
+            var startTime = req.query.startTime;
+            var endTime = req.query.endTime;
 
             if (!companyId || !tenantId)
             {
@@ -140,15 +140,15 @@
         return next();
     });
 
-    //server.get('/DVP/API/' + hostVersion + '/CallCDR/GetCallDetails/:sessionId', function(req, res, next)
-    server.get('/DVP/API/:version/CallCDR/GetCallDetails/:sessionId', authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    //query_string : ?sessionId=fs43dg-dse43f-fd44g-fsdh53-sdffd
+    server.get('/DVP/API/:version/CallCDR/GetCallDetailsBySession/:sessionId', authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
 
         try
         {
-            var sessionId = req.params.sessionId;
+            var sessionId = req.query.sessionId;
 
             logger.debug('[DVP-CDRProcessor.GetCallDetails] - [%s] - HTTP Request Received - Params - SessionId : %s', reqId, sessionId);
 
