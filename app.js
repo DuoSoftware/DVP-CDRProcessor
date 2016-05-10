@@ -141,7 +141,7 @@
     });
 
     //query_string : ?sessionId=fs43dg-dse43f-fd44g-fsdh53-sdffd
-    server.get('/DVP/API/:version/CallCDR/GetCallDetailsBySession/:sessionId', authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    server.get('/DVP/API/:version/CallCDR/GetCallDetailsBySession', authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
