@@ -1,13 +1,13 @@
 var dbModel = require('dvp-dbmodels');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 
-var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, callback)
+var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, callback)
 {
     var callLegList = [];
 
     try
     {
-        dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId}]}).then(function(callLeg)
+        dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId}], order:['CreatedTime'], offset: offset, limit: limit}).then(function(callLeg)
         {
 
             logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
@@ -28,13 +28,13 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
     }
 };
 
-var GetCallRelatedLegsForAppId = function(appId, companyId, tenantId, startTime, endTime, callback)
+var GetCallRelatedLegsForAppId = function(appId, companyId, tenantId, startTime, endTime, offset, limit, callback)
 {
     var callLegList = [];
 
     try
     {
-        dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, AppId : appId, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound'}]}).then(function(callLeg)
+        dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, AppId : appId, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound'}], offset: offset, limit: limit}).then(function(callLeg)
         {
             logger.info('[DVP-CDRProcessor.GetCallRelatedLegsForAppId] PGSQL Get call cdr records for app id query success');
 

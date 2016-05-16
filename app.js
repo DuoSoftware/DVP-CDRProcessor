@@ -50,6 +50,8 @@
         {
             var startTime = req.query.startTime;
             var endTime = req.query.endTime;
+            var offset = req.query.offset;
+            var limit = req.query.limit;
 
             var companyId = req.user.company;
             var tenantId = req.user.tenant;
@@ -59,9 +61,9 @@
                 throw new Error("Invalid company or tenant");
             }
 
-            logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
+            logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s, Offset: %s, Limit : %s', reqId, startTime, endTime, offset, limit);
 
-            backendHandler.GetCallRelatedLegsInDateRange(startTime, endTime, companyId, tenantId, function(err, legs)
+            backendHandler.GetCallRelatedLegsInDateRange(startTime, endTime, companyId, tenantId, offset, limit, function(err, legs)
             {
                 if(err)
                 {
@@ -82,7 +84,7 @@
         catch(ex)
         {
             logger.error('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - Exception occurred', reqId, ex);
-            var jsonString = messageFormatter.FormatMessage(ex, "", undefined, emptyArr);
+            var jsonString = messageFormatter.FormatMessage(ex, "SUCCESS", undefined, emptyArr);
             logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - API RESPONSE : %s', reqId, jsonString);
             res.end(jsonString);
         }
@@ -103,6 +105,8 @@
             var tenantId = req.user.tenant;
             var startTime = req.query.startTime;
             var endTime = req.query.endTime;
+            var offset = req.query.offset;
+            var limit = req.query.limit;
 
             if (!companyId || !tenantId)
             {
@@ -111,7 +115,7 @@
 
             logger.debug('[DVP-CDRProcessor.GetCallDetailsByAppId] - [%s] - HTTP Request Received - Params - AppId : %s', reqId, appId);
 
-            backendHandler.GetCallRelatedLegsForAppId(appId, companyId, tenantId, startTime, endTime, function(err, legs)
+            backendHandler.GetCallRelatedLegsForAppId(appId, companyId, tenantId, startTime, endTime, offset, limit, function(err, legs)
             {
                 if(err)
                 {
