@@ -74,7 +74,6 @@
 
                 var processedCdr = ProcessBatchCDR(legs);
                 var jsonString = messageFormatter.FormatMessage(err, "", undefined, processedCdr);
-                logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - API RESPONSE : %s', reqId, jsonString);
                 res.end(jsonString);
             })
 
