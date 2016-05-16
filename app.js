@@ -73,6 +73,7 @@
                 }
 
                 var processedCdr = ProcessBatchCDR(legs);
+                logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - CDR Processing Done', reqId);
                 var jsonString = messageFormatter.FormatMessage(err, "", undefined, processedCdr);
                 res.end(jsonString);
             })
