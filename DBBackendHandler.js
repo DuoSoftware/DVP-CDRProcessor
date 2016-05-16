@@ -12,14 +12,7 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
 
             logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
 
-            if(callLeg.length > 200)
-            {
-                callback(new Error('Too much data to load - please narrow the search'), callLegList);
-            }
-            else
-            {
-                callback(undefined, callLeg);
-            }
+            callback(undefined, callLeg);
 
         }).catch(function(err)
         {
@@ -77,7 +70,7 @@ var GetCallRelatedLegs = function(sessionId, callback)
         {
 
             logger.info('[DVP-CDRProcessor.GetCallRelatedLegs] PGSQL Get call cdr record for sessionId query success');
-            if (callLeg.CallUuid)
+            if (callLeg && callLeg.CallUuid)
             {
                 var callId = callLeg.CallUuid;
                 dbModel.CallCDR.findAll({where: [{CallUuid: callId}]}).then(function (callLegs)
@@ -94,7 +87,7 @@ var GetCallRelatedLegs = function(sessionId, callback)
             }
             else
             {
-                callback(new Error('CallUuid not found in cdr'), callLegList);
+                callback(new Error('CDR not found'), callLegList);
             }
 
 
@@ -107,7 +100,7 @@ var GetCallRelatedLegs = function(sessionId, callback)
     }
     catch(ex)
     {
-        callback(err, callLegList);
+        callback(ex, callLegList);
     }
 };
 
