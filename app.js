@@ -31,14 +31,159 @@
 
         try
         {
-            var arr = underscore.groupBy(cdrList, 'CallUuid');
 
-            return arr;
+            for(i=0; i<cdrList.length; i++)
+            {
+                var OriginatedLegs = cdrList[i].OriginatedLegs;
+
+                if(OriginatedLegs)
+                {
+                    //Do HTTP DECODE
+                    var decodedLegsStr = decodeURIComponent(OriginatedLegs);
+
+                    var formattedStr = decodedLegsStr.replace("ARRAY::", "");
+
+                    var legsUnformattedList = formattedStr.split('|:');
+
+                    cdrList[i].RelatedLegs = {};
+
+                    for(j=0; j<legsUnformattedList.length; j++)
+                    {
+                        var legProperties = legsUnformattedList[j].split(';');
+
+                        var legUuid = legProperties[0];
+
+                        if(cdrList[i].Uuid != legUuid && !cdrList[i].RelatedLegs[legUuid])
+                        {
+                            cdrList[i].RelatedLegs[legUuid] = legUuid;
+                        }
+
+                    }
+                }
+            }
+
+            //var arr = underscore.filter(cdrList, function(cdrLeg)
+            //{
+            //    return cdrLeg.OriginatedLegs
+            //});
+
+            //var arr = underscore.groupBy(cdrList, 'CallUuid');
+
+            return cdrList;
         }
         catch(ex)
         {
             return undefined;
         }
+    };
+
+    var ProcessCDRLegs = function(processedCdr, cdrList, callback)
+    {
+        var len = processedCdr.length;
+        var current = 0;
+
+        if(len)
+        {
+            for(i=0; i<processedCdr.length; i++)
+            {
+                cdrList[processedCdr[i].Uuid] = [];
+                cdrList[processedCdr[i].Uuid].push(processedCdr[i]);
+
+                var relatedLegsLength = 0;
+
+                if(processedCdr[i].RelatedLegs)
+                {
+                    relatedLegsLength = Object.keys(processedCdr[i].RelatedLegs).length;
+                }
+
+                if(processedCdr[i].RelatedLegs && relatedLegsLength)
+                {
+                    CollectOtherLegsCDR(cdrList[processedCdr[i].Uuid], processedCdr[i].RelatedLegs, function(err, resp)
+                    {
+                        current++;
+
+                        if(current === len)
+                        {
+                            callback(null, cdrList);
+                        }
+
+                    })
+                }
+                else
+                {
+                    if(processedCdr[i].ObjType === 'HTTAPI' || processedCdr[i].ObjType === 'SOCKET')
+                    {
+                        CollectBLeg(cdrList[processedCdr[i].Uuid], processedCdr[i].Uuid, processedCdr[i].CallUuid, function(err, resp)
+                        {
+
+                            current++;
+
+                            if(current === len)
+                            {
+                                callback(null, cdrList);
+                            }
+                        })
+
+                    }
+                    else
+                    {
+                        current++;
+
+                        if(current === len)
+                        {
+                            callback(null, cdrList);
+                        }
+                    }
+
+
+                }
+            }
+        }
+        else
+        {
+            callback(null, cdrList);
+        }
+
+    }
+
+    var CollectBLeg = function(cdrListArr, uuid, callUuid, callback)
+    {
+        backendHandler.GetBLegForIVRCalls(uuid, callUuid, function(err, legInfo)
+        {
+
+            if(legInfo)
+            {
+                cdrListArr.push(legInfo);
+            }
+
+            callback(err, cdrListArr);
+        })
+    };
+
+    var CollectOtherLegsCDR = function(cdrListArr, relatedLegs, callback)
+    {
+        var len = Object.keys(relatedLegs).length;
+
+        var count = 0;
+
+        for(legUuid in relatedLegs)
+        {
+            backendHandler.GetSpecificLegByUuid(legUuid, function(err, legInfo)
+            {
+                count++;
+                if(legInfo)
+                {
+                    cdrListArr.push(legInfo);
+
+                }
+
+                if(count === len)
+                {
+                    callback(null, true);
+                }
+            })
+
+        };
     };
 
     //query_string : ?startTime=2016-05-09&endTime=2016-05-12
@@ -75,17 +220,94 @@
                 }
 
                 var processedCdr = ProcessBatchCDR(legs);
-                logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - CDR Processing Done', reqId);
-                var jsonString = messageFormatter.FormatMessage(err, "", undefined, processedCdr);
-                res.end(jsonString);
+
+                var cdrList = {};
+
+                ProcessCDRLegs(processedCdr, cdrList, function(err, resp)
+                {
+                    logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - CDR Processing Done', reqId);
+
+                    var jsonString = "";
+
+                    if(err)
+                    {
+                        jsonString = messageFormatter.FormatMessage(err, "ERROR OCCURRED", false, cdrList);
+
+                    }
+                    else
+                    {
+                        jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, cdrList);
+                    }
+                    res.end(jsonString);
+                })
+
+
+
             })
 
         }
         catch(ex)
         {
             logger.error('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - Exception occurred', reqId, ex);
-            var jsonString = messageFormatter.FormatMessage(ex, "SUCCESS", undefined, emptyArr);
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
             logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+
+    //query_string : ?startTime=2016-05-09&endTime=2016-05-12
+    server.get('/DVP/API/:version/CallCDR/GetConferenceDetailsByRange', authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var startTime = req.query.startTime;
+            var endTime = req.query.endTime;
+            var offset = req.query.offset;
+            var limit = req.query.limit;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.GetConferenceDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s, Offset: %s, Limit : %s', reqId, startTime, endTime, offset, limit);
+
+            backendHandler.GetConferenceRelatedLegsInDateRange(startTime, endTime, companyId, tenantId, offset, limit, function(err, legs)
+            {
+                logger.debug('[DVP-CDRProcessor.GetConferenceDetailsByRange] - [%s] - CDR Processing Done', reqId);
+
+                var jsonString = "";
+
+                if(err)
+                {
+                    jsonString = messageFormatter.FormatMessage(err, "ERROR", false, emptyArr);
+
+                }
+                else
+                {
+                    var groupedConf = underscore.groupBy(legs, 'CallUuid');
+                    jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, groupedConf);
+                }
+                res.end(jsonString);
+
+
+
+            })
+
+        }
+        catch(ex)
+        {
+            logger.error('[DVP-CDRProcessor.GetConferenceDetailsByRange] - [%s] - Exception occurred', reqId, ex);
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.GetConferenceDetailsByRange] - [%s] - API RESPONSE : %s', reqId, jsonString);
             res.end(jsonString);
         }
 

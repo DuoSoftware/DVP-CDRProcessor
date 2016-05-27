@@ -7,24 +7,93 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
 
     try
     {
-        dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId}], order:['CreatedTime'], offset: offset, limit: limit}).then(function(callLeg)
+        if(offset)
         {
 
-            logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
+            dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', id: { gt: offset }, ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]}], order:['CreatedTime'], limit: limit}).then(function(callLeg)
+            {
 
-            callback(undefined, callLeg);
+                logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
 
-        }).catch(function(err)
+                callback(undefined, callLeg);
+
+            }).catch(function(err)
+            {
+                logger.error('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
+
+                callback(err, callLegList);
+            });
+        }
+        else
         {
-            logger.error('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
+            dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]}], order:['CreatedTime'], limit: limit}).then(function(callLeg)
+            {
 
-            callback(err, callLegList);
-        })
+                logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
+
+                callback(undefined, callLeg);
+
+            }).catch(function(err)
+            {
+                logger.error('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
+
+                callback(err, callLegList);
+            })
+        }
+
 
     }
     catch(ex)
     {
         callback(ex, callLegList);
+    }
+};
+
+var GetConferenceRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, callback)
+{
+    var confLegList = [];
+
+    try
+    {
+        if(offset)
+        {
+
+            dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, id: { gt: offset }, ObjCategory: 'CONFERENCE'}], order:['CreatedTime'], limit: limit}).then(function(callLeg)
+            {
+
+                logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
+
+                callback(undefined, callLeg);
+
+            }).catch(function(err)
+            {
+                logger.error('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
+
+                callback(err, confLegList);
+            });
+        }
+        else
+        {
+            dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjCategory: 'CONFERENCE'}], order:['CreatedTime'], limit: limit}).then(function(callLeg)
+            {
+
+                logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
+
+                callback(undefined, callLeg);
+
+            }).catch(function(err)
+            {
+                logger.error('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
+
+                callback(err, confLegList);
+            })
+        }
+
+
+    }
+    catch(ex)
+    {
+        callback(ex, confLegList);
     }
 };
 
@@ -59,6 +128,38 @@ var GetCallRelatedLegsForAppId = function(appId, companyId, tenantId, startTime,
         callback(ex, callLegList);
     }
 };
+
+var GetSpecificLegByUuid = function(uuid, callback)
+{
+    try
+    {
+        dbModel.CallCDR.find({where :[{Uuid: uuid}]}).then(function(callLeg)
+        {
+            callback(null, callLeg);
+        });
+
+    }
+    catch(ex)
+    {
+        callback(ex, null);
+    }
+}
+
+var GetBLegForIVRCalls = function(uuid, callUuid, callback)
+{
+    try
+    {
+        dbModel.CallCDR.find({where :[{CallUuid: callUuid, Direction: 'outbound', Uuid: {ne: uuid}}]}).then(function(callLeg)
+        {
+            callback(null, callLeg);
+        });
+
+    }
+    catch(ex)
+    {
+        callback(ex, null);
+    }
+}
 
 var GetCallRelatedLegs = function(sessionId, callback)
 {
@@ -132,4 +233,7 @@ var AddCDRRecord = function(cdrInfo, callback)
 module.exports.AddCDRRecord = AddCDRRecord;
 module.exports.GetCallRelatedLegs = GetCallRelatedLegs;
 module.exports.GetCallRelatedLegsInDateRange = GetCallRelatedLegsInDateRange;
+module.exports.GetConferenceRelatedLegsInDateRange = GetConferenceRelatedLegsInDateRange;
 module.exports.GetCallRelatedLegsForAppId = GetCallRelatedLegsForAppId;
+module.exports.GetSpecificLegByUuid = GetSpecificLegByUuid;
+module.exports.GetBLegForIVRCalls = GetBLegForIVRCalls;
