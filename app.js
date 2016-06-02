@@ -149,7 +149,7 @@
         }
         else
         {
-            callback(null, cdrList);
+            callback(null, null);
         }
 
     }
