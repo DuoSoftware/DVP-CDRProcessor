@@ -74,7 +74,7 @@ var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyI
         }
         else
         {
-            dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', QueueSec: {gt: 10}, AgentAnswered: false, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]}], order:['CreatedTime'], limit: limit}).then(function(callLeg)
+            dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjType: 'HTTAPI', Direction: 'inbound', QueueSec: {gt: 10}, AgentAnswered: false, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]}], order:['CreatedTime'], limit: limit}).then(function(callLeg)
             {
 
                 logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
