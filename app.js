@@ -194,6 +194,76 @@
         };
     };
 
+    server.get('/DVP/API/:version/CallCDR/GetAbandonCallDetailsByRange', authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var startTime = req.query.startTime;
+            var endTime = req.query.endTime;
+            var offset = req.query.offset;
+            var limit = req.query.limit;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.GetAbandonCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s, Offset: %s, Limit : %s', reqId, startTime, endTime, offset, limit);
+
+            backendHandler.GetAbandonCallRelatedLegsInDateRange(startTime, endTime, companyId, tenantId, offset, limit, function(err, legs)
+            {
+                if(err)
+                {
+                    logger.error('[DVP-CDRProcessor.GetAbandonCallDetailsByRange] - [%s] - Exception occurred on method GetCallRelatedLegsInDateRange', reqId, err);
+                }
+                else
+                {
+                    logger.debug('[DVP-CDRProcessor.GetAbandonCallDetailsByRange] - [%s] - Get call cdr details by date success', reqId);
+                }
+
+                var processedCdr = ProcessBatchCDR(legs);
+
+                var cdrList = {};
+
+                ProcessCDRLegs(processedCdr, cdrList, function(err, resp)
+                {
+                    logger.debug('[DVP-CDRProcessor.GetAbandonCallDetailsByRange] - [%s] - CDR Processing Done', reqId);
+
+                    var jsonString = "";
+
+                    if(err)
+                    {
+                        jsonString = messageFormatter.FormatMessage(err, "ERROR OCCURRED", false, cdrList);
+
+                    }
+                    else
+                    {
+                        jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, cdrList);
+                    }
+                    res.end(jsonString);
+                })
+
+
+
+            })
+
+        }
+        catch(ex)
+        {
+            logger.error('[DVP-CDRProcessor.GetAbandonCallDetailsByRange] - [%s] - Exception occurred', reqId, ex);
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.GetAbandonCallDetailsByRange] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
     //query_string : ?startTime=2016-05-09&endTime=2016-05-12
     server.get('/DVP/API/:version/CallCDR/GetCallDetailsByRange', authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {

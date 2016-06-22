@@ -6,7 +6,7 @@
   "dependencies": {
     "config": "^1.12.0",
     "dvp-common": "^0.1.3",
-    "dvp-dbmodels": "^0.1.6",
+    "dvp-dbmodels": "^0.2.1",
     "node-uuid": "^1.4.3",
     "restify": "^3.0.2",
     "restify-jwt": "^0.4.0",
