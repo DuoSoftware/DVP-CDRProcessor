@@ -279,6 +279,9 @@
             var companyId = req.user.company;
             var tenantId = req.user.tenant;
 
+            offset = parseInt(offset);
+            limit = parseInt(limit);
+
             if (!companyId || !tenantId)
             {
                 throw new Error("Invalid company or tenant");
