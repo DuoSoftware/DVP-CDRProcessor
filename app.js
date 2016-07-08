@@ -520,10 +520,19 @@
                 var uuid = varSec['uuid'];
                 var callUuid = varSec['call_uuid'];
                 var bridgeUuid = varSec['bridge_uuid'];
-                //var sipFromUser = callerProfileSec['caller_id_number'];
-                var sipFromUser = varSec['sip_from_user'];
-                //var sipToUser = callerProfileSec['destination_number'];
-                var sipToUser = varSec['sip_to_user'];
+                var sipFromUser = callerProfileSec['caller_id_number'];
+                var sipToUser = callerProfileSec['destination_number'];
+
+                if(!sipFromUser)
+                {
+                    sipFromUser = varSec['sip_from_user'];
+                }
+
+                if(!sipToUser)
+                {
+                    sipToUser = varSec['sip_to_user'];
+                }
+
                 var hangupCause = varSec['hangup_cause'];
                 var direction = varSec['direction'];
                 var switchName = cdrObj['switchname'];
@@ -535,6 +544,12 @@
                 var opCat = varSec['DVP_OPERATION_CAT'];
                 var actionCat = varSec['DVP_ACTION_CAT'];
                 var advOpAction = varSec['DVP_ADVANCED_OP_ACTION'];
+                var confName = varSec['DVP_CONFERENCE_NAME'];
+                var dvpCallDirection = varSec['DVP_CALL_DIRECTION'];
+                var sipHangupDisposition = varSec['sip_hangup_disposition'];
+                var memberuuid = varSec['memberuuid'];
+                var conferenceUuid = varSec['conference_uuid'];
+                var originatedLegs = varSec['originated_legs'];
                 var answerDate = undefined;
                 var createdDate = undefined;
                 var bridgeDate = undefined;
@@ -548,6 +563,16 @@
                 if(!sipToUser)
                 {
                     sipToUser = varSec['dialed_user'];
+                }
+
+                if(memberuuid)
+                {
+                    callUuid = memberuuid;
+                }
+
+                if(conferenceUuid)
+                {
+                    callUuid = conferenceUuid;
                 }
 
 
@@ -579,6 +604,27 @@
                     hangupDate = new Date(hangupTStamp);
                 }
 
+                var isAgentAnswered = false;
+
+                var ardsAddedTimeStamp = varSec['ards_added'];
+                var queueLeftTimeStamp = varSec['ards_queue_left'];
+                var ardsRoutedTimeStamp = varSec['ards_routed'];
+
+                var queueTime = 0;
+
+                if(ardsAddedTimeStamp && queueLeftTimeStamp)
+                {
+                    var ardsAddedTimeSec = parseInt(ardsAddedTimeStamp);
+                    var queueLeftTimeSec = parseInt(queueLeftTimeStamp);
+
+                    queueTime = queueLeftTimeSec - ardsAddedTimeSec;
+                }
+
+                if(ardsRoutedTimeStamp)
+                {
+                    isAgentAnswered = true;
+                }
+
                 if(!appId)
                 {
                     appId = '-1';
@@ -594,7 +640,8 @@
                     tenantId = '-1';
                 }
 
-                var isAnswered = bridgeUuid != undefined;
+                var agentSkill = varSec['ards_skill_display'];
+
                 var duration = varSec['duration'];
                 var billSec = varSec['billsec'];
                 var holdSec = varSec['hold_accum_seconds'];
@@ -603,6 +650,13 @@
                 var waitSec = varSec['waitsec'];
                 var progressMediaSec = varSec['progress_mediasec'];
                 var flowBillSec = varSec['flow_billsec'];
+
+                var isAnswered = false;
+
+                if(answerDate > new Date('1970-01-01'))
+                {
+                    isAnswered = true;
+                }
 
                 var cdr = dbModel.CallCDR.build({
                     Uuid: uuid,
@@ -623,6 +677,7 @@
                     BillSec: billSec,
                     HoldSec: holdSec,
                     ProgressSec: progressSec,
+                    QueueSec: queueTime,
                     AnswerSec: answerSec,
                     WaitSec: waitSec,
                     ProgressMediaSec: progressMediaSec,
@@ -632,8 +687,21 @@
                     ObjCategory: 'DEFAULT',
                     CompanyId: companyId,
                     TenantId: tenantId,
-                    AppId: appId
+                    AppId: appId,
+                    AgentSkill: agentSkill,
+                    OriginatedLegs: originatedLegs,
+                    DVPCallDirection: dvpCallDirection,
+                    HangupDisposition:sipHangupDisposition,
+                    AgentAnswered: isAgentAnswered
                 });
+
+
+
+
+                if(actionCat === 'CONFERENCE')
+                {
+                    cdr.ExtraData = confName;
+                }
 
                 if(actionCat)
                 {
