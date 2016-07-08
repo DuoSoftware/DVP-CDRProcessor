@@ -31,7 +31,6 @@
     server.use(restify.acceptParser(server.acceptable));
     server.use(restify.queryParser());
     server.use(restify.bodyParser());
-    server.use(jwt({secret: secret.Secret}));
 
     var ProcessBatchCDR = function(cdrList)
     {
@@ -194,7 +193,7 @@
         };
     };
 
-    server.get('/DVP/API/:version/CallCDR/GetAbandonCallDetailsByRange', authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    server.get('/DVP/API/:version/CallCDR/GetAbandonCallDetailsByRange', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
@@ -265,7 +264,7 @@
     });
 
     //query_string : ?startTime=2016-05-09&endTime=2016-05-12
-    server.get('/DVP/API/:version/CallCDR/GetCallDetailsByRange', authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    server.get('/DVP/API/:version/CallCDR/GetCallDetailsByRange', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
@@ -340,7 +339,7 @@
 
 
     //query_string : ?startTime=2016-05-09&endTime=2016-05-12
-    server.get('/DVP/API/:version/CallCDR/GetConferenceDetailsByRange', authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    server.get('/DVP/API/:version/CallCDR/GetConferenceDetailsByRange', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
@@ -396,7 +395,7 @@
     });
 
     //query_string : ?appId=4&startTime=2016-05-09&endTime=2016-05-12
-    server.get('/DVP/API/:version/CallCDR/GetCallDetailsByApp', authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    server.get('/DVP/API/:version/CallCDR/GetCallDetailsByApp', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
@@ -448,7 +447,7 @@
     });
 
     //query_string : ?sessionId=fs43dg-dse43f-fd44g-fsdh53-sdffd
-    server.get('/DVP/API/:version/CallCDR/GetCallDetailsBySession', authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    server.get('/DVP/API/:version/CallCDR/GetCallDetailsBySession', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
