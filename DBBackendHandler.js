@@ -89,6 +89,29 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
     }
 };
 
+var GetCallSummaryDetailsDateRange = function(startTime, endTime, companyId, tenantId, callback)
+{
+    try
+    {
+        var st = startTime.toISOString();
+        var et = endTime.toISOString();
+        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : {between:[st, et]}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]}).then(function(callCount)
+        {
+            callback(null, callCount);
+
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+
+
+    }
+    catch(ex)
+    {
+        callback(ex, 0);
+    }
+};
+
 var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, callback)
 {
     var callLegList = [];
@@ -366,3 +389,4 @@ module.exports.GetCallRelatedLegsForAppId = GetCallRelatedLegsForAppId;
 module.exports.GetSpecificLegByUuid = GetSpecificLegByUuid;
 module.exports.GetBLegForIVRCalls = GetBLegForIVRCalls;
 module.exports.GetAbandonCallRelatedLegsInDateRange = GetAbandonCallRelatedLegsInDateRange;
+module.exports.GetCallSummaryDetailsDateRange = GetCallSummaryDetailsDateRange;

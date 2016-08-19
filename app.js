@@ -3,6 +3,8 @@
     var stringify = require('stringify');
     var dbModel = require('dvp-dbmodels');
     var underscore = require('underscore');
+    var moment = require('moment');
+    var async = require('async');
     var config = require('config');
     var nodeUuid = require('node-uuid');
     var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
@@ -151,7 +153,7 @@
             callback(null, null);
         }
 
-    }
+    };
 
     var CollectBLeg = function(cdrListArr, uuid, callUuid, callback)
     {
@@ -331,6 +333,66 @@
             logger.error('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - Exception occurred', reqId, ex);
             var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
             logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+
+    var processSummaryData = function(startDate, endDate, companyId, tenantId, callback)
+    {
+        backendHandler.GetCallSummaryDetailsDateRange(startDate, endDate, companyId, tenantId, function(err, count)
+        {
+            callback(err, count);
+        });
+    };
+
+
+    //query_string : ?startTime=2016-05-09&endTime=2016-05-12
+    server.get('/DVP/API/:version/CallCDR/GetCallCDRSummary/Hourly', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var summaryDate = req.query.date;
+            var tz = req.query.tz;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - HTTP Request Received - Params - summaryDate : %s', reqId, summaryDate);
+
+            //Generate 24 hrs moment time array
+
+            var hrFuncArr = [];
+
+            for(i=0; i<24; i++)
+            {
+                var sd = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i, 'hours');
+                var ed = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i+1, 'hours');
+
+                hrFuncArr.push(processSummaryData.bind(this, sd, ed, companyId, tenantId));
+            }
+
+
+            async.parallel(hrFuncArr, function(err, results)
+            {
+                res.end(JSON.stringify(results));
+            });
+
+
+        }
+        catch(ex)
+        {
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - API RESPONSE : %s', reqId, jsonString);
             res.end(jsonString);
         }
 
