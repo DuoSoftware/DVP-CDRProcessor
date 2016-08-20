@@ -340,11 +340,11 @@
     });
 
 
-    var processSummaryData = function(startDate, endDate, companyId, tenantId, callback)
+    var processSummaryData = function(caption, startDate, endDate, companyId, tenantId, callback)
     {
-        backendHandler.GetCallSummaryDetailsDateRange(startDate, endDate, companyId, tenantId, function(err, count)
+        backendHandler.GetCallSummaryDetailsDateRange(caption, startDate, endDate, companyId, tenantId, function(err, summaryData)
         {
-            callback(err, count);
+            callback(err, summaryData);
         });
     };
 
@@ -378,13 +378,86 @@
                 var sd = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i, 'hours');
                 var ed = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i+1, 'hours');
 
-                hrFuncArr.push(processSummaryData.bind(this, sd, ed, companyId, tenantId));
+                hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId));
             }
 
 
             async.parallel(hrFuncArr, function(err, results)
             {
-                res.end(JSON.stringify(results));
+                if(err)
+                {
+                    var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, emptyArr);
+                    logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+                }
+                else
+                {
+                    var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, results);
+                    logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+                }
+            });
+
+
+        }
+        catch(ex)
+        {
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+    server.get('/DVP/API/:version/CallCDR/GetCallCDRSummary/Daily', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var summaryDate = req.query.month;
+            var tz = req.query.tz;
+
+            var daysOfMonth = moment(summaryDate + "-01 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").daysInMonth();
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - HTTP Request Received - Params - summaryDate : %s', reqId, summaryDate);
+
+            //Generate 24 hrs moment time array
+
+            var hrFuncArr = [];
+
+            for(i=0; i<daysOfMonth; i++)
+            {
+                var sd = moment(summaryDate + "-01 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i, 'days');
+                var ed = moment(summaryDate + "-01 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i+1, 'days');
+
+                hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId));
+            }
+
+
+            async.parallel(hrFuncArr, function(err, results)
+            {
+                if(err)
+                {
+                    var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, emptyArr);
+                    logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+                }
+                else
+                {
+                    var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, results);
+                    logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+                }
             });
 
 
@@ -672,6 +745,13 @@
                 var queueLeftTimeStamp = varSec['ards_queue_left'];
                 var ardsRoutedTimeStamp = varSec['ards_routed'];
 
+                var isQueued = false;
+
+                if(ardsAddedTimeStamp)
+                {
+                    isQueued = true;
+                }
+
                 var queueTime = 0;
 
                 if(ardsAddedTimeStamp && queueLeftTimeStamp)
@@ -754,7 +834,8 @@
                     OriginatedLegs: originatedLegs,
                     DVPCallDirection: dvpCallDirection,
                     HangupDisposition:sipHangupDisposition,
-                    AgentAnswered: isAgentAnswered
+                    AgentAnswered: isAgentAnswered,
+                    IsQueued: isQueued
                 });
 
 

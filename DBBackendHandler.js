@@ -89,26 +89,197 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
     }
 };
 
-var GetCallSummaryDetailsDateRange = function(startTime, endTime, companyId, tenantId, callback)
+var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, companyId, tenantId, callback)
 {
+    var summaryDetails = {};
     try
     {
         var st = startTime.toISOString();
         var et = endTime.toISOString();
+
         dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : {between:[st, et]}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]}).then(function(callCount)
         {
-            callback(null, callCount);
+            if(callCount)
+            {
+                summaryDetails.IVRCallsCount = callCount;
+            }
+            else
+            {
+                summaryDetails.IVRCallsCount = 0;
+            }
+
+            dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : {between:[st, et]}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', IsQueued: true, ObjType: 'HTTAPI'}]}).then(function(queuedCount)
+            {
+                if(callCount)
+                {
+                    summaryDetails.QueuedCallsCount = queuedCount;
+                }
+                else
+                {
+                    summaryDetails.QueuedCallsCount = 0;
+                }
+
+
+                dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : {between:[st, et]}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {gt: 10}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(abandonCount)
+                {
+                    if(abandonCount)
+                    {
+                        summaryDetails.AbandonCallsCount = abandonCount;
+                    }
+                    else
+                    {
+                        summaryDetails.AbandonCallsCount = 0;
+                    }
+
+                    if(summaryDetails.IVRCallsCount)
+                    {
+                        summaryDetails.AbandonPercentage = (summaryDetails.AbandonCallsCount / summaryDetails.IVRCallsCount) * 100;
+                    }
+                    else
+                    {
+                        summaryDetails.AbandonPercentage = 'N/A';
+                    }
+
+
+                    dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : {between:[st, et]}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {lte: 10}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(dropCount)
+                    {
+                        if(dropCount)
+                        {
+                            summaryDetails.DropCallsCount = dropCount;
+                        }
+                        else
+                        {
+                            summaryDetails.DropCallsCount = 0;
+                        }
+
+                        if(summaryDetails.IVRCallsCount)
+                        {
+                            summaryDetails.DropPercentage = (summaryDetails.DropCallsCount / summaryDetails.IVRCallsCount) * 100;
+                        }
+                        else
+                        {
+                            summaryDetails.DropPercentage = 'N/A';
+                        }
+
+                        dbModel.CallCDRProcessed.aggregate('HoldSec', 'avg', {where :[{CreatedTime : {between:[st, et]}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(holdAvg)
+                        {
+                            if(holdAvg)
+                            {
+                                summaryDetails.HoldAverage = holdAvg;
+                            }
+                            else
+                            {
+                                summaryDetails.HoldAverage = 'N/A';
+                            }
+
+                            dbModel.CallCDRProcessed.aggregate('IvrConnectSec', 'avg', {where :[{CreatedTime : {between:[st, et]}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]}).then(function(ivrAvg)
+                            {
+                                if(ivrAvg)
+                                {
+                                    summaryDetails.IvrAverage = ivrAvg;
+                                }
+                                else
+                                {
+                                    summaryDetails.IvrAverage = 'N/A';
+                                }
+
+                                dbModel.CallCDRProcessed.aggregate('AnswerSec', 'avg', {where :[{CreatedTime : {between:[st, et]}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(ringAvg)
+                                {
+                                    if(ringAvg)
+                                    {
+                                        summaryDetails.RingAverage = ringAvg;
+                                    }
+                                    else
+                                    {
+                                        summaryDetails.RingAverage = 'N/A';
+                                    }
+
+                                    dbModel.CallCDRProcessed.aggregate('BillSec', 'avg', {where :[{CreatedTime : {between:[st, et]}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(talkAvg)
+                                    {
+                                        if(talkAvg)
+                                        {
+                                            summaryDetails.TalkAverage = talkAvg;
+                                        }
+                                        else
+                                        {
+                                            summaryDetails.TalkAverage = 'N/A';
+                                        }
+
+                                        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : {between:[st, et]}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(answerCount)
+                                        {
+                                            if(answerCount)
+                                            {
+                                                summaryDetails.AnswerCount = answerCount;
+                                            }
+                                            else
+                                            {
+                                                summaryDetails.AnswerCount = 0;
+                                            }
+
+                                            if(summaryDetails.IVRCallsCount)
+                                            {
+                                                summaryDetails.AnswerPercentage = (summaryDetails.AnswerCount / summaryDetails.IVRCallsCount) * 100;
+                                            }
+                                            else
+                                            {
+                                                summaryDetails.AnswerPercentage = 'N/A';
+                                            }
+
+                                            summaryDetails.Caption = caption+1;
+
+                                            callback(null, summaryDetails);
+
+                                        }).catch(function(err)
+                                        {
+                                            callback(err, summaryDetails);
+                                        });
+
+                                    }).catch(function(err)
+                                    {
+                                        callback(err, summaryDetails);
+                                    });
+
+                                }).catch(function(err)
+                                {
+                                    callback(err, summaryDetails);
+                                });
+
+                            }).catch(function(err)
+                            {
+                                callback(err, summaryDetails);
+                            });
+
+                        }).catch(function(err)
+                        {
+                            callback(err, summaryDetails);
+                        });
+
+                    }).catch(function(err)
+                    {
+                        callback(err, summaryDetails);
+                    });
+
+                }).catch(function(err)
+                {
+                    callback(err, summaryDetails);
+                });
+
+            }).catch(function(err)
+            {
+                callback(err, summaryDetails);
+            });
+
 
         }).catch(function(err)
         {
-            callback(err, 0);
+            callback(err, summaryDetails);
         });
 
 
     }
     catch(ex)
     {
-        callback(ex, 0);
+        callback(ex, summaryDetails);
     }
 };
 

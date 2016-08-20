@@ -6,8 +6,8 @@
   "dependencies": {
     "async": "^2.0.1",
     "config": "^1.12.0",
-    "dvp-common": "^0.4.0",
-    "dvp-dbmodels": "^0.3.9",
+    "dvp-common": "^0.4.4",
+    "dvp-dbmodels": "^0.4.2",
     "moment": "^2.14.1",
     "node-uuid": "^1.4.3",
     "restify": "^3.0.2",
