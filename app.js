@@ -160,12 +160,100 @@
         backendHandler.GetBLegForIVRCalls(uuid, callUuid, function(err, legInfo)
         {
 
-            if(legInfo)
+            if(legInfo && legInfo.length > 0)
             {
-                cdrListArr.push(legInfo);
+                var len = legInfo.length;
+                var current = 0;
+
+                for(i=0; i<legInfo.length; i++)
+                {
+                    var legType = legInfo[i].ObjType;
+
+                    if(legType && (legType === 'ATT_XFER_USER' || legType === 'ATT_XFER_GATEWAY'))
+                    {
+                        //check for Originated Legs
+
+                        if(legInfo[i].OriginatedLegs)
+                        {
+                            var decodedLegsStr = decodeURIComponent(legInfo[i].OriginatedLegs);
+
+                            var formattedStr = decodedLegsStr.replace("ARRAY::", "");
+
+                            var legsUnformattedList = formattedStr.split('|:');
+
+                            if(legsUnformattedList && legsUnformattedList.length > 0)
+                            {
+                                var legProperties = legsUnformattedList[0].split(';');
+
+                                var legUuid = legProperties[0];
+
+                                backendHandler.GetSpecificLegByUuid(legUuid, function(err, transferLeg)
+                                {
+                                    current++;
+
+                                    cdrListArr.push(legInfo);
+
+                                    if(transferLeg)
+                                    {
+                                        var tempTransLeg = transferLeg.toJSON();
+                                        tempTransLeg.IsTransferredParty = true;
+                                        cdrListArr.push(tempTransLeg);
+                                    }
+
+                                    if(current === len)
+                                    {
+                                        callback(null, cdrListArr);
+                                    }
+
+
+                                })
+                            }
+                            else
+                            {
+                                current++;
+
+                                cdrListArr.push(legInfo);
+
+                                if(current === len)
+                                {
+                                    callback(null, cdrListArr);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            current++;
+
+                            cdrListArr.push(legInfo);
+
+                            if(current === len)
+                            {
+                                callback(null, cdrListArr);
+                            }
+                        }
+
+
+                    }
+                    else
+                    {
+                        current++;
+
+                        cdrListArr.push(legInfo);
+
+                        if(current === len)
+                        {
+                            callback(null, cdrListArr);
+                        }
+                    }
+                }
+
+            }
+            else
+            {
+                callback(err, cdrListArr);
             }
 
-            callback(err, cdrListArr);
+
         })
     };
 
@@ -175,24 +263,107 @@
 
         var count = 0;
 
-        for(legUuid in relatedLegs)
+        if(len > 0)
         {
-            backendHandler.GetSpecificLegByUuid(legUuid, function(err, legInfo)
+            for(legUuid in relatedLegs)
             {
-                count++;
-                if(legInfo)
+                backendHandler.GetSpecificLegByUuid(legUuid, function(err, legInfo)
                 {
-                    cdrListArr.push(legInfo);
+                    if(legInfo)
+                    {
+                        var legType = legInfo.ObjType;
 
-                }
+                        if(legType && (legType === 'ATT_XFER_USER' || legType === 'ATT_XFER_GATEWAY'))
+                        {
+                            if(legInfo.OriginatedLegs)
+                            {
+                                var decodedLegsStr = decodeURIComponent(legInfo.OriginatedLegs);
 
-                if(count === len)
-                {
-                    callback(null, true);
-                }
-            })
+                                var formattedStr = decodedLegsStr.replace("ARRAY::", "");
 
-        };
+                                var legsUnformattedList = formattedStr.split('|:');
+
+                                if (legsUnformattedList && legsUnformattedList.length > 0)
+                                {
+                                    var legProperties = legsUnformattedList[0].split(';');
+
+                                    var legUuid = legProperties[0];
+
+                                    backendHandler.GetSpecificLegByUuid(legUuid, function (err, transferLeg)
+                                    {
+                                        cdrListArr.push(legInfo);
+
+                                        if(transferLeg)
+                                        {
+                                            var tempTransLeg = transferLeg.toJSON();
+                                            tempTransLeg.IsTransferredParty = true;
+                                            cdrListArr.push(tempTransLeg);
+                                        }
+
+                                        count++;
+
+                                        if(count === len)
+                                        {
+                                            callback(null, true);
+                                        }
+                                    })
+                                }
+                                else
+                                {
+                                    cdrListArr.push(legInfo);
+                                    count++;
+
+                                    if(count === len)
+                                    {
+                                        callback(null, true);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                cdrListArr.push(legInfo);
+                                count++;
+
+                                if(count === len)
+                                {
+                                    callback(null, true);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            cdrListArr.push(legInfo);
+                            count++;
+
+                            if(count === len)
+                            {
+                                callback(null, true);
+                            }
+                        }
+
+
+                    }
+                    else
+                    {
+                        count++;
+
+                        if(count === len)
+                        {
+                            callback(null, true);
+                        }
+                    }
+
+
+                })
+
+            }
+        }
+        else
+        {
+            callback(null, true);
+        }
+
+
     };
 
     server.get('/DVP/API/:version/CallCDR/GetAbandonCallDetailsByRange', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
@@ -350,7 +521,7 @@
 
 
     //query_string : ?startTime=2016-05-09&endTime=2016-05-12
-    server.get('/DVP/API/:version/CallCDR/GetCallCDRSummary/Hourly', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
@@ -410,16 +581,19 @@
         return next();
     });
 
-    server.get('/DVP/API/:version/CallCDR/GetCallCDRSummary/Daily', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Daily', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
         try
         {
-            var summaryDate = req.query.month;
+            var startDate = req.query.startDate;
+            var endDate = req.query.endDate;
+
             var tz = req.query.tz;
 
-            var daysOfMonth = moment(summaryDate + "-01 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").daysInMonth();
+            var momentSD = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z");
+            var momentED = moment(endDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z");
 
             var companyId = req.user.company;
             var tenantId = req.user.tenant;
@@ -429,11 +603,26 @@
                 throw new Error("Invalid company or tenant");
             }
 
-            logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - HTTP Request Received - Params - summaryDate : %s', reqId, summaryDate);
+            logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - HTTP Request Received - Params - startDate : %s, endDate : %s', reqId, startDate, endDate);
 
             //Generate 24 hrs moment time array
 
-            var hrFuncArr = [];
+            var dayFuncArr = [];
+            var cnt = 1;
+
+            while(momentSD <= momentED)
+            {
+                var sd = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt, 'days');
+                var ed = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt+1, 'days');
+
+                momentSD = sd;
+
+                dayFuncArr.push(processSummaryData.bind(this, sd.format('YYYY-MM-DD'), sd, ed, companyId, tenantId));
+
+                cnt++;
+            }
+
+            /*var hrFuncArr = [];
 
             for(i=0; i<daysOfMonth; i++)
             {
@@ -441,10 +630,10 @@
                 var ed = moment(summaryDate + "-01 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i+1, 'days');
 
                 hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId));
-            }
+            }*/
 
 
-            async.parallel(hrFuncArr, function(err, results)
+            async.parallel(dayFuncArr, function(err, results)
             {
                 if(err)
                 {
@@ -744,6 +933,7 @@
                 var ardsAddedTimeStamp = varSec['ards_added'];
                 var queueLeftTimeStamp = varSec['ards_queue_left'];
                 var ardsRoutedTimeStamp = varSec['ards_routed'];
+                var ardsResourceName = varSec['ards_resource_name'];
 
                 var isQueued = false;
 
@@ -798,6 +988,22 @@
                 if(answerDate > new Date('1970-01-01'))
                 {
                     isAnswered = true;
+                }
+
+                if(dvpCallDirection === 'inbound' && direction === 'outbound')
+                {
+                    if(ardsResourceName)
+                    {
+                        sipToUser = ardsResourceName;
+                    }
+                }
+
+                if(dvpCallDirection === 'outbound')
+                {
+                    if(ardsResourceName)
+                    {
+                        sipFromUser = ardsResourceName;
+                    }
                 }
 
                 var cdr = dbModel.CallCDR.build({

@@ -133,7 +133,7 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
 
                     if(summaryDetails.IVRCallsCount)
                     {
-                        summaryDetails.AbandonPercentage = (summaryDetails.AbandonCallsCount / summaryDetails.IVRCallsCount) * 100;
+                        summaryDetails.AbandonPercentage = Math.round((summaryDetails.AbandonCallsCount / summaryDetails.IVRCallsCount) * 100);
                     }
                     else
                     {
@@ -154,7 +154,7 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
 
                         if(summaryDetails.IVRCallsCount)
                         {
-                            summaryDetails.DropPercentage = (summaryDetails.DropCallsCount / summaryDetails.IVRCallsCount) * 100;
+                            summaryDetails.DropPercentage = Math.round((summaryDetails.DropCallsCount / summaryDetails.IVRCallsCount) * 100);
                         }
                         else
                         {
@@ -218,14 +218,14 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
 
                                             if(summaryDetails.IVRCallsCount)
                                             {
-                                                summaryDetails.AnswerPercentage = (summaryDetails.AnswerCount / summaryDetails.IVRCallsCount) * 100;
+                                                summaryDetails.AnswerPercentage = Math.round((summaryDetails.AnswerCount / summaryDetails.IVRCallsCount) * 100);
                                             }
                                             else
                                             {
                                                 summaryDetails.AnswerPercentage = 'N/A';
                                             }
 
-                                            summaryDetails.Caption = caption+1;
+                                            summaryDetails.Caption = caption;
 
                                             callback(null, summaryDetails);
 
@@ -471,7 +471,7 @@ var GetBLegForIVRCalls = function(uuid, callUuid, callback)
 {
     try
     {
-        dbModel.CallCDR.find({where :[{CallUuid: callUuid, Direction: 'outbound', Uuid: {ne: uuid}}]}).then(function(callLeg)
+        dbModel.CallCDR.findAll({where :[{CallUuid: callUuid, Direction: 'outbound', Uuid: {ne: uuid}}]}).then(function(callLeg)
         {
             callback(null, callLeg);
         });
