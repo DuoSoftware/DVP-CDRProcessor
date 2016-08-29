@@ -1,7 +1,7 @@
 var dbModel = require('dvp-dbmodels');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 
-var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, callback)
+var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, skillFilter, dirFilter, recFilter, callback)
 {
     var callLegList = [];
 
@@ -11,7 +11,33 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
         {
             if(limit)
             {
-                dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', id: { gt: offset }, ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]}], order:['CreatedTime'], limit: limit}).then(function(callLeg)
+                var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', id: { gt: offset }, ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]};
+                if(agentFilter)
+                {
+                    sqlCond.$or = [{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}];
+                }
+                if(skillFilter)
+                {
+                    sqlCond.AgentSkill = skillFilter;
+                }
+                if(dirFilter)
+                {
+                    sqlCond.DVPCallDirection = dirFilter;
+                }
+                if(recFilter === true || recFilter === false)
+                {
+                    if(recFilter === true)
+                    {
+                        sqlCond.BillSec = { gt: 0 }
+                    }
+                    else
+                    {
+                        sqlCond.BillSec = 0
+                    }
+
+                }
+
+                dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime'], limit: limit}).then(function(callLeg)
                 {
 
                     logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
@@ -24,10 +50,38 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
 
                     callback(err, callLegList);
                 });
+
             }
             else
             {
-                dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', id: { gt: offset }, ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]}], order:['CreatedTime']}).then(function(callLeg)
+
+                var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', id: { gt: offset }, ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]};
+                if(agentFilter)
+                {
+                    sqlCond.SipResource = agentFilter;
+                }
+                if(skillFilter)
+                {
+                    sqlCond.AgentSkill = skillFilter;
+                }
+                if(dirFilter)
+                {
+                    sqlCond.DVPCallDirection = dirFilter;
+                }
+                if(recFilter === true || recFilter === false)
+                {
+                    if(recFilter === true)
+                    {
+                        sqlCond.BillSec = { gt: 0 }
+                    }
+                    else
+                    {
+                        sqlCond.BillSec = 0
+                    }
+
+                }
+
+                dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime']}).then(function(callLeg)
                 {
 
                     logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
@@ -48,7 +102,33 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
         {
             if(limit)
             {
-                dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]}], order:['CreatedTime'], limit: limit}).then(function(callLeg)
+                var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]};
+                if(agentFilter)
+                {
+                    sqlCond.SipResource = agentFilter;
+                }
+                if(skillFilter)
+                {
+                    sqlCond.AgentSkill = skillFilter;
+                }
+                if(dirFilter)
+                {
+                    sqlCond.DVPCallDirection = dirFilter;
+                }
+                if(recFilter === true || recFilter === false)
+                {
+                    if(recFilter === true)
+                    {
+                        sqlCond.BillSec = { gt: 0 }
+                    }
+                    else
+                    {
+                        sqlCond.BillSec = 0
+                    }
+
+                }
+
+                dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime'], limit: limit}).then(function(callLeg)
                 {
 
                     logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
@@ -64,7 +144,33 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
             }
             else
             {
-                dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]}], order:['CreatedTime']}).then(function(callLeg)
+                var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]};
+                if(agentFilter)
+                {
+                    sqlCond.SipResource = agentFilter;
+                }
+                if(skillFilter)
+                {
+                    sqlCond.AgentSkill = skillFilter;
+                }
+                if(dirFilter)
+                {
+                    sqlCond.DVPCallDirection = dirFilter;
+                }
+                if(recFilter === true || recFilter === false)
+                {
+                    if(recFilter === true)
+                    {
+                        sqlCond.BillSec = { gt: 0 }
+                    }
+                    else
+                    {
+                        sqlCond.BillSec = 0
+                    }
+
+                }
+
+                dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime']}).then(function(callLeg)
                 {
 
                     logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');

@@ -447,6 +447,10 @@
             var endTime = req.query.endTime;
             var offset = req.query.offset;
             var limit = req.query.limit;
+            var agent = req.query.agent;
+            var skill = req.query.skill;
+            var direction = req.query.direction;
+            var recording = req.query.recording;
 
             var companyId = req.user.company;
             var tenantId = req.user.tenant;
@@ -461,7 +465,7 @@
 
             logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s, Offset: %s, Limit : %s', reqId, startTime, endTime, offset, limit);
 
-            backendHandler.GetCallRelatedLegsInDateRange(startTime, endTime, companyId, tenantId, offset, limit, function(err, legs)
+            backendHandler.GetCallRelatedLegsInDateRange(startTime, endTime, companyId, tenantId, offset, limit, agent, skill, direction, recording, function(err, legs)
             {
                 if(err)
                 {
@@ -934,6 +938,7 @@
                 var queueLeftTimeStamp = varSec['ards_queue_left'];
                 var ardsRoutedTimeStamp = varSec['ards_routed'];
                 var ardsResourceName = varSec['ards_resource_name'];
+                var ardsSipName = varSec['ARDS-SIP-Name'];
 
                 var isQueued = false;
 
@@ -990,7 +995,7 @@
                     isAnswered = true;
                 }
 
-                if(dvpCallDirection === 'inbound' && direction === 'outbound')
+                /*if(dvpCallDirection === 'inbound' && direction === 'outbound')
                 {
                     if(ardsResourceName)
                     {
@@ -1004,7 +1009,7 @@
                     {
                         sipFromUser = ardsResourceName;
                     }
-                }
+                }*/
 
                 var cdr = dbModel.CallCDR.build({
                     Uuid: uuid,
@@ -1045,7 +1050,10 @@
                 });
 
 
-
+                if(ardsSipName && dvpCallDirection === 'inbound')
+                {
+                    cdr.SipResource = ardsSipName;
+                }
 
                 if(actionCat === 'CONFERENCE')
                 {
