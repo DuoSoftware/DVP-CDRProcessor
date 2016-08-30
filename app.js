@@ -187,32 +187,21 @@
 
                                 var legUuid = legProperties[0];
 
-                                backendHandler.GetSpecificLegByUuid(legUuid, function(err, transferLeg)
+                                GetSpecificLegsForTransfer(legUuid, cdrListArr, legInfo[i], function(err, transInfLegRes)
                                 {
                                     current++;
-
-                                    cdrListArr.push(legInfo);
-
-                                    if(transferLeg)
-                                    {
-                                        var tempTransLeg = transferLeg.toJSON();
-                                        tempTransLeg.IsTransferredParty = true;
-                                        cdrListArr.push(tempTransLeg);
-                                    }
 
                                     if(current === len)
                                     {
                                         callback(null, cdrListArr);
                                     }
-
-
-                                })
+                                });
                             }
                             else
                             {
                                 current++;
 
-                                cdrListArr.push(legInfo);
+                                cdrListArr.push(legInfo[i]);
 
                                 if(current === len)
                                 {
@@ -224,7 +213,7 @@
                         {
                             current++;
 
-                            cdrListArr.push(legInfo);
+                            cdrListArr.push(legInfo[i]);
 
                             if(current === len)
                             {
@@ -238,7 +227,7 @@
                     {
                         current++;
 
-                        cdrListArr.push(legInfo);
+                        cdrListArr.push(legInfo[i]);
 
                         if(current === len)
                         {
@@ -254,6 +243,23 @@
             }
 
 
+        })
+    };
+
+    var GetSpecificLegsForTransfer = function(legUuid, cdrListArr, legInfo, callback)
+    {
+        backendHandler.GetSpecificLegByUuid(legUuid, function (err, transferLeg)
+        {
+            cdrListArr.push(legInfo);
+
+            if(transferLeg)
+            {
+                var tempTransLeg = transferLeg.toJSON();
+                tempTransLeg.IsTransferredParty = true;
+                cdrListArr.push(tempTransLeg);
+            }
+
+            callback(err, true);
         })
     };
 
