@@ -612,7 +612,7 @@
             //Generate 24 hrs moment time array
 
             var dayFuncArr = [];
-            var cnt = 1;
+            var cnt = 0;
 
             while(momentSD <= momentED)
             {

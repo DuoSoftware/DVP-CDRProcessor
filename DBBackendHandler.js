@@ -24,9 +24,9 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
                 {
                     sqlCond.DVPCallDirection = dirFilter;
                 }
-                if(recFilter === true || recFilter === false)
+                if(recFilter == 'true' || recFilter == 'false')
                 {
-                    if(recFilter === true)
+                    if(recFilter == 'true')
                     {
                         sqlCond.BillSec = { gt: 0 }
                     }
@@ -68,9 +68,9 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
                 {
                     sqlCond.DVPCallDirection = dirFilter;
                 }
-                if(recFilter === true || recFilter === false)
+                if(recFilter == 'true' || recFilter == 'false')
                 {
-                    if(recFilter === true)
+                    if(recFilter == 'true')
                     {
                         sqlCond.BillSec = { gt: 0 }
                     }
@@ -115,15 +115,15 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
                 {
                     sqlCond.DVPCallDirection = dirFilter;
                 }
-                if(recFilter === true || recFilter === false)
+                if(recFilter == 'true' || recFilter == 'false')
                 {
-                    if(recFilter === true)
+                    if(recFilter == 'true')
                     {
-                        sqlCond.BillSec = { gt: 0 }
+                        sqlCond.AgentAnswered = true
                     }
                     else
                     {
-                        sqlCond.BillSec = 0
+                        sqlCond.AgentAnswered = false
                     }
 
                 }
@@ -157,9 +157,9 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
                 {
                     sqlCond.DVPCallDirection = dirFilter;
                 }
-                if(recFilter === true || recFilter === false)
+                if(recFilter == 'true' || recFilter == 'false')
                 {
-                    if(recFilter === true)
+                    if(recFilter == 'true')
                     {
                         sqlCond.BillSec = { gt: 0 }
                     }
@@ -203,7 +203,7 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
         var st = startTime.toISOString();
         var et = endTime.toISOString();
 
-        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : {between:[st, et]}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]}).then(function(callCount)
+        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]}).then(function(callCount)
         {
             if(callCount)
             {
@@ -214,7 +214,7 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
                 summaryDetails.IVRCallsCount = 0;
             }
 
-            dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : {between:[st, et]}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', IsQueued: true, ObjType: 'HTTAPI'}]}).then(function(queuedCount)
+            dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', IsQueued: true, ObjType: 'HTTAPI'}]}).then(function(queuedCount)
             {
                 if(callCount)
                 {
@@ -226,7 +226,7 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
                 }
 
 
-                dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : {between:[st, et]}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {gt: 10}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(abandonCount)
+                dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {gt: 10}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(abandonCount)
                 {
                     if(abandonCount)
                     {
@@ -247,7 +247,7 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
                     }
 
 
-                    dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : {between:[st, et]}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {lte: 10}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(dropCount)
+                    dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {lte: 10}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(dropCount)
                     {
                         if(dropCount)
                         {
@@ -267,7 +267,7 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
                             summaryDetails.DropPercentage = 'N/A';
                         }
 
-                        dbModel.CallCDRProcessed.aggregate('HoldSec', 'avg', {where :[{CreatedTime : {between:[st, et]}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(holdAvg)
+                        dbModel.CallCDRProcessed.aggregate('HoldSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(holdAvg)
                         {
                             if(holdAvg)
                             {
@@ -278,7 +278,7 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
                                 summaryDetails.HoldAverage = 'N/A';
                             }
 
-                            dbModel.CallCDRProcessed.aggregate('IvrConnectSec', 'avg', {where :[{CreatedTime : {between:[st, et]}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]}).then(function(ivrAvg)
+                            dbModel.CallCDRProcessed.aggregate('IvrConnectSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]}).then(function(ivrAvg)
                             {
                                 if(ivrAvg)
                                 {
@@ -289,7 +289,7 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
                                     summaryDetails.IvrAverage = 'N/A';
                                 }
 
-                                dbModel.CallCDRProcessed.aggregate('AnswerSec', 'avg', {where :[{CreatedTime : {between:[st, et]}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(ringAvg)
+                                dbModel.CallCDRProcessed.aggregate('AnswerSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(ringAvg)
                                 {
                                     if(ringAvg)
                                     {
@@ -300,7 +300,7 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
                                         summaryDetails.RingAverage = 'N/A';
                                     }
 
-                                    dbModel.CallCDRProcessed.aggregate('BillSec', 'avg', {where :[{CreatedTime : {between:[st, et]}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(talkAvg)
+                                    dbModel.CallCDRProcessed.aggregate('BillSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(talkAvg)
                                     {
                                         if(talkAvg)
                                         {
@@ -311,7 +311,7 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
                                             summaryDetails.TalkAverage = 'N/A';
                                         }
 
-                                        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : {between:[st, et]}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(answerCount)
+                                        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(answerCount)
                                         {
                                             if(answerCount)
                                             {
