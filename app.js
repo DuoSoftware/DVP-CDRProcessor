@@ -383,6 +383,9 @@
             var offset = req.query.offset;
             var limit = req.query.limit;
 
+            offset = parseInt(offset);
+            limit = parseInt(limit);
+
             var companyId = req.user.company;
             var tenantId = req.user.tenant;
 
