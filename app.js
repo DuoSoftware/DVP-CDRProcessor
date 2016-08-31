@@ -625,7 +625,7 @@
                 var sd = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt, 'days');
                 var ed = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt+1, 'days');
 
-                momentSD = sd;
+                momentSD = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt+1, 'days');
 
                 dayFuncArr.push(processSummaryData.bind(this, sd.format('YYYY-MM-DD'), sd, ed, companyId, tenantId));
 
