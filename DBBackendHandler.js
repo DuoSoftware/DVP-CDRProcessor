@@ -1,7 +1,7 @@
 var dbModel = require('dvp-dbmodels');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 
-var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, skillFilter, dirFilter, recFilter, callback)
+var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, callback)
 {
     var callLegList = [];
 
@@ -14,7 +14,8 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
                 var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', id: { gt: offset }, ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]};
                 if(agentFilter)
                 {
-                    sqlCond.$or = [{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}];
+                    sqlCond.$and = [];
+                    sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
                 }
                 if(skillFilter)
                 {
@@ -36,6 +37,17 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
                     }
 
                 }
+
+                if(customerFilter)
+                {
+                    if(sqlCond.$and)
+                    {
+                        sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
+                    }
+
+                }
+
+
 
                 dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime'], limit: limit}).then(function(callLeg)
                 {
@@ -58,7 +70,8 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
                 var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', id: { gt: offset }, ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]};
                 if(agentFilter)
                 {
-                    sqlCond.SipResource = agentFilter;
+                    sqlCond.$and = [];
+                    sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
                 }
                 if(skillFilter)
                 {
@@ -77,6 +90,15 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
                     else
                     {
                         sqlCond.BillSec = 0
+                    }
+
+                }
+
+                if(customerFilter)
+                {
+                    if(sqlCond.$and)
+                    {
+                        sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
                     }
 
                 }
@@ -105,7 +127,8 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
                 var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]};
                 if(agentFilter)
                 {
-                    sqlCond.SipResource = agentFilter;
+                    sqlCond.$and = [];
+                    sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
                 }
                 if(skillFilter)
                 {
@@ -128,6 +151,20 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
 
                 }
 
+                if(customerFilter)
+                {
+                    if(!sqlCond.$and)
+                    {
+                        sqlCond.$and = [];
+
+                    }
+
+                    sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
+
+                }
+
+
+
                 dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime'], limit: limit}).then(function(callLeg)
                 {
 
@@ -147,7 +184,8 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
                 var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]};
                 if(agentFilter)
                 {
-                    sqlCond.SipResource = agentFilter;
+                    sqlCond.$and = [];
+                    sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
                 }
                 if(skillFilter)
                 {
@@ -166,6 +204,15 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
                     else
                     {
                         sqlCond.BillSec = 0
+                    }
+
+                }
+
+                if(customerFilter)
+                {
+                    if(sqlCond.$and)
+                    {
+                        sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
                     }
 
                 }

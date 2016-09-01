@@ -460,6 +460,7 @@
             var skill = req.query.skill;
             var direction = req.query.direction;
             var recording = req.query.recording;
+            var custNum = req.query.custnumber;
 
             var companyId = req.user.company;
             var tenantId = req.user.tenant;
@@ -474,7 +475,7 @@
 
             logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s, Offset: %s, Limit : %s', reqId, startTime, endTime, offset, limit);
 
-            backendHandler.GetCallRelatedLegsInDateRange(startTime, endTime, companyId, tenantId, offset, limit, agent, skill, direction, recording, function(err, legs)
+            backendHandler.GetCallRelatedLegsInDateRange(startTime, endTime, companyId, tenantId, offset, limit, agent, skill, direction, recording, custNum, function(err, legs)
             {
                 if(err)
                 {
