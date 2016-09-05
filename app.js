@@ -677,6 +677,84 @@
         return next();
     });
 
+    server.get('/DVP/API/:version/CallCDR/AgentStatus', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var startDate = req.query.startDate;
+            var endDate = req.query.endDate;
+            var resourceId = req.query.resourceId;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.AgentStatus] - [%s] - HTTP Request Received - Params - startDate : %s, endDate : %s', reqId, startDate, endDate);
+
+            //Get all agent status data
+
+            var sessionList = [];
+
+            backendHandler.GetResourceStatusList(startDate, endDate, resourceId, companyId, tenantId, function(err, resList)
+            {
+                var currentSession = [];
+                for(i=0; i<resList.length; i++)
+                {
+                    var curRes = resList[i];
+
+                    if(curRes.Status === 'Available' && curRes.Reason === 'Register')
+                    {
+                        if(currentSession.length === 0)
+                        {
+                            currentSession.push(curRes);
+                        }
+
+                    }
+                    else if(curRes.Status === 'NotAvailable' && curRes.Reason === 'UnRegister')
+                    {
+                        if(currentSession.length > 0)
+                        {
+                            currentSession.push(curRes);
+
+                            sessionList.push(currentSession);
+
+                            currentSession = [];
+
+                        }
+                    }
+                    else
+                    {
+                        if(currentSession.length > 0)
+                        {
+                            currentSession.push(curRes);
+                        }
+                    }
+
+                }
+
+                var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, sessionList);
+                logger.debug('[DVP-CDRProcessor.AgentStatus] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                res.end(jsonString);
+
+            });
+
+        }
+        catch(ex)
+        {
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.AgentStatus] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
 
     //query_string : ?startTime=2016-05-09&endTime=2016-05-12
     server.get('/DVP/API/:version/CallCDR/GetConferenceDetailsByRange', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)

@@ -634,7 +634,29 @@ var GetBLegForIVRCalls = function(uuid, callUuid, callback)
     {
         callback(ex, null);
     }
-}
+};
+
+var GetResourceStatusList = function(startTime, endTime, resourceId, companyId, tenantId, callback)
+{
+    var emptyArr = [];
+
+    try
+    {
+        dbModel.ResResourceStatusChangeInfo.findAll({where :[{CompanyId: companyId, TenantId: tenantId, ResourceId: resourceId, StatusType: 'ResourceStatus', createdAt: {between:[startTime, endTime]}}], order: ['createdAt']}).then(function(resourceInfoList)
+        {
+            callback(null, resourceInfoList)
+
+        }).catch(function(err)
+        {
+            callback(err, emptyArr)
+        });
+
+    }
+    catch(ex)
+    {
+        callback(ex, emptyArr);
+    }
+};
 
 var GetCallRelatedLegs = function(sessionId, callback)
 {
@@ -714,3 +736,4 @@ module.exports.GetSpecificLegByUuid = GetSpecificLegByUuid;
 module.exports.GetBLegForIVRCalls = GetBLegForIVRCalls;
 module.exports.GetAbandonCallRelatedLegsInDateRange = GetAbandonCallRelatedLegsInDateRange;
 module.exports.GetCallSummaryDetailsDateRange = GetCallSummaryDetailsDateRange;
+module.exports.GetResourceStatusList = GetResourceStatusList;
