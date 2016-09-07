@@ -3,6 +3,7 @@
     var stringify = require('stringify');
     var dbModel = require('dvp-dbmodels');
     var underscore = require('underscore');
+    var deepcopy = require('deepcopy');
     var moment = require('moment');
     var async = require('async');
     var config = require('config');
@@ -685,7 +686,6 @@
         {
             var startDate = req.query.startDate;
             var endDate = req.query.endDate;
-            var resourceId = req.query.resourceId;
 
             var companyId = req.user.company;
             var tenantId = req.user.tenant;
@@ -699,46 +699,59 @@
 
             //Get all agent status data
 
-            var sessionList = [];
+            //var sessionList = [];
 
-            backendHandler.GetResourceStatusList(startDate, endDate, resourceId, companyId, tenantId, function(err, resList)
+            backendHandler.GetResourceStatusList(startDate, endDate, companyId, tenantId, function(err, resList)
             {
-                var currentSession = [];
-                for(i=0; i<resList.length; i++)
+                //var currentSession = {};
+                //
+                //currentSession.SessionList = [];
+
+                var groupedList = underscore.groupBy(resList, function(event)
+                {
+                   return event.ResourceId;
+                });
+
+                /*for(i=0; i<resList.length; i++)
                 {
                     var curRes = resList[i];
 
                     if(curRes.Status === 'Available' && curRes.Reason === 'Register')
                     {
-                        if(currentSession.length === 0)
+                        if(currentSession.SessionList.length === 0)
                         {
-                            currentSession.push(curRes);
+                            currentSession.SessionStart = curRes.createdAt;
+                            currentSession.SessionList.push(curRes);
                         }
 
                     }
                     else if(curRes.Status === 'NotAvailable' && curRes.Reason === 'UnRegister')
                     {
-                        if(currentSession.length > 0)
+                        if(currentSession.SessionList.length > 0)
                         {
-                            currentSession.push(curRes);
+                            currentSession.SessionEnd = curRes.createdAt;
+                            currentSession.SessionList.push(curRes);
 
-                            sessionList.push(currentSession);
+                            var copy = JSON.parse(JSON.stringify(currentSession));
 
-                            currentSession = [];
+                            sessionList.push(copy);
+
+                            currentSession = {};
+                            currentSession.SessionList = [];
 
                         }
                     }
                     else
                     {
-                        if(currentSession.length > 0)
+                        if(currentSession.SessionList.length > 0)
                         {
-                            currentSession.push(curRes);
+                            currentSession.SessionList.push(curRes);
                         }
                     }
 
-                }
+                }*/
 
-                var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, sessionList);
+                var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, groupedList);
                 logger.debug('[DVP-CDRProcessor.AgentStatus] - [%s] - API RESPONSE : %s', reqId, jsonString);
                 res.end(jsonString);
 

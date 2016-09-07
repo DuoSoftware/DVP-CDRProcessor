@@ -636,13 +636,13 @@ var GetBLegForIVRCalls = function(uuid, callUuid, callback)
     }
 };
 
-var GetResourceStatusList = function(startTime, endTime, resourceId, companyId, tenantId, callback)
+var GetResourceStatusList = function(startTime, endTime, companyId, tenantId, callback)
 {
     var emptyArr = [];
 
     try
     {
-        dbModel.ResResourceStatusChangeInfo.findAll({where :[{CompanyId: companyId, TenantId: tenantId, ResourceId: resourceId, StatusType: 'ResourceStatus', createdAt: {between:[startTime, endTime]}}], order: ['createdAt']}).then(function(resourceInfoList)
+        dbModel.ResResourceStatusChangeInfo.findAll({where :[{CompanyId: companyId, TenantId: tenantId, StatusType: 'ResourceStatus', createdAt: {between:[startTime, endTime]}}], order: ['createdAt'], include: [{model: dbModel.ResResource, as: 'ResResource'}]}).then(function(resourceInfoList)
         {
             callback(null, resourceInfoList)
 
