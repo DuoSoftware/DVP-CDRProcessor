@@ -678,7 +678,7 @@
         return next();
     });
 
-    server.get('/DVP/API/:version/CallCDR/AgentStatus', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    server.post('/DVP/API/:version/CallCDR/AgentStatus', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
@@ -686,6 +686,17 @@
         {
             var startDate = req.query.startDate;
             var endDate = req.query.endDate;
+            var status = req.query.status;
+
+            var agentList = null;
+            var statusList = null;
+
+            if(req.body)
+            {
+                agentList = req.body.agentList;
+                statusList = req.body.statusList;
+            }
+
 
             var companyId = req.user.company;
             var tenantId = req.user.tenant;
@@ -701,7 +712,7 @@
 
             //var sessionList = [];
 
-            backendHandler.GetResourceStatusList(startDate, endDate, companyId, tenantId, function(err, resList)
+            backendHandler.GetResourceStatusList(startDate, endDate, statusList, agentList, companyId, tenantId, function(err, resList)
             {
                 //var currentSession = {};
                 //

@@ -1,5 +1,13 @@
 var dbModel = require('dvp-dbmodels');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
+var config = require('config');
+
+var abandonCallThreshold = config.AbandonCallThreshold;
+
+if(!abandonCallThreshold)
+{
+    abandonCallThreshold = 10;
+}
 
 var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, callback)
 {
@@ -242,6 +250,94 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
     }
 };
 
+var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, callback)
+{
+    var callLegList = [];
+
+    try
+    {
+        if(offset)
+        {
+            if(limit)
+            {
+                dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjType: 'HTTAPI', Direction: 'inbound', QueueSec: {gt: abandonCallThreshold}, id: { gt: offset }, AgentAnswered: false, ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]}], order:['CreatedTime'], limit: limit}).then(function(callLeg)
+                {
+
+                    logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
+
+                    callback(undefined, callLeg);
+
+                }).catch(function(err)
+                {
+                    logger.error('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
+
+                    callback(err, callLegList);
+                });
+            }
+            else
+            {
+                dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjType: 'HTTAPI', Direction: 'inbound', QueueSec: {gt: abandonCallThreshold}, id: { gt: offset }, AgentAnswered: false, ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]}], order:['CreatedTime']}).then(function(callLeg)
+                {
+
+                    logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
+
+                    callback(undefined, callLeg);
+
+                }).catch(function(err)
+                {
+                    logger.error('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
+
+                    callback(err, callLegList);
+                });
+            }
+
+
+        }
+        else
+        {
+            if(limit)
+            {
+                dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjType: 'HTTAPI', Direction: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]}], order:['CreatedTime'], limit: limit}).then(function(callLeg)
+                {
+
+                    logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
+
+                    callback(undefined, callLeg);
+
+                }).catch(function(err)
+                {
+                    logger.error('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
+
+                    callback(err, callLegList);
+                })
+            }
+            else
+            {
+                dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjType: 'HTTAPI', Direction: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]}], order:['CreatedTime']}).then(function(callLeg)
+                {
+
+                    logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
+
+                    callback(undefined, callLeg);
+
+                }).catch(function(err)
+                {
+                    logger.error('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
+
+                    callback(err, callLegList);
+                })
+            }
+
+        }
+
+
+    }
+    catch(ex)
+    {
+        callback(ex, callLegList);
+    }
+};
+
 var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, companyId, tenantId, callback)
 {
     var summaryDetails = {};
@@ -273,7 +369,7 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
                 }
 
 
-                dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {gt: 10}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(abandonCount)
+                dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(abandonCount)
                 {
                     if(abandonCount)
                     {
@@ -294,7 +390,7 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
                     }
 
 
-                    dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {lte: 10}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(dropCount)
+                    dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {lte: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(dropCount)
                     {
                         if(dropCount)
                         {
@@ -436,94 +532,6 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
     }
 };
 
-var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, callback)
-{
-    var callLegList = [];
-
-    try
-    {
-        if(offset)
-        {
-            if(limit)
-            {
-                dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjType: 'HTTAPI', Direction: 'inbound', QueueSec: {gt: 10}, id: { gt: offset }, AgentAnswered: false, ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]}], order:['CreatedTime'], limit: limit}).then(function(callLeg)
-                {
-
-                    logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
-
-                    callback(undefined, callLeg);
-
-                }).catch(function(err)
-                {
-                    logger.error('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
-
-                    callback(err, callLegList);
-                });
-            }
-            else
-            {
-                dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjType: 'HTTAPI', Direction: 'inbound', QueueSec: {gt: 10}, id: { gt: offset }, AgentAnswered: false, ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]}], order:['CreatedTime']}).then(function(callLeg)
-                {
-
-                    logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
-
-                    callback(undefined, callLeg);
-
-                }).catch(function(err)
-                {
-                    logger.error('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
-
-                    callback(err, callLegList);
-                });
-            }
-
-
-        }
-        else
-        {
-            if(limit)
-            {
-                dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjType: 'HTTAPI', Direction: 'inbound', QueueSec: {gt: 10}, AgentAnswered: false, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]}], order:['CreatedTime'], limit: limit}).then(function(callLeg)
-                {
-
-                    logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
-
-                    callback(undefined, callLeg);
-
-                }).catch(function(err)
-                {
-                    logger.error('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
-
-                    callback(err, callLegList);
-                })
-            }
-            else
-            {
-                dbModel.CallCDR.findAll({where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjType: 'HTTAPI', Direction: 'inbound', QueueSec: {gt: 10}, AgentAnswered: false, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]}], order:['CreatedTime']}).then(function(callLeg)
-                {
-
-                    logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
-
-                    callback(undefined, callLeg);
-
-                }).catch(function(err)
-                {
-                    logger.error('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
-
-                    callback(err, callLegList);
-                })
-            }
-
-        }
-
-
-    }
-    catch(ex)
-    {
-        callback(ex, callLegList);
-    }
-};
-
 var GetConferenceRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, callback)
 {
     var confLegList = [];
@@ -636,13 +644,39 @@ var GetBLegForIVRCalls = function(uuid, callUuid, callback)
     }
 };
 
-var GetResourceStatusList = function(startTime, endTime, companyId, tenantId, callback)
+var GetResourceStatusList = function(startTime, endTime, statusList, agents, companyId, tenantId, callback)
 {
     var emptyArr = [];
 
     try
     {
-        dbModel.ResResourceStatusChangeInfo.findAll({where :[{CompanyId: companyId, TenantId: tenantId, StatusType: 'ResourceStatus', createdAt: {between:[startTime, endTime]}}], order: ['createdAt'], include: [{model: dbModel.ResResource, as: 'ResResource'}]}).then(function(resourceInfoList)
+        var defaultQuery = {where :[{CompanyId: companyId, TenantId: tenantId, StatusType: 'ResourceStatus', createdAt: {between:[startTime, endTime]}}], order: ['createdAt'], include: [{model: dbModel.ResResource, as: 'ResResource'}]};
+
+        if(statusList && statusList.length > 0)
+        {
+            defaultQuery.where[0].$or = [];
+
+            statusList.forEach(function(status)
+            {
+                defaultQuery.where[0].$or.push({Reason: status.Status});
+
+            });
+        }
+
+        if(agents && agents.length > 0)
+        {
+            defaultQuery.include[0].where = [{$or:[]}];
+
+            var tempOrCondArr = defaultQuery.include[0].where[0].$or;
+            agents.forEach(function(agent)
+            {
+                tempOrCondArr.push({ResourceName: agent.ResourceName});
+
+            });
+        }
+
+
+        dbModel.ResResourceStatusChangeInfo.findAll(defaultQuery).then(function(resourceInfoList)
         {
             callback(null, resourceInfoList)
 

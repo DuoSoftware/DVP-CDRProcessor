@@ -17,5 +17,6 @@ module.exports = {
     "Ip":"0.0.0.0",
     "Port":9093,
     "Version":"1.0.0.0"
-  }
+  },
+  "AbandonCallThreshold": 5
 };
