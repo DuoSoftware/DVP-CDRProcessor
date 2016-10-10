@@ -11,6 +11,7 @@
     "dvp-dbmodels": "^0.4.4",
     "moment": "^2.14.1",
     "node-uuid": "^1.4.3",
+    "redis": "^2.6.2",
     "restify": "^3.0.2",
     "restify-jwt": "^0.4.0",
     "stringify": "^3.1.0",
