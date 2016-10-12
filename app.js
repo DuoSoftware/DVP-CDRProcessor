@@ -704,7 +704,7 @@
                 throw new Error("Invalid company or tenant");
             }
 
-            logger.debug('[DVP-CDRProcessor.GetProcessedCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s, Offset: %s, Limit : %s', reqId, startTime, endTime);
+            logger.debug('[DVP-CDRProcessor.GetProcessedCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
 
             backendHandler.GetProcessedCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, function(err, cdrList)
             {
@@ -721,7 +721,7 @@
                 {
 
                     var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, cdrList);
-                    logger.debug('[DVP-CDRProcessor.GetProcessedCallDetailsByRange] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    logger.debug('[DVP-CDRProcessor.GetProcessedCallDetailsByRange] - [%s] - API RESPONSE : SUCCESS', reqId);
                     res.end(jsonString);
 
 
