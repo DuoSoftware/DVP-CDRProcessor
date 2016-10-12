@@ -612,6 +612,127 @@ var GetCallRelatedLegsForAppId = function(appId, companyId, tenantId, startTime,
     }
 };
 
+var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, callback)
+{
+    var callLegList = [];
+
+    try
+    {
+        var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId};
+        if(agentFilter)
+        {
+            sqlCond.$and = [];
+            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
+        }
+        if(skillFilter)
+        {
+            sqlCond.AgentSkill = skillFilter;
+        }
+        if(dirFilter)
+        {
+            sqlCond.DVPCallDirection = dirFilter;
+        }
+        if(recFilter == 'true' || recFilter == 'false')
+        {
+            if(recFilter == 'true')
+            {
+                sqlCond.BillSec = { gt: 0 }
+            }
+            else
+            {
+                sqlCond.BillSec = 0
+            }
+
+        }
+
+        if(customerFilter)
+        {
+            if(sqlCond.$and)
+            {
+                sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
+            }
+
+        }
+
+        dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:['CreatedTime']}).then(function(callLeg)
+        {
+
+            callback(undefined, callLeg);
+
+        }).catch(function(err)
+        {
+            callback(err, callLegList);
+        })
+
+
+    }
+    catch(ex)
+    {
+        callback(ex, callLegList);
+    }
+};
+
+var GetProcessedCDRInDateRangeAbandon = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, callback)
+{
+    var callLegList = [];
+
+    try
+    {
+        var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, AgentAnswered: false, QueueSec: {gt: abandonCallThreshold}};
+        if(agentFilter)
+        {
+            sqlCond.$and = [];
+            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
+        }
+        if(skillFilter)
+        {
+            sqlCond.AgentSkill = skillFilter;
+        }
+        if(dirFilter)
+        {
+            sqlCond.DVPCallDirection = dirFilter;
+        }
+        if(recFilter == 'true' || recFilter == 'false')
+        {
+            if(recFilter == 'true')
+            {
+                sqlCond.BillSec = { gt: 0 }
+            }
+            else
+            {
+                sqlCond.BillSec = 0
+            }
+
+        }
+
+        if(customerFilter)
+        {
+            if(sqlCond.$and)
+            {
+                sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
+            }
+
+        }
+
+        dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:['CreatedTime']}).then(function(callLeg)
+        {
+
+            callback(undefined, callLeg);
+
+        }).catch(function(err)
+        {
+            callback(err, callLegList);
+        })
+
+
+    }
+    catch(ex)
+    {
+        callback(ex, callLegList);
+    }
+};
+
+
 var GetSpecificLegByUuid = function(uuid, callback)
 {
     try
@@ -760,7 +881,6 @@ var AddCDRRecord = function(cdrInfo, callback)
 };
 
 
-
 module.exports.AddCDRRecord = AddCDRRecord;
 module.exports.GetCallRelatedLegs = GetCallRelatedLegs;
 module.exports.GetCallRelatedLegsInDateRange = GetCallRelatedLegsInDateRange;
@@ -771,3 +891,5 @@ module.exports.GetBLegForIVRCalls = GetBLegForIVRCalls;
 module.exports.GetAbandonCallRelatedLegsInDateRange = GetAbandonCallRelatedLegsInDateRange;
 module.exports.GetCallSummaryDetailsDateRange = GetCallSummaryDetailsDateRange;
 module.exports.GetResourceStatusList = GetResourceStatusList;
+module.exports.GetProcessedCDRInDateRange = GetProcessedCDRInDateRange;
+module.exports.GetProcessedCDRInDateRangeAbandon = GetProcessedCDRInDateRangeAbandon;

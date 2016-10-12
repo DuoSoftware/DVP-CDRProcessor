@@ -22,8 +22,26 @@ module.exports = {
 
     },
 
+    "Services":
+    {
+
+        "fileServiceHost": "SYS_FILESERVICE_HOST",
+        "fileServicePort": "SYS_FILESERVICE_PORT",
+        "fileServiceVersion":"SYS_FILESERVICE_VERSION"
+
+    },
+
+    "Redis":
+    {
+        "ip": "SYS_REDIS_HOST",
+        "port": "SYS_REDIS_PORT",
+        "password": "SYS_REDIS_PASSWORD"
+    },
+
     "Host":{
         "Port":"HOST_CDRPROCESSOR_PORT",
         "Version":"HOST_VERSION"
-    }
+    },
+
+    "Token": "HOST_TOKEN"
 };
