@@ -411,6 +411,9 @@
             var endTime = req.query.endTime;
             var offset = req.query.offset;
             var limit = req.query.limit;
+            var agent = req.query.agent;
+            var skill = req.query.skill;
+            var custNum = req.query.custnumber;
 
             offset = parseInt(offset);
             limit = parseInt(limit);
@@ -425,7 +428,7 @@
 
             logger.debug('[DVP-CDRProcessor.GetAbandonCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s, Offset: %s, Limit : %s', reqId, startTime, endTime, offset, limit);
 
-            backendHandler.GetAbandonCallRelatedLegsInDateRange(startTime, endTime, companyId, tenantId, offset, limit, function(err, legs)
+            backendHandler.GetAbandonCallRelatedLegsInDateRange(startTime, endTime, companyId, tenantId, offset, limit, agent, skill, custNum, function(err, legs)
             {
                 if(err)
                 {
@@ -535,10 +538,6 @@
 
             fileName = fileName.replace(/:/g, "-") + '.' + fileType;
 
-            var responseData = {
-                filename: fileName,
-                fileStatusAccessCode: 'FILEDOWNLOADSTATUS:' + reqId
-            };
 
             //check file exists
 
@@ -546,7 +545,7 @@
             {
                 if(fileData)
                 {
-                    redisHandler.SetObject('FILEDOWNLOADSTATUS:' + reqId, 'READY', function(err, redisResp)
+                    redisHandler.SetObject('FILEDOWNLOADSTATUS:' + fileName, 'READY', function(err, redisResp)
                     {
                         if (err)
                         {
@@ -567,7 +566,7 @@
                 }
                 else
                 {
-                    redisHandler.SetObject('FILEDOWNLOADSTATUS:' + reqId, 'WORKING', function(err, redisResp)
+                    redisHandler.SetObject('FILEDOWNLOADSTATUS:' + fileName, 'WORKING', function(err, redisResp)
                     {
                         if (err)
                         {
@@ -579,7 +578,7 @@
                         {
 
                             //should respose end
-                            var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, responseData);
+                            var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
                             logger.debug('[DVP-CDRProcessor.DownloadCDR] - [%s] - API RESPONSE : %s', reqId, jsonString);
                             res.end(jsonString);
 
@@ -590,7 +589,7 @@
                                 var jsonString = "";
                                 if(err)
                                 {
-                                    redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + reqId, function(err, redisResp){});
+                                    redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
                                 }
                                 else
                                 {
@@ -624,7 +623,7 @@
                                         {
                                             if (err)
                                             {
-                                                redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + reqId, function(err, redisResp){});
+                                                redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
                                             }
                                             else
                                             {
@@ -632,11 +631,11 @@
                                                 {
                                                     if(!err && uploadResp)
                                                     {
-                                                        redisHandler.SetObject('FILEDOWNLOADSTATUS:' + reqId, 'READY', function(err, redisResp){});
+                                                        redisHandler.SetObject('FILEDOWNLOADSTATUS:' + fileName, 'READY', function(err, redisResp){});
                                                     }
                                                     else
                                                     {
-                                                        redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + reqId, function(err, redisResp){});
+                                                        redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
                                                     }
 
                                                 });
@@ -648,7 +647,7 @@
                                     }
                                     else
                                     {
-                                        redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + reqId, function(err, redisResp){});
+                                        redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
                                         //nothing to show - delete redis object
                                     }
 
