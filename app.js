@@ -821,12 +821,23 @@
     });
 
 
-    var processSummaryData = function(caption, startDate, endDate, companyId, tenantId, callback)
+    var processSummaryData = function(caption, startDate, endDate, companyId, tenantId, skill, callback)
     {
-        backendHandler.GetCallSummaryDetailsDateRange(caption, startDate, endDate, companyId, tenantId, function(err, summaryData)
+        if(skill)
         {
-            callback(err, summaryData);
-        });
+            backendHandler.GetCallSummaryDetailsDateRangeWithSkill(caption, startDate, endDate, companyId, tenantId, skill, function(err, summaryData)
+            {
+                callback(err, summaryData);
+            });
+        }
+        else
+        {
+            backendHandler.GetCallSummaryDetailsDateRange(caption, startDate, endDate, companyId, tenantId, function(err, summaryData)
+            {
+                callback(err, summaryData);
+            });
+        }
+
     };
 
 
@@ -859,7 +870,7 @@
                 var sd = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i, 'hours');
                 var ed = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i+1, 'hours');
 
-                hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId));
+                hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId, null));
             }
 
 
@@ -885,6 +896,68 @@
         {
             var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
             logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+    server.get('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var summaryDate = req.query.date;
+            var tz = req.query.tz;
+
+            var skill = req.query.skill;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueue] - [%s] - HTTP Request Received - Params - summaryDate : %s', reqId, summaryDate);
+
+            //Generate 24 hrs moment time array
+
+            var hrFuncArr = [];
+
+            for(i=0; i<24; i++)
+            {
+                var sd = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i, 'hours');
+                var ed = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i+1, 'hours');
+
+                hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId, skill));
+            }
+
+
+            async.parallel(hrFuncArr, function(err, results)
+            {
+                if(err)
+                {
+                    var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, emptyArr);
+                    logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueue] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+                }
+                else
+                {
+                    var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, results);
+                    logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueue] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+                }
+            });
+
+
+        }
+        catch(ex)
+        {
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueue] - [%s] - API RESPONSE : %s', reqId, jsonString);
             res.end(jsonString);
         }
 
@@ -929,7 +1002,7 @@
 
                 momentSD = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt+1, 'days');
 
-                dayFuncArr.push(processSummaryData.bind(this, sd.utcOffset(tz).format('YYYY-MM-DD'), sd, ed, companyId, tenantId));
+                dayFuncArr.push(processSummaryData.bind(this, sd.utcOffset(tz).format('YYYY-MM-DD'), sd, ed, companyId, tenantId, null));
 
                 cnt++;
             }
