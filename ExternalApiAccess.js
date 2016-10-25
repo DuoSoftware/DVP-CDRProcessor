@@ -70,7 +70,65 @@ var RemoteGetFileMetadata = function(reqId, filename, companyId, tenantId, callb
     }
 };
 
-var UploadFile = function(reqId, filename, companyId, tenantId, callback)
+var FileUploadReserve = function(reqId, filename, companyId, tenantId, callback)
+{
+    try
+    {
+        var securityToken = config.Token;
+
+        securityToken = 'bearer ' + securityToken;
+
+        logger.debug('[DVP-CDRProcessor.FileUploadReserve] - [%s] -  Trying to get file meta data from api - Params - filename : %s', reqId, filename);
+
+        var fileServiceHost = config.Services.fileServiceHost;
+        var fileServicePort = config.Services.fileServicePort;
+        var fileServiceVersion = config.Services.fileServiceVersion;
+        var compInfo = tenantId + ':' + companyId;
+
+        if(fileServiceHost && fileServicePort && fileServiceVersion)
+        {
+            var httpUrl = util.format('http://%s/DVP/API/%s/FileService/File/Reserve', fileServiceHost, fileServiceVersion);
+
+            if(validator.isIP(fileServiceHost))
+            {
+                httpUrl = util.format('http://%s:%s/DVP/API/%s/FileService/File/Reserve', fileServiceHost, fileServicePort, fileServiceVersion);
+            }
+
+            var reqBody = {class: 'CDR', fileCategory:'REPORTS', display: filename, filename: filename};
+
+            var bodyJson = JSON.stringify(reqBody);
+
+            httpReq({url:httpUrl, method: 'POST', headers: {'authorization': securityToken, 'companyinfo': compInfo, 'content-type': 'application/json'}, body: bodyJson}, function(error, response, body)
+            {
+                if (!error && response.statusCode == 200)
+                {
+                    var apiResp = JSON.parse(body);
+
+                    logger.debug('[DVP-CDRProcessor.FileUploadReserve] - [%s] - file service returned : %s', reqId, body);
+
+                    callback(apiResp.Exception, apiResp.Result);
+                }
+                else
+                {
+                    logger.error('[DVP-CDRProcessor.FileUploadReserve] - [%s] - file service call failed', reqId, error);
+                    callback(error, undefined);
+                }
+            });
+        }
+        else
+        {
+            logger.error('[DVP-CDRProcessor.FileUploadReserve] - [%s] - File host, port or version not found', reqId);
+            callback(new Error('File host, port or version not found'), undefined)
+        }
+    }
+    catch(ex)
+    {
+        logger.error('[DVP-CDRProcessor.FileUploadReserve] - [%s] - Exception occurred', reqId, ex);
+        callback(ex, undefined);
+    }
+};
+
+var UploadFile = function(reqId, uniqueId, filename, companyId, tenantId, callback)
 {
     try
     {
@@ -98,12 +156,12 @@ var UploadFile = function(reqId, filename, companyId, tenantId, callback)
 
             var bodyJson = JSON.stringify(reqBody);
 
-
             var formData = {
                 class: 'CDR',
                 fileCategory:'REPORTS',
                 display: filename,
                 filename: filename,
+                reservedId: uniqueId,
                 attachments: [
                     fs.createReadStream(filename)
                 ]
@@ -141,3 +199,4 @@ var UploadFile = function(reqId, filename, companyId, tenantId, callback)
 
 module.exports.RemoteGetFileMetadata = RemoteGetFileMetadata;
 module.exports.UploadFile = UploadFile;
+module.exports.FileUploadReserve = FileUploadReserve;
