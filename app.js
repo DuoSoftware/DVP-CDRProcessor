@@ -611,6 +611,7 @@
                                                 {
                                                     externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
                                                     {
+                                                        fs.unlink(fileName);
                                                         if(!err && uploadResp)
                                                         {
 
@@ -814,6 +815,7 @@
                                                 {
                                                     externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
                                                     {
+                                                        fs.unlink(fileName);
                                                         if(!err && uploadResp)
                                                         {
 
@@ -1101,6 +1103,186 @@
         return next();
     });
 
+    server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly/Download', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var summaryDate = req.query.date;
+            var tz = req.query.tz;
+            var fileType = req.query.fileType;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - HTTP Request Received - Params - summaryDate : %s', reqId, summaryDate);
+
+            //Generate 24 hrs moment time array
+
+            var dateTimestamp = moment(summaryDate + " 00:00:00 " + tz).unix();
+
+            //Create FILE NAME Key
+            var fileName = 'CALL_SUMMARY_HOURLY_' + tenantId + '_' + companyId + '_' + dateTimestamp;
+
+            fileName = fileName.replace(/:/g, "-") + '.' + fileType;
+
+            var hrFuncArr = [];
+
+            for(i=0; i<24; i++)
+            {
+                var sd = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i, 'hours');
+                var ed = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i+1, 'hours');
+
+                hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId, null));
+            }
+
+
+            externalApi.RemoteGetFileMetadata(reqId, fileName, companyId, tenantId, function(err, fileData)
+            {
+                if(fileData)
+                {
+
+                    //call service instead
+                    var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
+                    logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+
+
+                }
+                else
+                {
+                    externalApi.FileUploadReserve(reqId, fileName, companyId, tenantId, function(err, fileResResp)
+                    {
+                        if (err)
+                        {
+                            var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, null);
+                            logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                            res.end(jsonString);
+                        }
+                        else
+                        {
+                            if(fileResResp)
+                            {
+                                var uniqueId = fileResResp;
+
+                                //should respose end
+                                var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
+                                logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                res.end(jsonString);
+
+
+                                async.parallel(hrFuncArr, function(err, results)
+                                {
+                                    if(err)
+                                    {
+
+                                    }
+                                    else
+                                    {
+                                        if(results)
+                                        {
+
+                                            var newSummary = results.map(function(sumr) {
+
+                                                if(typeof sumr.IvrAverage === "number")
+                                                {
+                                                    sumr.IvrAverage = convertToMMSS(sumr.IvrAverage);
+                                                }
+
+                                                if(typeof sumr.HoldAverage === "number")
+                                                {
+                                                    sumr.HoldAverage = convertToMMSS(sumr.HoldAverage);
+                                                }
+
+                                                if(typeof sumr.RingAverage === "number")
+                                                {
+                                                    sumr.RingAverage = convertToMMSS(sumr.RingAverage);
+                                                }
+
+                                                if(typeof sumr.TalkAverage === "number")
+                                                {
+                                                    sumr.TalkAverage = convertToMMSS(sumr.TalkAverage);
+                                                }
+
+                                                return sumr;
+                                            });
+
+
+
+                                            var fieldNames = ['Hour', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandon Calls (%)', 'Dropped Calls (%)', 'Avg Hold Time (sec)',	'Avg IVR Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answer Percentage (%)'];
+
+                                            var fields = ['Caption', 'IVRCallsCount', 'QueuedCallsCount', 'AbandonPercentage', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'RingAverage', 'TalkAverage', 'AnswerPercentage'];
+
+                                            var csvFileData = json2csv({ data: newSummary, fields: fields, fieldNames : fieldNames });
+
+                                            fs.writeFile(fileName, csvFileData, function(err)
+                                            {
+                                                if (err)
+                                                {
+                                                    //can delete file
+                                                    //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
+                                                }
+                                                else
+                                                {
+                                                    externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
+                                                    {
+                                                        fs.unlink(fileName);
+                                                        if(!err && uploadResp)
+                                                        {
+
+                                                        }
+                                                        else
+                                                        {
+                                                            //can delete file
+                                                            //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
+                                                        }
+
+                                                    });
+
+                                                }
+                                            });
+                                        }
+
+                                    }
+                                });
+
+                            }
+                            else
+                            {
+                                var jsonString = messageFormatter.FormatMessage(new Error('Failed to reserve file'), "ERROR", false, null);
+                                logger.debug('[DVP-CDRProcessor.PrepareDownloadAbandon] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                res.end(jsonString);
+                            }
+
+
+
+
+                        }
+                    });
+
+                }
+
+            });
+
+
+
+        }
+        catch(ex)
+        {
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
     server.get('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
@@ -1150,6 +1332,227 @@
                     res.end(jsonString);
                 }
             });
+
+
+        }
+        catch(ex)
+        {
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueue] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+    var getQueueSummaryAsync = function(summaryDate, tz, companyId, tenantId, skill, callback)
+    {
+        var hrFuncArr = [];
+
+        for(i=0; i<24; i++)
+        {
+            var sd = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i, 'hours');
+            var ed = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i+1, 'hours');
+
+            hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId, skill));
+        }
+        async.parallel(hrFuncArr, function(err, results)
+        {
+            var obj = {
+                skill: skill,
+                data: results
+            };
+            callback(err, obj);
+        });
+    };
+
+    server.post('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly/Download', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var summaryDate = req.query.date;
+            var tz = req.query.tz;
+            var fileType = req.query.fileType;
+
+            var skills = req.body.skills;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueueDownload] - [%s] - HTTP Request Received - Params - summaryDate : %s', reqId, summaryDate);
+
+            //Generate 24 hrs moment time array
+
+            var dateTimestamp = moment(summaryDate + " 00:00:00 " + tz).unix();
+
+            //Create FILE NAME Key
+            var fileName = 'CALL_SUMMARY_QUEUE_HOURLY_' + tenantId + '_' + companyId + '_' + dateTimestamp;
+
+            if(skills && skills.length > 0)
+            {
+                skills.forEach(function(skill)
+                {
+                    if(skill)
+                    {
+                        fileName = fileName + '_' + skill;
+                    }
+                })
+            }
+
+            fileName = fileName.replace(/:/g, "-") + '.' + fileType;
+
+            var groupedArr = [];
+
+            if(skills && skills.length > 0)
+            {
+                skills.forEach(function(skill)
+                {
+                    groupedArr.push(getQueueSummaryAsync.bind(this, summaryDate, tz, companyId, tenantId, skill));
+                });
+
+                externalApi.RemoteGetFileMetadata(reqId, fileName, companyId, tenantId, function(err, fileData)
+                {
+                    if(fileData)
+                    {
+
+                        //call service instead
+                        var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
+                        logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueueDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                        res.end(jsonString);
+
+
+                    }
+                    else
+                    {
+                        externalApi.FileUploadReserve(reqId, fileName, companyId, tenantId, function(err, fileResResp)
+                        {
+                            if (err)
+                            {
+                                var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, null);
+                                logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueueDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                res.end(jsonString);
+                            }
+                            else
+                            {
+                                if(fileResResp)
+                                {
+                                    var uniqueId = fileResResp;
+
+                                    //should respose end
+                                    var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
+                                    logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueueDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                    res.end(jsonString);
+
+                                    var summaryData = [];
+
+                                    async.parallel(groupedArr, function(err, results)
+                                    {
+
+                                        results.forEach(function(grp)
+                                        {
+                                            var skillName = grp.skill;
+
+                                            grp.data.forEach(function(sumData)
+                                            {
+                                                sumData.Skill = skillName;
+
+                                                if(typeof sumData.IvrAverage === "number")
+                                                {
+                                                    sumData.IvrAverage = convertToMMSS(sumData.IvrAverage);
+                                                }
+
+                                                if(typeof sumData.HoldAverage === "number")
+                                                {
+                                                    sumData.HoldAverage = convertToMMSS(sumData.HoldAverage);
+                                                }
+
+                                                if(typeof sumData.RingAverage === "number")
+                                                {
+                                                    sumData.RingAverage = convertToMMSS(sumData.RingAverage);
+                                                }
+
+                                                if(typeof sumData.TalkAverage === "number")
+                                                {
+                                                    sumData.TalkAverage = convertToMMSS(sumData.TalkAverage);
+                                                }
+
+                                                summaryData.push(sumData);
+                                            })
+                                        });
+
+                                        var fieldNames = ['Skill', 'Hour', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandon Calls (%)', 'Dropped Calls (%)', 'Avg Hold Time (sec)',	'Avg IVR Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answer Percentage (%)'];
+
+                                        var fields = ['Skill', 'Caption', 'IVRCallsCount', 'QueuedCallsCount', 'AbandonPercentage', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'RingAverage', 'TalkAverage', 'AnswerPercentage'];
+
+                                        var csvFileData = json2csv({ data: summaryData, fields: fields, fieldNames : fieldNames });
+
+                                        fs.writeFile(fileName, csvFileData, function(err)
+                                        {
+                                            if (err)
+                                            {
+                                                //can delete file
+                                                //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
+                                            }
+                                            else
+                                            {
+                                                externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
+                                                {
+                                                    fs.unlink(fileName);
+                                                    if(!err && uploadResp)
+                                                    {
+
+                                                    }
+                                                    else
+                                                    {
+                                                        //can delete file
+                                                        //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
+                                                    }
+
+                                                });
+
+                                            }
+                                        });
+
+                                    });
+
+
+                                }
+                                else
+                                {
+                                    var jsonString = messageFormatter.FormatMessage(new Error('Failed to reserve file'), "ERROR", false, null);
+                                    logger.debug('[DVP-CDRProcessor.PrepareDownloadAbandon] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                    res.end(jsonString);
+                                }
+
+
+
+
+                            }
+                        });
+
+                    }
+
+                });
+
+
+
+            }
+            else
+            {
+                var jsonString = messageFormatter.FormatMessage(new Error('No skills provided'), "Fail", false, null);
+                logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueue] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                res.end(jsonString);
+            }
+
+
+
 
 
         }
@@ -1232,6 +1635,217 @@
                     res.end(jsonString);
                 }
             });
+
+
+        }
+        catch(ex)
+        {
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+    server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Daily/Download', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var startDate = req.query.startDate;
+            var endDate = req.query.endDate;
+
+            var tz = req.query.tz;
+            var fileType = req.query.fileType;
+
+            var momentSD = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z");
+            var momentED = moment(endDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z");
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - HTTP Request Received - Params - startDate : %s, endDate : %s', reqId, startDate, endDate);
+
+            //Generate 24 hrs moment time array
+
+            var dateTimestampSD = moment(momentSD).unix();
+            var dateTimestampED = moment(momentED).unix();
+
+            //Create FILE NAME Key
+            var fileName = 'CALL_SUMMARY_DAILY_' + tenantId + '_' + companyId + '_' + dateTimestampSD + '_' + dateTimestampED;
+
+            fileName = fileName.replace(/:/g, "-") + '.' + fileType;
+
+            var dayFuncArr = [];
+            var cnt = 0;
+
+            while(momentSD <= momentED)
+            {
+                var sd = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt, 'days');
+                var ed = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt+1, 'days');
+
+                //fixed momentSD
+
+                momentSD = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt+1, 'days');
+
+                dayFuncArr.push(processSummaryData.bind(this, sd.utcOffset(tz).format('YYYY-MM-DD'), sd, ed, companyId, tenantId, null));
+
+                cnt++;
+            }
+
+            /*var hrFuncArr = [];
+
+             for(i=0; i<daysOfMonth; i++)
+             {
+             var sd = moment(summaryDate + "-01 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i, 'days');
+             var ed = moment(summaryDate + "-01 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i+1, 'days');
+
+             hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId));
+             }*/
+
+
+            externalApi.RemoteGetFileMetadata(reqId, fileName, companyId, tenantId, function(err, fileData)
+            {
+                if(fileData)
+                {
+
+                    //call service instead
+                    var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
+                    logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+
+
+                }
+                else
+                {
+                    externalApi.FileUploadReserve(reqId, fileName, companyId, tenantId, function(err, fileResResp)
+                    {
+                        if (err)
+                        {
+                            var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, null);
+                            logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                            res.end(jsonString);
+                        }
+                        else
+                        {
+                            if(fileResResp)
+                            {
+                                var uniqueId = fileResResp;
+
+                                //should respose end
+                                var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
+                                logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                res.end(jsonString);
+
+                                async.parallel(dayFuncArr, function(err, results)
+                                {
+                                    if(err)
+                                    {
+                                        var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, emptyArr);
+                                        logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                        res.end(jsonString);
+                                    }
+                                    else
+                                    {
+                                        if(results)
+                                        {
+                                            var newSummary = results.map(function(sumr) {
+
+                                                if(typeof sumr.IvrAverage === "number")
+                                                {
+                                                    sumr.IvrAverage = convertToMMSS(sumr.IvrAverage);
+                                                }
+
+                                                if(typeof sumr.HoldAverage === "number")
+                                                {
+                                                    sumr.HoldAverage = convertToMMSS(sumr.HoldAverage);
+                                                }
+
+                                                if(typeof sumr.RingAverage === "number")
+                                                {
+                                                    sumr.RingAverage = convertToMMSS(sumr.RingAverage);
+                                                }
+
+                                                if(typeof sumr.TalkAverage === "number")
+                                                {
+                                                    sumr.TalkAverage = convertToMMSS(sumr.TalkAverage);
+                                                }
+
+                                                return sumr;
+                                            });
+
+
+
+                                            var fieldNames = ['Day', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandon Calls (%)', 'Dropped Calls (%)', 'Avg Hold Time (sec)',	'Avg IVR Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answer Percentage (%)'];
+
+                                            var fields = ['Caption', 'IVRCallsCount', 'QueuedCallsCount', 'AbandonPercentage', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'RingAverage', 'TalkAverage', 'AnswerPercentage'];
+
+                                            var csvFileData = json2csv({ data: newSummary, fields: fields, fieldNames : fieldNames });
+
+                                            fs.writeFile(fileName, csvFileData, function(err)
+                                            {
+                                                if (err)
+                                                {
+                                                    //can delete file
+                                                    //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
+                                                }
+                                                else
+                                                {
+                                                    externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
+                                                    {
+                                                        fs.unlink(fileName);
+                                                        if(!err && uploadResp)
+                                                        {
+
+                                                        }
+                                                        else
+                                                        {
+                                                            //can delete file
+                                                            //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
+                                                        }
+
+                                                    });
+
+                                                }
+                                            });
+                                        }
+                                        else
+                                        {
+
+                                        }
+                                    }
+                                });
+
+
+
+
+                            }
+                            else
+                            {
+                                var jsonString = messageFormatter.FormatMessage(new Error('Failed to reserve file'), "ERROR", false, null);
+                                logger.debug('[DVP-CDRProcessor.PrepareDownloadAbandon] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                res.end(jsonString);
+                            }
+
+
+
+
+                        }
+                    });
+
+                }
+
+            });
+
+
+
 
 
         }
