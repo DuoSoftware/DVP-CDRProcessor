@@ -197,6 +197,62 @@ var UploadFile = function(reqId, uniqueId, filename, companyId, tenantId, callba
     }
 };
 
+var DeleteFile = function(reqId, uniqueId, companyId, tenantId, callback)
+{
+    try
+    {
+        var securityToken = config.Token;
+
+        securityToken = 'bearer ' + securityToken;
+
+        logger.debug('[DVP-CDRProcessor.DeleteFile] - [%s] -  Trying to get file meta data from api', reqId);
+
+        var fileServiceHost = config.Services.fileServiceHost;
+        var fileServicePort = config.Services.fileServicePort;
+        var fileServiceVersion = config.Services.fileServiceVersion;
+        var compInfo = tenantId + ':' + companyId;
+
+        if(fileServiceHost && fileServicePort && fileServiceVersion)
+        {
+            var httpUrl = util.format('http://%s/DVP/API/%s/FileService/File/%s', fileServiceHost, fileServiceVersion, uniqueId);
+
+            if(validator.isIP(fileServiceHost))
+            {
+                httpUrl = util.format('http://%s:%s/DVP/API/%s/FileService/File/%s', fileServiceHost, fileServicePort, fileServiceVersion, uniqueId);
+            }
+
+
+            httpReq.del({url:httpUrl, headers: {'authorization': securityToken, 'companyinfo': compInfo}}, function(error, response, body)
+            {
+                if (!error && response.statusCode == 200)
+                {
+                    var apiResp = JSON.parse(body);
+
+                    logger.debug('[DVP-CDRProcessor.DeleteFile] - [%s] - file service returned : %s', reqId, body);
+
+                    callback(apiResp.Exception, apiResp.Result);
+                }
+                else
+                {
+                    logger.error('[DVP-CDRProcessor.DeleteFile] - [%s] - file service call failed', reqId, error);
+                    callback(error, undefined);
+                }
+            });
+        }
+        else
+        {
+            logger.error('[DVP-CDRProcessor.DeleteFile] - [%s] - File host, port or version not found', reqId);
+            callback(new Error('File host, port or version not found'), undefined)
+        }
+    }
+    catch(ex)
+    {
+        logger.error('[DVP-CDRProcessor.DeleteFile] - [%s] - Exception occurred', reqId, ex);
+        callback(ex, undefined);
+    }
+};
+
 module.exports.RemoteGetFileMetadata = RemoteGetFileMetadata;
 module.exports.UploadFile = UploadFile;
 module.exports.FileUploadReserve = FileUploadReserve;
+module.exports.DeleteFile = DeleteFile;

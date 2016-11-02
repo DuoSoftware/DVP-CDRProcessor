@@ -571,6 +571,12 @@
                                     if(err)
                                     {
                                         //can delete file reserve
+                                        externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                            if(err)
+                                            {
+                                                logger.error('[DVP-CDRProcessor.PrepareDownloadAbandon] - [%s] - Delete Failed : %s', reqId, err);
+                                            }
+                                        });
                                     }
                                     else
                                     {
@@ -604,6 +610,12 @@
                                             {
                                                 if (err)
                                                 {
+                                                    externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                        if(err)
+                                                        {
+                                                            logger.error('[DVP-CDRProcessor.PrepareDownloadAbandon] - [%s] - Delete Failed : %s', reqId, err);
+                                                        }
+                                                    });
                                                     //can delete file
                                                     //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
                                                 }
@@ -618,8 +630,13 @@
                                                         }
                                                         else
                                                         {
-                                                            //can delete file
-                                                            //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
+                                                            externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                                if(err)
+                                                                {
+                                                                    logger.error('[DVP-CDRProcessor.PrepareDownloadAbandon] - [%s] - Delete Failed : %s', reqId, err);
+                                                                }
+                                                            });
+
                                                         }
 
                                                     });
@@ -631,9 +648,12 @@
                                         }
                                         else
                                         {
-                                            //can delete file
-                                            //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
-                                            //nothing to show - delete redis object
+                                            externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                if(err)
+                                                {
+                                                    logger.error('[DVP-CDRProcessor.PrepareDownloadAbandon] - [%s] - Delete Failed : %s', reqId, err);
+                                                }
+                                            });
                                         }
 
 
@@ -775,6 +795,12 @@
                                     if(err)
                                     {
                                         //can delete file reserve
+                                        externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                            if(err)
+                                            {
+                                                logger.error('[DVP-CDRProcessor.DownloadCDR] - [%s] - Delete Failed : %s', reqId, err);
+                                            }
+                                        });
                                     }
                                     else
                                     {
@@ -808,8 +834,12 @@
                                             {
                                                 if (err)
                                                 {
-                                                    //can delete file
-                                                    //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
+                                                    externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                        if(err)
+                                                        {
+                                                            logger.error('[DVP-CDRProcessor.DownloadCDR] - [%s] - Delete Failed : %s', reqId, err);
+                                                        }
+                                                    });
                                                 }
                                                 else
                                                 {
@@ -822,8 +852,12 @@
                                                         }
                                                         else
                                                         {
-                                                            //can delete file
-                                                            //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
+                                                            externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                                if(err)
+                                                                {
+                                                                    logger.error('[DVP-CDRProcessor.DownloadCDR] - [%s] - Delete Failed : %s', reqId, err);
+                                                                }
+                                                            });
                                                         }
 
                                                     });
@@ -835,9 +869,12 @@
                                         }
                                         else
                                         {
-                                            //can delete file
-                                            //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
-                                            //nothing to show - delete redis object
+                                            externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                if(err)
+                                                {
+                                                    logger.error('[DVP-CDRProcessor.DownloadCDR] - [%s] - Delete Failed : %s', reqId, err);
+                                                }
+                                            });
                                         }
 
 
@@ -868,6 +905,398 @@
             logger.error('[DVP-CDRProcessor.DownloadCDR] - [%s] - Exception occurred', reqId, ex);
             var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
             logger.debug('[DVP-CDRProcessor.DownloadCDR] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+    server.post('/DVP/API/:version/CallCDR/GeneratePreviousDay', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"write"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var fileType = req.body.fileType;
+            var tz = req.body.tz;
+
+            var localTime = moment().utcOffset(tz);
+
+            var prevDay = localTime.subtract(1, 'days');
+
+            var startDateDateComponent = prevDay.format("YYYY-MM-DD");
+
+            var startDay = startDateDateComponent + ' 00:00:00.000' + tz;
+            var endDay = startDateDateComponent + ' 23:59:59.999' + tz;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.GeneratePreviousDay] - [%s] - HTTP Request Received', reqId);
+
+
+            //Create FILE NAME Key
+            var fileName = 'CDR_DAILY_REPORT_' + tenantId + '_' + companyId + '_' + startDateDateComponent;
+
+            fileName = fileName.replace(/:/g, "-") + '.' + fileType;
+
+
+            //check file exists
+
+            externalApi.RemoteGetFileMetadata(reqId, fileName, companyId, tenantId, function(err, fileData)
+            {
+                if(fileData)
+                {
+
+                    //call service instead
+                    var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
+                    logger.debug('[DVP-CDRProcessor.GeneratePreviousDay] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+
+
+                }
+                else
+                {
+                    externalApi.FileUploadReserve(reqId, fileName, companyId, tenantId, function(err, fileResResp)
+                    {
+                        if (err)
+                        {
+                            var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, null);
+                            logger.debug('[DVP-CDRProcessor.GeneratePreviousDay] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                            res.end(jsonString);
+                        }
+                        else
+                        {
+                            if(fileResResp)
+                            {
+                                var uniqueId = fileResResp;
+
+                                //should respose end
+                                var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
+                                logger.debug('[DVP-CDRProcessor.GeneratePreviousDay] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                res.end(jsonString);
+
+                                backendHandler.GetProcessedCDRInDateRange(startDay, endDay, companyId, tenantId, null, null, null, null, null, function(err, cdrList)
+                                {
+                                    logger.debug('[DVP-CDRProcessor.GeneratePreviousDay] - [%s] - CDR Processing Done', reqId);
+
+                                    var jsonString = "";
+                                    if(err)
+                                    {
+                                        //can delete file reserve
+                                        externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                            if(err)
+                                            {
+                                                logger.error('[DVP-CDRProcessor.GeneratePreviousDay] - [%s] - Delete Failed : %s', reqId, err);
+                                            }
+                                        });
+                                    }
+                                    else
+                                    {
+                                        //Convert CDR LIST TO FILE AND UPLOAD
+
+                                        if(cdrList && cdrList.length > 0)
+                                        {
+                                            cdrList.forEach(function(cdrProcessed)
+                                            {
+                                                cdrProcessed.BillSec = convertToMMSS(cdrProcessed.BillSec);
+                                                cdrProcessed.Duration = convertToMMSS(cdrProcessed.Duration);
+                                                cdrProcessed.AnswerSec = convertToMMSS(cdrProcessed.AnswerSec);
+                                                cdrProcessed.QueueSec = convertToMMSS(cdrProcessed.QueueSec);
+                                                cdrProcessed.HoldSec = convertToMMSS(cdrProcessed.HoldSec);
+
+                                                var localTime = moment(cdrProcessed.CreatedTime).utcOffset(tz).format("YYYY-MM-DD HH:mm:ss");
+
+                                                cdrProcessed.CreatedLocalTime = localTime;
+
+                                            });
+
+                                            //Convert to CSV
+
+                                            var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Answered', 'Call Time', 'Total Duration', 'Bill Duration', 'Answer Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party', 'Transferred Parties'];
+
+                                            var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'AgentAnswered', 'CreatedLocalTime', 'Duration', 'BillSec', 'AnswerSec', 'QueueSec', 'HoldSec', 'ObjType', 'ObjCategory', 'HangupParty', 'TransferredParties'];
+
+                                            var csvFileData = json2csv({ data: cdrList, fields: fields, fieldNames : fieldNames });
+
+                                            fs.writeFile(fileName, csvFileData, function(err)
+                                            {
+                                                if (err)
+                                                {
+                                                    externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                        if(err)
+                                                        {
+                                                            logger.error('[DVP-CDRProcessor.GeneratePreviousDay] - [%s] - Delete Failed : %s', reqId, err);
+                                                        }
+                                                    });
+                                                }
+                                                else
+                                                {
+                                                    externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
+                                                    {
+                                                        fs.unlink(fileName);
+                                                        if(!err && uploadResp)
+                                                        {
+
+                                                        }
+                                                        else
+                                                        {
+                                                            externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                                if(err)
+                                                                {
+                                                                    logger.error('[DVP-CDRProcessor.GeneratePreviousDay] - [%s] - Delete Failed : %s', reqId, err);
+                                                                }
+                                                            });
+                                                        }
+
+                                                    });
+
+                                                }
+                                            });
+
+
+                                        }
+                                        else
+                                        {
+
+                                            externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                if(err)
+                                                {
+                                                    logger.error('[DVP-CDRProcessor.GeneratePreviousDay] - [%s] - Delete Failed : %s', reqId, err);
+                                                }
+                                            });
+                                        }
+
+
+                                    }
+
+                                });
+                            }
+                            else
+                            {
+                                var jsonString = messageFormatter.FormatMessage(new Error('Failed to reserve file'), "ERROR", false, null);
+                                logger.debug('[DVP-CDRProcessor.DownloadCDR] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                res.end(jsonString);
+                            }
+
+
+
+
+                        }
+                    });
+
+                }
+
+            });
+
+        }
+        catch(ex)
+        {
+            logger.error('[DVP-CDRProcessor.DownloadCDR] - [%s] - Exception occurred', reqId, ex);
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.DownloadCDR] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+    server.post('/DVP/API/:version/CallCDR/Abandon/GeneratePreviousDay', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"write"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var fileType = req.body.fileType;
+            var tz = req.body.tz;
+
+            var localTime = moment().utcOffset(tz);
+
+            var prevDay = localTime.subtract(1, 'days');
+
+            var startDateDateComponent = prevDay.format("YYYY-MM-DD");
+
+            var startDay = startDateDateComponent + ' 00:00:00.000' + tz;
+            var endDay = startDateDateComponent + ' 23:59:59.999' + tz;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.GeneratePreviousDayAbandon] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s, Offset: %s, Limit : %s', reqId, startTime, endTime, offset, limit);
+
+            //Create FILE NAME Key
+            var fileName = 'ABANDONCDR_DAILY_REPORT_' + tenantId + '_' + companyId + '_' + startDateDateComponent;
+
+            fileName = fileName.replace(/:/g, "-") + '.' + fileType;
+
+            externalApi.RemoteGetFileMetadata(reqId, fileName, companyId, tenantId, function(err, fileData)
+            {
+                if(fileData)
+                {
+
+                    //call service instead
+                    var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
+                    logger.debug('[DVP-CDRProcessor.GeneratePreviousDayAbandon] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+
+
+                }
+                else
+                {
+                    externalApi.FileUploadReserve(reqId, fileName, companyId, tenantId, function(err, fileResResp)
+                    {
+                        if (err)
+                        {
+                            var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, null);
+                            logger.debug('[DVP-CDRProcessor.GeneratePreviousDayAbandon] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                            res.end(jsonString);
+                        }
+                        else
+                        {
+                            if(fileResResp)
+                            {
+                                var uniqueId = fileResResp;
+
+                                //should respose end
+                                var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
+                                logger.debug('[DVP-CDRProcessor.GeneratePreviousDayAbandon] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                res.end(jsonString);
+
+                                backendHandler.GetProcessedCDRInDateRangeAbandon(startDay, endDay, companyId, tenantId, null, null, null, null, null, function(err, cdrList)
+                                {
+                                    logger.debug('[DVP-CDRProcessor.GeneratePreviousDayAbandon] - [%s] - CDR Processing Done', reqId);
+
+                                    var jsonString = "";
+                                    if(err)
+                                    {
+                                        //can delete file reserve
+                                        externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                            if(err)
+                                            {
+                                                logger.error('[DVP-CDRProcessor.GeneratePreviousDay] - [%s] - Delete Failed : %s', reqId, err);
+                                            }
+                                        });
+                                    }
+                                    else
+                                    {
+                                        //Convert CDR LIST TO FILE AND UPLOAD
+
+                                        if(cdrList && cdrList.length > 0)
+                                        {
+                                            cdrList.forEach(function(cdrProcessed)
+                                            {
+                                                cdrProcessed.BillSec = convertToMMSS(cdrProcessed.BillSec);
+                                                cdrProcessed.Duration = convertToMMSS(cdrProcessed.Duration);
+                                                cdrProcessed.AnswerSec = convertToMMSS(cdrProcessed.AnswerSec);
+                                                cdrProcessed.QueueSec = convertToMMSS(cdrProcessed.QueueSec);
+                                                cdrProcessed.HoldSec = convertToMMSS(cdrProcessed.HoldSec);
+
+                                                var localTime = moment(cdrProcessed.CreatedTime).utcOffset(tz).format("YYYY-MM-DD HH:mm:ss");
+
+                                                cdrProcessed.CreatedLocalTime = localTime;
+
+                                            });
+
+                                            //Convert to CSV
+
+                                            var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Call Time', 'Total Duration', 'Answer Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party'];
+
+                                            var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CreatedLocalTime', 'Duration', 'AnswerSec', 'QueueSec', 'HoldSec', 'ObjType', 'ObjCategory', 'HangupParty'];
+
+                                            var csvFileData = json2csv({ data: cdrList, fields: fields, fieldNames : fieldNames });
+
+                                            fs.writeFile(fileName, csvFileData, function(err)
+                                            {
+                                                if (err)
+                                                {
+                                                    externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                        if(err)
+                                                        {
+                                                            logger.error('[DVP-CDRProcessor.GeneratePreviousDay] - [%s] - Delete Failed : %s', reqId, err);
+                                                        }
+                                                    });
+                                                    //can delete file
+                                                    //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
+                                                }
+                                                else
+                                                {
+                                                    externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
+                                                    {
+                                                        fs.unlink(fileName);
+                                                        if(!err && uploadResp)
+                                                        {
+
+                                                        }
+                                                        else
+                                                        {
+                                                            externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                                if(err)
+                                                                {
+                                                                    logger.error('[DVP-CDRProcessor.GeneratePreviousDay] - [%s] - Delete Failed : %s', reqId, err);
+                                                                }
+                                                            });
+                                                            //can delete file
+                                                            //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
+                                                        }
+
+                                                    });
+
+                                                }
+                                            });
+
+
+                                        }
+                                        else
+                                        {
+                                            externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                if(err)
+                                                {
+                                                    logger.error('[DVP-CDRProcessor.GeneratePreviousDay] - [%s] - Delete Failed : %s', reqId, err);
+                                                }
+                                            });
+                                            //can delete file
+                                            //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
+                                            //nothing to show - delete redis object
+                                        }
+
+
+                                    }
+
+                                });
+                            }
+                            else
+                            {
+                                var jsonString = messageFormatter.FormatMessage(new Error('Failed to reserve file'), "ERROR", false, null);
+                                logger.debug('[DVP-CDRProcessor.GeneratePreviousDayAbandon] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                res.end(jsonString);
+                            }
+
+
+
+
+                        }
+                    });
+
+                }
+
+            });
+
+        }
+        catch(ex)
+        {
+            logger.error('[DVP-CDRProcessor.GeneratePreviousDayAbandon] - [%s] - Exception occurred', reqId, ex);
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.GeneratePreviousDayAbandon] - [%s] - API RESPONSE : %s', reqId, jsonString);
             res.end(jsonString);
         }
 
@@ -1181,6 +1610,12 @@
                                 {
                                     if(err)
                                     {
+                                        externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                            if(err)
+                                            {
+                                                logger.error('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - Delete Failed : %s', reqId, err);
+                                            }
+                                        });
 
                                     }
                                     else
@@ -1225,8 +1660,12 @@
                                             {
                                                 if (err)
                                                 {
-                                                    //can delete file
-                                                    //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
+                                                    externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                        if(err)
+                                                        {
+                                                            logger.error('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - Delete Failed : %s', reqId, err);
+                                                        }
+                                                    });
                                                 }
                                                 else
                                                 {
@@ -1239,12 +1678,25 @@
                                                         }
                                                         else
                                                         {
-                                                            //can delete file
-                                                            //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
+                                                            externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                                if(err)
+                                                                {
+                                                                    logger.error('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - Delete Failed : %s', reqId, err);
+                                                                }
+                                                            });
                                                         }
 
                                                     });
 
+                                                }
+                                            });
+                                        }
+                                        else
+                                        {
+                                            externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                if(err)
+                                                {
+                                                    logger.error('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - Delete Failed : %s', reqId, err);
                                                 }
                                             });
                                         }
@@ -1277,6 +1729,202 @@
         {
             var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
             logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+    server.post('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly/GeneratePreviousDay', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"write"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var fileType = req.body.fileType;
+            var tz = req.body.tz;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            var localTime = moment().utcOffset(tz);
+
+            var prevDay = localTime.subtract(1, 'days');
+
+            var summaryDate = prevDay.format("YYYY-MM-DD");
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyGeneratePreviousDay] - [%s] - HTTP Request Received - Params - summaryDate : %s', reqId, summaryDate);
+
+            //Generate 24 hrs moment time array
+
+            //Create FILE NAME Key
+            var fileName = 'CALL_SUMMARY_DAILY_REPORT_' + tenantId + '_' + companyId + '_' + summaryDate;
+
+            fileName = fileName.replace(/:/g, "-") + '.' + fileType;
+
+            var hrFuncArr = [];
+
+            for(i=0; i<24; i++)
+            {
+                var sd = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i, 'hours');
+                var ed = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i+1, 'hours');
+
+                hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId, null));
+            }
+
+
+            externalApi.RemoteGetFileMetadata(reqId, fileName, companyId, tenantId, function(err, fileData)
+            {
+                if(fileData)
+                {
+
+                    //call service instead
+                    var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
+                    logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyGeneratePreviousDay] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+
+
+                }
+                else
+                {
+                    externalApi.FileUploadReserve(reqId, fileName, companyId, tenantId, function(err, fileResResp)
+                    {
+                        if (err)
+                        {
+                            var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, null);
+                            logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyGeneratePreviousDay] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                            res.end(jsonString);
+                        }
+                        else
+                        {
+                            if(fileResResp)
+                            {
+                                var uniqueId = fileResResp;
+
+                                //should respose end
+                                var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
+                                logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyGeneratePreviousDay] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                res.end(jsonString);
+
+
+                                async.parallel(hrFuncArr, function(err, results)
+                                {
+                                    if(err)
+                                    {
+                                        externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                            if(err)
+                                            {
+                                                logger.error('[DVP-CDRProcessor.GetCallCDRSummaryHourlyGeneratePreviousDay] - [%s] - Delete Failed : %s', reqId, err);
+                                            }
+                                        });
+                                    }
+                                    else
+                                    {
+                                        if(results)
+                                        {
+
+                                            var newSummary = results.map(function(sumr) {
+
+                                                if(typeof sumr.IvrAverage === "number")
+                                                {
+                                                    sumr.IvrAverage = convertToMMSS(sumr.IvrAverage);
+                                                }
+
+                                                if(typeof sumr.HoldAverage === "number")
+                                                {
+                                                    sumr.HoldAverage = convertToMMSS(sumr.HoldAverage);
+                                                }
+
+                                                if(typeof sumr.RingAverage === "number")
+                                                {
+                                                    sumr.RingAverage = convertToMMSS(sumr.RingAverage);
+                                                }
+
+                                                if(typeof sumr.TalkAverage === "number")
+                                                {
+                                                    sumr.TalkAverage = convertToMMSS(sumr.TalkAverage);
+                                                }
+
+                                                return sumr;
+                                            });
+
+
+
+                                            var fieldNames = ['Hour', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandon Calls (%)', 'Dropped Calls (%)', 'Avg Hold Time (sec)',	'Avg IVR Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answer Percentage (%)'];
+
+                                            var fields = ['Caption', 'IVRCallsCount', 'QueuedCallsCount', 'AbandonPercentage', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'RingAverage', 'TalkAverage', 'AnswerPercentage'];
+
+                                            var csvFileData = json2csv({ data: newSummary, fields: fields, fieldNames : fieldNames });
+
+                                            fs.writeFile(fileName, csvFileData, function(err)
+                                            {
+                                                if (err)
+                                                {
+                                                    externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                        if(err)
+                                                        {
+                                                            logger.error('[DVP-CDRProcessor.GetCallCDRSummaryHourlyGeneratePreviousDay] - [%s] - Delete Failed : %s', reqId, err);
+                                                        }
+                                                    });
+                                                }
+                                                else
+                                                {
+                                                    externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
+                                                    {
+                                                        fs.unlink(fileName);
+                                                        if(!err && uploadResp)
+                                                        {
+
+                                                        }
+                                                        else
+                                                        {
+                                                            externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                                if(err)
+                                                                {
+                                                                    logger.error('[DVP-CDRProcessor.GetCallCDRSummaryHourlyGeneratePreviousDay] - [%s] - Delete Failed : %s', reqId, err);
+                                                                }
+                                                            });
+                                                        }
+
+                                                    });
+
+                                                }
+                                            });
+                                        }
+
+                                    }
+                                });
+
+                            }
+                            else
+                            {
+                                var jsonString = messageFormatter.FormatMessage(new Error('Failed to reserve file'), "ERROR", false, null);
+                                logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyGeneratePreviousDay] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                res.end(jsonString);
+                            }
+
+
+
+
+                        }
+                    });
+
+                }
+
+            });
+
+
+
+        }
+        catch(ex)
+        {
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyGeneratePreviousDay] - [%s] - API RESPONSE : %s', reqId, jsonString);
             res.end(jsonString);
         }
 
@@ -1497,8 +2145,12 @@
                                         {
                                             if (err)
                                             {
-                                                //can delete file
-                                                //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
+                                                externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                    if(err)
+                                                    {
+                                                        logger.error('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - Delete Failed : %s', reqId, err);
+                                                    }
+                                                });
                                             }
                                             else
                                             {
@@ -1511,8 +2163,12 @@
                                                     }
                                                     else
                                                     {
-                                                        //can delete file
-                                                        //redisHandler.DeleteObject('FILEDOWNLOADSTATUS:' + fileName, function(err, redisResp){});
+                                                        externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                            if(err)
+                                                            {
+                                                                logger.error('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - Delete Failed : %s', reqId, err);
+                                                            }
+                                                        });
                                                     }
 
                                                 });
@@ -1659,6 +2315,231 @@
 
             var tz = req.query.tz;
             var fileType = req.query.fileType;
+
+            var momentSD = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z");
+            var momentED = moment(endDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z");
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - HTTP Request Received - Params - startDate : %s, endDate : %s', reqId, startDate, endDate);
+
+            //Generate 24 hrs moment time array
+
+            var dateTimestampSD = moment(momentSD).unix();
+            var dateTimestampED = moment(momentED).unix();
+
+            //Create FILE NAME Key
+            var fileName = 'CALL_SUMMARY_DAILY_' + tenantId + '_' + companyId + '_' + dateTimestampSD + '_' + dateTimestampED;
+
+            fileName = fileName.replace(/:/g, "-") + '.' + fileType;
+
+            var dayFuncArr = [];
+            var cnt = 0;
+
+            while(momentSD <= momentED)
+            {
+                var sd = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt, 'days');
+                var ed = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt+1, 'days');
+
+                //fixed momentSD
+
+                momentSD = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt+1, 'days');
+
+                dayFuncArr.push(processSummaryData.bind(this, sd.utcOffset(tz).format('YYYY-MM-DD'), sd, ed, companyId, tenantId, null));
+
+                cnt++;
+            }
+
+
+
+            externalApi.RemoteGetFileMetadata(reqId, fileName, companyId, tenantId, function(err, fileData)
+            {
+                if(fileData)
+                {
+                    //call service instead
+                    var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
+                    logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+
+                }
+                else
+                {
+                    externalApi.FileUploadReserve(reqId, fileName, companyId, tenantId, function(err, fileResResp)
+                    {
+                        if (err)
+                        {
+                            var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, null);
+                            logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                            res.end(jsonString);
+                        }
+                        else
+                        {
+                            if(fileResResp)
+                            {
+                                var uniqueId = fileResResp;
+
+                                //should respose end
+                                var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
+                                logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                res.end(jsonString);
+
+                                async.parallel(dayFuncArr, function(err, results)
+                                {
+                                    if(err)
+                                    {
+                                        externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                            if(err)
+                                            {
+                                                logger.error('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - Delete Failed : %s', reqId, err);
+                                            }
+                                        });
+                                    }
+                                    else
+                                    {
+                                        if(results)
+                                        {
+                                            var newSummary = results.map(function(sumr) {
+
+                                                if(typeof sumr.IvrAverage === "number")
+                                                {
+                                                    sumr.IvrAverage = convertToMMSS(sumr.IvrAverage);
+                                                }
+
+                                                if(typeof sumr.HoldAverage === "number")
+                                                {
+                                                    sumr.HoldAverage = convertToMMSS(sumr.HoldAverage);
+                                                }
+
+                                                if(typeof sumr.RingAverage === "number")
+                                                {
+                                                    sumr.RingAverage = convertToMMSS(sumr.RingAverage);
+                                                }
+
+                                                if(typeof sumr.TalkAverage === "number")
+                                                {
+                                                    sumr.TalkAverage = convertToMMSS(sumr.TalkAverage);
+                                                }
+
+                                                return sumr;
+                                            });
+
+
+
+                                            var fieldNames = ['Day', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandon Calls (%)', 'Dropped Calls (%)', 'Avg Hold Time (sec)',	'Avg IVR Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answer Percentage (%)'];
+
+                                            var fields = ['Caption', 'IVRCallsCount', 'QueuedCallsCount', 'AbandonPercentage', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'RingAverage', 'TalkAverage', 'AnswerPercentage'];
+
+                                            var csvFileData = json2csv({ data: newSummary, fields: fields, fieldNames : fieldNames });
+
+                                            fs.writeFile(fileName, csvFileData, function(err)
+                                            {
+                                                if (err)
+                                                {
+                                                    externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                        if(err)
+                                                        {
+                                                            logger.error('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - Delete Failed : %s', reqId, err);
+                                                        }
+                                                    });
+                                                }
+                                                else
+                                                {
+                                                    externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
+                                                    {
+                                                        fs.unlink(fileName);
+                                                        if(!err && uploadResp)
+                                                        {
+
+                                                        }
+                                                        else
+                                                        {
+                                                            externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                                if(err)
+                                                                {
+                                                                    logger.error('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - Delete Failed : %s', reqId, err);
+                                                                }
+                                                            });
+                                                        }
+
+                                                    });
+
+                                                }
+                                            });
+                                        }
+                                        else
+                                        {
+                                            externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                if(err)
+                                                {
+                                                    logger.error('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - Delete Failed : %s', reqId, err);
+                                                }
+                                            });
+
+                                        }
+                                    }
+                                });
+
+                            }
+                            else
+                            {
+                                var jsonString = messageFormatter.FormatMessage(new Error('Failed to reserve file'), "ERROR", false, null);
+                                logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                res.end(jsonString);
+                            }
+
+
+
+
+                        }
+                    });
+
+                }
+
+            });
+        }
+        catch(ex)
+        {
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+    server.post('/DVP/API/:version/CallCDR/CallCDRSummary/Daily/GeneratePreviousMonth', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"write"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+
+            var startDate = req.query.startDate;
+            var endDate = req.query.endDate;
+
+            var tz = req.body.tz;
+            var fileType = req.body.fileType;
+
+            var localTime = moment().utcOffset(tz);
+
+            var prevMonth = localTime.substract(1, 'months');
+
+            var startDate = prevMonth.startOf('month');
+
+            var endDate = prevMonth.endOf('month');
+
+            var prevMonthDate = localTime.month();
+
+            var startDateDateComponent = prevDay.format("YYYY-MM-DD");
+
+            var startDay = startDateDateComponent + ' 00:00:00.000' + tz;
+            var endDay = startDateDateComponent + ' 23:59:59.999' + tz;
 
             var momentSD = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z");
             var momentED = moment(endDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z");
@@ -2173,6 +3054,7 @@
                 var memberuuid = varSec['memberuuid'];
                 var conferenceUuid = varSec['conference_uuid'];
                 var originatedLegs = varSec['originated_legs'];
+                var startEpoch = varSec['start_epoch'];
                 var answerDate = undefined;
                 var createdDate = undefined;
                 var bridgeDate = undefined;
@@ -2211,6 +3093,13 @@
                 {
                     var createdTStamp = parseInt(createdTimeStamp)/1000;
                     createdDate = new Date(createdTStamp);
+                }
+                else
+                {
+                    if(startEpoch)
+                    {
+                        createdDate = new Date(startEpoch);
+                    }
                 }
 
                 var bridgedTimeStamp = timesSec['bridged_time'];
