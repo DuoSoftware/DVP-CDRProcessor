@@ -414,6 +414,7 @@
             var agent = req.query.agent;
             var skill = req.query.skill;
             var custNum = req.query.custnumber;
+            var didNum = req.query.didnumber;
 
             offset = parseInt(offset);
             limit = parseInt(limit);
@@ -428,7 +429,7 @@
 
             logger.debug('[DVP-CDRProcessor.GetAbandonCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s, Offset: %s, Limit : %s', reqId, startTime, endTime, offset, limit);
 
-            backendHandler.GetAbandonCallRelatedLegsInDateRange(startTime, endTime, companyId, tenantId, offset, limit, agent, skill, custNum, function(err, legs)
+            backendHandler.GetAbandonCallRelatedLegsInDateRange(startTime, endTime, companyId, tenantId, offset, limit, agent, skill, custNum, didNum, function(err, legs)
             {
                 if(err)
                 {
@@ -491,6 +492,7 @@
             var agent = req.query.agent;
             var skill = req.query.skill;
             var custNum = req.query.custnumber;
+            var didNum = req.query.didnumber;
             var fileType = req.query.fileType;
             var tz = req.query.tz;
 
@@ -563,7 +565,7 @@
                                 logger.debug('[DVP-CDRProcessor.PrepareDownloadAbandon] - [%s] - API RESPONSE : %s', reqId, jsonString);
                                 res.end(jsonString);
 
-                                backendHandler.GetProcessedCDRInDateRangeAbandon(startTime, endTime, companyId, tenantId, agent, skill, null, null, custNum, function(err, cdrList)
+                                backendHandler.GetProcessedCDRInDateRangeAbandon(startTime, endTime, companyId, tenantId, agent, skill, null, null, custNum, didNum, function(err, cdrList)
                                 {
                                     logger.debug('[DVP-CDRProcessor.PrepareDownloadAbandon] - [%s] - CDR Processing Done', reqId);
 
@@ -707,6 +709,7 @@
             var direction = req.query.direction;
             var recording = req.query.recording;
             var custNum = req.query.custnumber;
+            var didNum = req.query.didnumber;
             var fileType = req.query.fileType;
             var tz = req.query.tz;
 
@@ -787,7 +790,7 @@
                                 logger.debug('[DVP-CDRProcessor.DownloadCDR] - [%s] - API RESPONSE : %s', reqId, jsonString);
                                 res.end(jsonString);
 
-                                backendHandler.GetProcessedCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, function(err, cdrList)
+                                backendHandler.GetProcessedCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, function(err, cdrList)
                                 {
                                     logger.debug('[DVP-CDRProcessor.DownloadCDR] - [%s] - CDR Processing Done', reqId);
 
@@ -981,7 +984,7 @@
                                 logger.debug('[DVP-CDRProcessor.GeneratePreviousDay] - [%s] - API RESPONSE : %s', reqId, jsonString);
                                 res.end(jsonString);
 
-                                backendHandler.GetProcessedCDRInDateRange(startDay, endDay, companyId, tenantId, null, null, null, null, null, function(err, cdrList)
+                                backendHandler.GetProcessedCDRInDateRange(startDay, endDay, companyId, tenantId, null, null, null, null, null, null, function(err, cdrList)
                                 {
                                     logger.debug('[DVP-CDRProcessor.GeneratePreviousDay] - [%s] - CDR Processing Done', reqId);
 
@@ -1172,7 +1175,7 @@
                                 logger.debug('[DVP-CDRProcessor.GeneratePreviousDayAbandon] - [%s] - API RESPONSE : %s', reqId, jsonString);
                                 res.end(jsonString);
 
-                                backendHandler.GetProcessedCDRInDateRangeAbandon(startDay, endDay, companyId, tenantId, null, null, null, null, null, function(err, cdrList)
+                                backendHandler.GetProcessedCDRInDateRangeAbandon(startDay, endDay, companyId, tenantId, null, null, null, null, null, null, function(err, cdrList)
                                 {
                                     logger.debug('[DVP-CDRProcessor.GeneratePreviousDayAbandon] - [%s] - CDR Processing Done', reqId);
 
@@ -1321,6 +1324,7 @@
             var direction = req.query.direction;
             var recording = req.query.recording;
             var custNum = req.query.custnumber;
+            var didNum = req.query.didnumber;
 
             var companyId = req.user.company;
             var tenantId = req.user.tenant;
@@ -1335,7 +1339,7 @@
 
             logger.debug('[DVP-CDRProcessor.GetProcessedCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
 
-            backendHandler.GetProcessedCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, function(err, cdrList)
+            backendHandler.GetProcessedCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, function(err, cdrList)
             {
                 logger.debug('[DVP-CDRProcessor.GetProcessedCallDetailsByRange] - [%s] - CDR Processing Done', reqId);
 
@@ -1386,6 +1390,7 @@
             var direction = req.query.direction;
             var recording = req.query.recording;
             var custNum = req.query.custnumber;
+            var didNum = req.query.didnumber;
 
             var companyId = req.user.company;
             var tenantId = req.user.tenant;
@@ -1401,7 +1406,7 @@
             logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s, Offset: %s, Limit : %s', reqId, startTime, endTime, offset, limit);
 
 
-            backendHandler.GetCallRelatedLegsInDateRange(startTime, endTime, companyId, tenantId, offset, limit, agent, skill, direction, recording, custNum, function(err, legs)
+            backendHandler.GetCallRelatedLegsInDateRange(startTime, endTime, companyId, tenantId, offset, limit, agent, skill, direction, recording, custNum, didNum, function(err, legs)
             {
                 if(err)
                 {

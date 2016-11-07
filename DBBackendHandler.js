@@ -9,243 +9,98 @@ if(!abandonCallThreshold)
     abandonCallThreshold = 10;
 }
 
-var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, callback)
+var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, callback)
 {
     var callLegList = [];
 
     try
     {
+        var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]};
+        if(agentFilter)
+        {
+            sqlCond.$and = [];
+            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
+        }
+        if(skillFilter)
+        {
+            sqlCond.AgentSkill = skillFilter;
+        }
         if(offset)
         {
-            if(limit)
+            sqlCond.id = { gt: offset }
+        }
+        if(dirFilter)
+        {
+            sqlCond.DVPCallDirection = dirFilter;
+        }
+        if(recFilter == 'true' || recFilter == 'false')
+        {
+            if(recFilter == 'true')
             {
-                var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', id: { gt: offset }, ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]};
-                if(agentFilter)
-                {
-                    sqlCond.$and = [];
-                    sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
-                }
-                if(skillFilter)
-                {
-                    sqlCond.AgentSkill = skillFilter;
-                }
-                if(dirFilter)
-                {
-                    sqlCond.DVPCallDirection = dirFilter;
-                }
-                if(recFilter == 'true' || recFilter == 'false')
-                {
-                    if(recFilter == 'true')
-                    {
-                        sqlCond.BillSec = { gt: 0 }
-                    }
-                    else
-                    {
-                        sqlCond.BillSec = 0
-                    }
-
-                }
-
-                if(customerFilter)
-                {
-                    if(!sqlCond.$and)
-                    {
-                        sqlCond.$and = [];
-                    }
-
-                    sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
-
-                }
-
-
-
-                dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime'], limit: limit}).then(function(callLeg)
-                {
-
-                    logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
-
-                    callback(undefined, callLeg);
-
-                }).catch(function(err)
-                {
-                    logger.error('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
-
-                    callback(err, callLegList);
-                });
-
+                sqlCond.BillSec = { gt: 0 }
             }
             else
             {
-
-                var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', id: { gt: offset }, ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]};
-                if(agentFilter)
-                {
-                    sqlCond.$and = [];
-                    sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
-                }
-                if(skillFilter)
-                {
-                    sqlCond.AgentSkill = skillFilter;
-                }
-                if(dirFilter)
-                {
-                    sqlCond.DVPCallDirection = dirFilter;
-                }
-                if(recFilter == 'true' || recFilter == 'false')
-                {
-                    if(recFilter == 'true')
-                    {
-                        sqlCond.BillSec = { gt: 0 }
-                    }
-                    else
-                    {
-                        sqlCond.BillSec = 0
-                    }
-
-                }
-
-                if(customerFilter)
-                {
-                    if(!sqlCond.$and)
-                    {
-                        sqlCond.$and = [];
-                    }
-                    sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
-
-
-                }
-
-                dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime']}).then(function(callLeg)
-                {
-
-                    logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
-
-                    callback(undefined, callLeg);
-
-                }).catch(function(err)
-                {
-                    logger.error('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
-
-                    callback(err, callLegList);
-                });
+                sqlCond.BillSec = 0
             }
 
+        }
+
+        if(customerFilter)
+        {
+            if(!sqlCond.$and)
+            {
+                sqlCond.$and = [];
+            }
+
+            sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
+
+        }
+
+        if(didFilter)
+        {
+            if(!sqlCond.$and)
+            {
+                sqlCond.$and = [];
+            }
+
+            sqlCond.$and.push({DVPCallDirection: 'inbound', SipToUser: didFilter});
+
+        }
+
+        if(limit)
+        {
+            dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime'], limit: limit}).then(function(callLeg)
+            {
+
+                logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
+
+                callback(undefined, callLeg);
+
+            }).catch(function(err)
+            {
+                logger.error('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
+
+                callback(err, callLegList);
+            });
 
         }
         else
         {
-            if(limit)
+
+            dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime']}).then(function(callLeg)
             {
-                var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]};
-                if(agentFilter)
-                {
-                    sqlCond.$and = [];
-                    sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
-                }
-                if(skillFilter)
-                {
-                    sqlCond.AgentSkill = skillFilter;
-                }
-                if(dirFilter)
-                {
-                    sqlCond.DVPCallDirection = dirFilter;
-                }
-                if(recFilter == 'true' || recFilter == 'false')
-                {
-                    if(recFilter == 'true')
-                    {
-                        sqlCond.AgentAnswered = true
-                    }
-                    else
-                    {
-                        sqlCond.AgentAnswered = false
-                    }
 
-                }
+                logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
 
-                if(customerFilter)
-                {
-                    if(!sqlCond.$and)
-                    {
-                        sqlCond.$and = [];
+                callback(undefined, callLeg);
 
-                    }
-
-                    sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
-
-                }
-
-
-
-                dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime'], limit: limit}).then(function(callLeg)
-                {
-
-                    logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
-
-                    callback(undefined, callLeg);
-
-                }).catch(function(err)
-                {
-                    logger.error('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
-
-                    callback(err, callLegList);
-                })
-            }
-            else
+            }).catch(function(err)
             {
-                var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]};
-                if(agentFilter)
-                {
-                    sqlCond.$and = [];
-                    sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
-                }
-                if(skillFilter)
-                {
-                    sqlCond.AgentSkill = skillFilter;
-                }
-                if(dirFilter)
-                {
-                    sqlCond.DVPCallDirection = dirFilter;
-                }
-                if(recFilter == 'true' || recFilter == 'false')
-                {
-                    if(recFilter == 'true')
-                    {
-                        sqlCond.BillSec = { gt: 0 }
-                    }
-                    else
-                    {
-                        sqlCond.BillSec = 0
-                    }
+                logger.error('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
 
-                }
-
-                if(customerFilter)
-                {
-                    if(!sqlCond.$and)
-                    {
-                        sqlCond.$and = [];
-                    }
-                    sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
-
-
-                }
-
-                dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime']}).then(function(callLeg)
-                {
-
-                    logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
-
-                    callback(undefined, callLeg);
-
-                }).catch(function(err)
-                {
-                    logger.error('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
-
-                    callback(err, callLegList);
-                })
-            }
-
+                callback(err, callLegList);
+            });
         }
 
 
@@ -256,175 +111,84 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
     }
 };
 
-var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, skillFilter, customerFilter, callback)
+var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, skillFilter, customerFilter, didFilter, callback)
 {
     var callLegList = [];
 
     try
     {
+
+        var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjType: 'HTTAPI', Direction: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]};
+
+        if(agentFilter)
+        {
+            sqlCond.$and = [];
+            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
+        }
+        if(skillFilter)
+        {
+            sqlCond.AgentSkill = skillFilter;
+        }
+
         if(offset)
         {
-            if(limit)
+            sqlCond.id = { gt: offset };
+        }
+
+        if(customerFilter)
+        {
+            if(!sqlCond.$and)
             {
-                var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjType: 'HTTAPI', Direction: 'inbound', QueueSec: {gt: abandonCallThreshold}, id: { gt: offset }, AgentAnswered: false, ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]};
-
-                if(agentFilter)
-                {
-                    sqlCond.$and = [];
-                    sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
-                }
-                if(skillFilter)
-                {
-                    sqlCond.AgentSkill = skillFilter;
-                }
-
-                if(customerFilter)
-                {
-                    if(!sqlCond.$and)
-                    {
-                        sqlCond.$and = [];
-                    }
-
-                    sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
-
-                }
-
-                dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime'], limit: limit}).then(function(callLeg)
-                {
-
-                    logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
-
-                    callback(undefined, callLeg);
-
-                }).catch(function(err)
-                {
-                    logger.error('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
-
-                    callback(err, callLegList);
-                });
-            }
-            else
-            {
-                var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjType: 'HTTAPI', Direction: 'inbound', QueueSec: {gt: abandonCallThreshold}, id: { gt: offset }, AgentAnswered: false, ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]};
-
-                if(agentFilter)
-                {
-                    sqlCond.$and = [];
-                    sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
-                }
-                if(skillFilter)
-                {
-                    sqlCond.AgentSkill = skillFilter;
-                }
-
-                if(customerFilter)
-                {
-                    if(!sqlCond.$and)
-                    {
-                        sqlCond.$and = [];
-                    }
-                    sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
-
-                }
-
-                dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime']}).then(function(callLeg)
-                {
-
-                    logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
-
-                    callback(undefined, callLeg);
-
-                }).catch(function(err)
-                {
-                    logger.error('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
-
-                    callback(err, callLegList);
-                });
+                sqlCond.$and = [];
             }
 
+            sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
 
+        }
+
+        if(didFilter)
+        {
+            if(!sqlCond.$and)
+            {
+                sqlCond.$and = [];
+            }
+
+            sqlCond.$and.push({DVPCallDirection: 'inbound', SipToUser: didFilter});
+
+        }
+
+        if(limit)
+        {
+
+            dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime'], limit: limit}).then(function(callLeg)
+            {
+
+                logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
+
+                callback(undefined, callLeg);
+
+            }).catch(function(err)
+            {
+                logger.error('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
+
+                callback(err, callLegList);
+            });
         }
         else
         {
-            if(limit)
+            dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime']}).then(function(callLeg)
             {
-                var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjType: 'HTTAPI', Direction: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]};
 
-                if(agentFilter)
-                {
-                    sqlCond.$and = [];
-                    sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
-                }
-                if(skillFilter)
-                {
-                    sqlCond.AgentSkill = skillFilter;
-                }
+                logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
 
-                if(customerFilter)
-                {
-                    if(!sqlCond.$and)
-                    {
-                        sqlCond.$and = [];
-                    }
-                    sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
+                callback(undefined, callLeg);
 
-
-                }
-
-                dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime'], limit: limit}).then(function(callLeg)
-                {
-
-                    logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
-
-                    callback(undefined, callLeg);
-
-                }).catch(function(err)
-                {
-                    logger.error('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
-
-                    callback(err, callLegList);
-                })
-            }
-            else
+            }).catch(function(err)
             {
-                var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjType: 'HTTAPI', Direction: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'}]}]};
+                logger.error('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
 
-                if(agentFilter)
-                {
-                    sqlCond.$and = [];
-                    sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
-                }
-                if(skillFilter)
-                {
-                    sqlCond.AgentSkill = skillFilter;
-                }
-
-                if(customerFilter)
-                {
-                    if(!sqlCond.$and)
-                    {
-                        sqlCond.$and = [];
-                    }
-                    sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
-
-
-                }
-
-                dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime']}).then(function(callLeg)
-                {
-
-                    logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
-
-                    callback(undefined, callLeg);
-
-                }).catch(function(err)
-                {
-                    logger.error('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query failed', err);
-
-                    callback(err, callLegList);
-                })
-            }
-
+                callback(err, callLegList);
+            });
         }
 
 
@@ -903,7 +667,7 @@ var GetCallRelatedLegsForAppId = function(appId, companyId, tenantId, startTime,
     }
 };
 
-var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, callback)
+var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, callback)
 {
     var callLegList = [];
 
@@ -945,9 +709,19 @@ var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantI
 
         }
 
+        if(didFilter)
+        {
+            if(!sqlCond.$and)
+            {
+                sqlCond.$and = [];
+            }
+
+            sqlCond.$and.push({DVPCallDirection: 'inbound', SipToUser: didFilter});
+
+        }
+
         dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:['CreatedTime']}).then(function(callLeg)
         {
-
             callback(undefined, callLeg);
 
         }).catch(function(err)
@@ -963,7 +737,7 @@ var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantI
     }
 };
 
-var GetProcessedCDRInDateRangeAbandon = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, callback)
+var GetProcessedCDRInDateRangeAbandon = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, callback)
 {
     var callLegList = [];
 
@@ -1005,9 +779,19 @@ var GetProcessedCDRInDateRangeAbandon = function(startTime, endTime, companyId, 
 
         }
 
+        if(didFilter)
+        {
+            if(!sqlCond.$and)
+            {
+                sqlCond.$and = [];
+            }
+
+            sqlCond.$and.push({DVPCallDirection: 'inbound', SipToUser: didFilter});
+
+        }
+
         dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:['CreatedTime']}).then(function(callLeg)
         {
-
             callback(undefined, callLeg);
 
         }).catch(function(err)
