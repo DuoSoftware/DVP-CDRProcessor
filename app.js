@@ -536,12 +536,10 @@
             {
                 if(fileData)
                 {
-
                     //call service instead
                     var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
                     logger.debug('[DVP-CDRProcessor.PrepareDownloadAbandon] - [%s] - API RESPONSE : %s', reqId, jsonString);
                     res.end(jsonString);
-
 
                 }
                 else
@@ -3002,6 +3000,333 @@
 
         return next();
     });
+
+
+    var generateCDRListByCustomer = function(cdrList, tz)
+    {
+        var cdrGroupList = {};
+        cdrList.forEach(function(cdr)
+        {
+            var custNumber = null;
+
+            if(cdr.DVPCallDirection === 'inbound')
+            {
+                custNumber = cdr.SipFromUser;
+            }
+            else if(cdr.DVPCallDirection === 'outbound')
+            {
+                custNumber = cdr.SipToUser;
+            }
+            if(custNumber)
+            {
+                if(cdrGroupList[custNumber])
+                {
+                    if(cdr.DVPCallDirection === 'inbound')
+                    {
+                        var obj = cdrGroupList[custNumber];
+                        //handle inbound counts
+                        obj.InboundCalls++;
+
+                        if(cdr.IsAnswered === true)
+                        {
+                            obj.InboundAnswered++;
+                        }
+                    }
+                    else if(cdr.DVPCallDirection === 'outbound')
+                    {
+                        obj.OutboundCalls++;
+
+                        if(cdr.IsAnswered === true)
+                        {
+                            obj.InboundAnswered++;
+                        }
+                    }
+
+                    obj.LastCallDirection = cdr.DVPCallDirection;
+                    obj.LastCallAnswered = cdr.IsAnswered;
+                    obj.PhoneNumber = custNumber;
+                    obj.LastCallTime = moment(cdr.CreatedTime).utcOffset(tz).format("YYYY-MM-DD HH:mm:ss");
+
+                }
+                else
+                {
+                    var obj = {};
+
+                    if(cdr.DVPCallDirection === 'inbound')
+                    {
+                        //handle inbound counts
+                        obj.InboundCalls = 1;
+                        obj.OutboundCalls = 0;
+                        obj.InboundAnswered = 0;
+                        obj.OutboundAnswered = 0;
+
+                        if(cdr.IsAnswered === true)
+                        {
+                            obj.InboundAnswered = 1;
+                        }
+                    }
+                    else if(cdr.DVPCallDirection === 'outbound')
+                    {
+                        obj.InboundCalls = 0;
+                        obj.OutboundCalls = 1;
+                        obj.InboundAnswered = 0;
+                        obj.OutboundAnswered = 0;
+
+                        if(cdr.IsAnswered === true)
+                        {
+                            obj.InboundAnswered = 1;
+                        }
+                    }
+                    else
+                    {
+                        obj.InboundCalls = 0;
+                        obj.OutboundCalls = 0;
+                        obj.InboundAnswered = 0;
+                        obj.OutboundAnswered = 0;
+                    }
+
+                    obj.LastCallDirection = cdr.DVPCallDirection;
+                    obj.LastCallAnswered = cdr.IsAnswered;
+                    obj.PhoneNumber = custNumber;
+                    obj.LastCallTime = moment(cdr.CreatedTime).utcOffset(tz).format("YYYY-MM-DD HH:mm:ss");
+
+
+                    cdrGroupList[custNumber] = obj;
+                }
+
+            }
+        });
+
+        var arr = [];
+
+        for(var cdr in cdrGroupList) {
+            if(cdrGroupList.hasOwnProperty(cdr))
+            {
+                arr.push(cdrGroupList[cdr]);
+            }
+        }
+
+        return arr;
+    };
+
+    server.get('/DVP/API/:version/CallCDR/CallSummaryByCustomerDownload', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var startTime = req.query.startTime;
+            var endTime = req.query.endTime;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            var fileType = req.query.fileType;
+
+            var tz = req.query.tz;
+
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.CallSummaryByCustomerDownload] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
+
+            var stInReadableFormat = moment(startTime).unix();
+            var etInReadableFormat = moment(endTime).unix();
+
+            //Create FILE NAME Key
+            var fileName = 'CALL_SUMMARY_CUSTOMER_' + tenantId + '_' + companyId + '_' + stInReadableFormat + '_' + etInReadableFormat;
+
+            fileName = fileName.replace(/:/g, "-") + '.' + fileType;
+
+            externalApi.RemoteGetFileMetadata(reqId, fileName, companyId, tenantId, function(err, fileData)
+            {
+                if(fileData)
+                {
+                    //call service instead
+                    var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
+                    logger.debug('[DVP-CDRProcessor.CallSummaryByCustomerDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+
+                }
+                else
+                {
+                    externalApi.FileUploadReserve(reqId, fileName, companyId, tenantId, function(err, fileResResp)
+                    {
+                        if (err)
+                        {
+                            var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, null);
+                            logger.debug('[DVP-CDRProcessor.CallSummaryByCustomerDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                            res.end(jsonString);
+                        }
+                        else
+                        {
+                            if(fileResResp)
+                            {
+                                var uniqueId = fileResResp;
+
+                                //should respose end
+                                var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
+                                logger.debug('[DVP-CDRProcessor.CallSummaryByCustomerDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                res.end(jsonString);
+
+                                backendHandler.GetProcessedCDRInDateRangeCustomer(startTime, endTime, companyId, tenantId, function(err, cdrList)
+                                {
+                                    if(err)
+                                    {
+                                        externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                            if(err)
+                                            {
+                                                logger.error('[DVP-CDRProcessor.CallSummaryByCustomerDownload] - [%s] - Delete Failed : %s', reqId, err);
+                                            }
+                                        });
+                                    }
+                                    else
+                                    {
+                                        var cdrCustList = generateCDRListByCustomer(cdrList, tz);
+
+                                        var fieldNames = ['Phone Number', 'Inbound Calls', 'Outbound Calls', 'Inbound Answered', 'Outbound Answered', 'Last Call Direction', 'Last Call Answered', 'Last Call Time'];
+
+                                        var fields = ['PhoneNumber', 'InboundCalls', 'OutboundCalls', 'InboundAnswered', 'OutboundAnswered', 'LastCallDirection', 'LastCallAnswered', 'LastCallTime'];
+
+                                        var csvFileData = json2csv({ data: cdrCustList, fields: fields, fieldNames : fieldNames });
+
+                                        fs.writeFile(fileName, csvFileData, function(err)
+                                        {
+                                            if (err)
+                                            {
+                                                externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                    if(err)
+                                                    {
+                                                        logger.error('[DVP-CDRProcessor.CallSummaryByCustomerDownload] - [%s] - Delete Failed : %s', reqId, err);
+                                                    }
+                                                });
+                                            }
+                                            else
+                                            {
+                                                externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
+                                                {
+                                                    fs.unlink(fileName);
+                                                    if(!err && uploadResp)
+                                                    {
+
+                                                    }
+                                                    else
+                                                    {
+                                                        externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                            if(err)
+                                                            {
+                                                                logger.error('[DVP-CDRProcessor.CallSummaryByCustomerDownload] - [%s] - Delete Failed : %s', reqId, err);
+                                                            }
+                                                        });
+
+                                                    }
+
+                                                });
+
+                                            }
+                                        });
+                                    }
+
+
+
+                                });
+
+                            }
+                            else
+                            {
+                                var jsonString = messageFormatter.FormatMessage(new Error('Failed to reserve file'), "ERROR", false, null);
+                                logger.debug('[DVP-CDRProcessor.CallSummaryByCustomerDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                res.end(jsonString);
+                            }
+
+
+
+
+                        }
+                    });
+
+                }
+
+            });
+
+
+
+
+        }
+        catch(ex)
+        {
+            logger.error('[DVP-CDRProcessor.CallSummaryByCustomerDownload] - [%s] - Exception occurred', reqId, ex);
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.CallSummaryByCustomerDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+
+    server.get('/DVP/API/:version/CallCDR/CallSummaryByCustomer', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var startTime = req.query.startTime;
+            var endTime = req.query.endTime;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            var tz = req.query.tz;
+
+            logger.debug('[DVP-CDRProcessor.CallSummaryByCustomer] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
+
+            //Create FILE NAME Key
+
+            backendHandler.GetProcessedCDRInDateRangeCustomer(startTime, endTime, companyId, tenantId, function(err, cdrList)
+            {
+                if(err)
+                {
+                    var emptyArr = [];
+                    var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, emptyArr);
+                    logger.debug('[DVP-CDRProcessor.CallSummaryByCustomer] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+                }
+                else
+                {
+                    var cdrCustList = generateCDRListByCustomer(cdrList, tz);
+
+                    var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, cdrCustList);
+                    logger.debug('[DVP-CDRProcessor.CallSummaryByCustomer] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+                }
+
+
+
+            });
+
+
+
+
+        }
+        catch(ex)
+        {
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.CallSummaryByCustomer] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
 
     //server.post('/DVP/API/' + hostVersion + '/CallCDR/ProcessCDR', function(req,res,next)
     server.post('/DVP/API/:version/CallCDR/ProcessCDR', function(req,res,next)

@@ -25,7 +25,7 @@ module.exports = {
   "Services":
   {
 
-    "fileServiceHost": "localhost:5645",
+    "fileServiceHost": "fileservice.app.veery.cloud",
     "fileServicePort": 5645,
     "fileServiceVersion":"1.0.0.0"
 

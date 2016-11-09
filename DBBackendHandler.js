@@ -667,6 +667,34 @@ var GetCallRelatedLegsForAppId = function(appId, companyId, tenantId, startTime,
     }
 };
 
+var GetProcessedCDRInDateRangeCustomer = function(startTime, endTime, companyId, tenantId, callback)
+{
+    var callLegList = [];
+
+    try
+    {
+        var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId};
+        sqlCond.$and = [];
+        sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound'},{DVPCallDirection: 'outbound', ObjCategory: 'GATEWAY'}]});
+
+
+        dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:['CreatedTime']}).then(function(callLeg)
+        {
+            callback(undefined, callLeg);
+
+        }).catch(function(err)
+        {
+            callback(err, callLegList);
+        })
+
+
+    }
+    catch(ex)
+    {
+        callback(ex, callLegList);
+    }
+};
+
 var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, callback)
 {
     var callLegList = [];
@@ -969,3 +997,4 @@ module.exports.GetCallSummaryDetailsDateRangeWithSkill = GetCallSummaryDetailsDa
 module.exports.GetResourceStatusList = GetResourceStatusList;
 module.exports.GetProcessedCDRInDateRange = GetProcessedCDRInDateRange;
 module.exports.GetProcessedCDRInDateRangeAbandon = GetProcessedCDRInDateRangeAbandon;
+module.exports.GetProcessedCDRInDateRangeCustomer = GetProcessedCDRInDateRangeCustomer;
