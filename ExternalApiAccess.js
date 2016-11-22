@@ -152,9 +152,6 @@ var UploadFile = function(reqId, uniqueId, filename, companyId, tenantId, callba
                 httpUrl = util.format('http://%s:%s/DVP/API/%s/FileService/File/Upload', fileServiceHost, fileServicePort, fileServiceVersion);
             }
 
-            var reqBody = {class: 'CDR', fileCategory:'REPORTS', display: filename, filename: filename};
-
-            var bodyJson = JSON.stringify(reqBody);
 
             var formData = {
                 class: 'CDR',

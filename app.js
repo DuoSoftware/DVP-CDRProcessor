@@ -26,7 +26,6 @@
     var fileServicePort = config.Services.fileServicePort;
     var fileServiceVersion = config.Services.fileServiceVersion;
 
-
     var server = restify.createServer({
         name: 'DVP-CDRProcessor'
     });
@@ -2523,9 +2522,6 @@
         try
         {
 
-            var startDate = req.query.startDate;
-            var endDate = req.query.endDate;
-
             var tz = req.body.tz;
             var fileType = req.body.fileType;
 
@@ -2533,19 +2529,18 @@
 
             var prevMonth = localTime.substract(1, 'months');
 
-            var startDate = prevMonth.startOf('month');
+            var startDateMonth = prevMonth.startOf('month');
 
-            var endDate = prevMonth.endOf('month');
+            var endDateMonth = prevMonth.endOf('month');
 
-            var prevMonthDate = localTime.month();
-
-            var startDateDateComponent = prevDay.format("YYYY-MM-DD");
+            var startDateDateComponent = startDateMonth.format("YYYY-MM-DD");
+            var endDateDateComponent = endDateMonth.format("YYYY-MM-DD");
 
             var startDay = startDateDateComponent + ' 00:00:00.000' + tz;
-            var endDay = startDateDateComponent + ' 23:59:59.999' + tz;
+            var endDay = endDateDateComponent + ' 23:59:59.999' + tz;
 
-            var momentSD = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z");
-            var momentED = moment(endDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z");
+            var momentSD = moment(startDay, "YYYY-MM-DD hh:mm:ss Z");
+            var momentED = moment(endDay, "YYYY-MM-DD hh:mm:ss Z");
 
             var companyId = req.user.company;
             var tenantId = req.user.tenant;
@@ -2572,12 +2567,12 @@
 
             while(momentSD <= momentED)
             {
-                var sd = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt, 'days');
-                var ed = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt+1, 'days');
+                var sd = moment(startDay, "YYYY-MM-DD hh:mm:ss Z").add(cnt, 'days');
+                var ed = moment(endDay, "YYYY-MM-DD hh:mm:ss Z").add(cnt+1, 'days');
 
                 //fixed momentSD
 
-                momentSD = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt+1, 'days');
+                momentSD = moment(startDay, "YYYY-MM-DD hh:mm:ss Z").add(cnt+1, 'days');
 
                 dayFuncArr.push(processSummaryData.bind(this, sd.utcOffset(tz).format('YYYY-MM-DD'), sd, ed, companyId, tenantId, null));
 
