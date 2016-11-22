@@ -2558,7 +2558,7 @@
             var dateTimestampED = moment(momentED).unix();
 
             //Create FILE NAME Key
-            var fileName = 'CALL_SUMMARY_DAILY_' + tenantId + '_' + companyId + '_' + dateTimestampSD + '_' + dateTimestampED;
+            var fileName = 'CALL_SUMMARY_DAILY_REPORT_' + tenantId + '_' + companyId + '_' + dateTimestampSD + '_' + dateTimestampED;
 
             fileName = fileName.replace(/:/g, "-") + '.' + fileType;
 
