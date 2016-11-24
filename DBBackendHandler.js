@@ -1,6 +1,7 @@
 var dbModel = require('dvp-dbmodels');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var config = require('config');
+var Promise = require('bluebird');
 
 var abandonCallThreshold = config.AbandonCallThreshold;
 
@@ -960,6 +961,33 @@ var GetCallRelatedLegs = function(sessionId, callback)
     }
 };
 
+var GetMailRecipients = function(companyId, tenantId, reportType)
+{
+    return new Promise(function(fulfill, reject)
+    {
+
+        try
+        {
+            dbModel.ReportMailRecipients.findAll({where :[{CompanyId: companyId, TenantId: tenantId, ReportType: reportType}]}).then(function(repMailRes)
+            {
+
+                fulfill(repMailRes);
+
+
+            }).catch(function(err)
+            {
+                reject(err);
+            })
+
+        }
+        catch(ex)
+        {
+            reject(ex);
+        }
+    });
+
+};
+
 var AddCDRRecord = function(cdrInfo, callback)
 {
     try
@@ -998,3 +1026,4 @@ module.exports.GetResourceStatusList = GetResourceStatusList;
 module.exports.GetProcessedCDRInDateRange = GetProcessedCDRInDateRange;
 module.exports.GetProcessedCDRInDateRangeAbandon = GetProcessedCDRInDateRangeAbandon;
 module.exports.GetProcessedCDRInDateRangeCustomer = GetProcessedCDRInDateRangeCustomer;
+module.exports.GetMailRecipients = GetMailRecipients;
