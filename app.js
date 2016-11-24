@@ -8,6 +8,7 @@
     var validator = require('validator');
     var moment = require('moment');
     var async = require('async');
+    var util = require('util');
     var config = require('config');
     var nodeUuid = require('node-uuid');
     var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
@@ -1001,7 +1002,7 @@
                             }
                             else
                             {
-                                externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
+                                externalApi.UploadFile(reqId, null, fileName, companyId, tenantId, function(err, uploadResp)
                                 {
                                     fs.unlink(fileName);
                                     if(!err && uploadResp)
@@ -3134,7 +3135,7 @@
         mailSender("EMAILOUT", sendObj);
     };
 
-    server.get('/DVP/API/:version/Report/SendMail', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"write"}), function(req, res, next)
+    server.post('/DVP/API/:version/CallCDR/Report/SendMail', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"write"}), function(req, res, next)
     {
         var reqId = nodeUuid.v1();
         try

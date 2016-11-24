@@ -158,12 +158,17 @@ var UploadFile = function(reqId, uniqueId, filename, companyId, tenantId, callba
                 fileCategory:'REPORTS',
                 display: filename,
                 filename: filename,
-                reservedId: uniqueId,
                 attachments: [
                     fs.createReadStream(filename)
                 ]
 
             };
+
+            if(uniqueId)
+            {
+                formData.reservedId = uniqueId
+            }
+
             httpReq.post({url:httpUrl, headers: {'authorization': securityToken, 'companyinfo': compInfo}, formData: formData}, function(error, response, body)
             {
                 if (!error && response.statusCode == 200)
