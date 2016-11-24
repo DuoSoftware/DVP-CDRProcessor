@@ -3123,8 +3123,8 @@
         }
 
         var sendObj = {
-            "company": companyId,
-            "tenant": tenantId
+            "company": 0,
+            "tenant": 1
         };
         sendObj.to =  recipient;
         sendObj.from = "reports";
