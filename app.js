@@ -3084,6 +3084,150 @@
         return next();
     });
 
+
+    server.post('/DVP/API/:version/CallCDR/MailRecipient', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"write"}), function(req, res, next)
+    {
+        var reqId = nodeUuid.v1();
+        try
+        {
+            if(req.body)
+            {
+                var recipient = req.body.recipient;
+                var tz = req.body.tz;
+                var reportType = req.body.reportType;
+
+                var companyId = req.user.company;
+                var tenantId = req.user.tenant;
+
+                if (!companyId || !tenantId)
+                {
+                    throw new Error("Invalid company or tenant");
+                }
+
+                logger.debug('[DVP-CDRProcessor.AddMailRecipient] - [%s] - HTTP Request Received - Params - Recipient : %s, ReportTime : %s, TimeZone : %s', reqId, recipient, reportTime, tz);
+
+                backendHandler.addEmailRecipientRecord(recipient, tz, reportType, companyId, tenantId).
+                    then(function(response)
+                    {
+                        var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, response);
+                        logger.debug('[DVP-CDRProcessor.AddMailRecipient] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                        res.end(jsonString);
+
+                    }).catch(function(err)
+                    {
+                        var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, null);
+                        logger.debug('[DVP-CDRProcessor.AddMailRecipient] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                        res.end(jsonString);
+
+                    });
+
+            }
+            else
+            {
+                var jsonString = messageFormatter.FormatMessage(new Error('Empty body'), "ERROR", false, null);
+                logger.debug('[DVP-CDRProcessor.AddMailRecipient] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                res.end(jsonString);
+            }
+
+
+        }
+        catch(ex)
+        {
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, null);
+            logger.debug('[DVP-CDRProcessor.AddMailRecipient] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+    server.get('/DVP/API/:version/CallCDR/MailRecipients', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.GetMailRecipient] - [%s] - HTTP Request Received', reqId);
+
+            backendHandler.getEmailRecipients(companyId, tenantId)
+                .then(function(response)
+                {
+                    var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, response);
+                    logger.debug('[DVP-CDRProcessor.AddMailRecipient] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+
+                }).catch(function(err)
+                {
+                    var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, emptyArr);
+                    logger.debug('[DVP-CDRProcessor.AddMailRecipient] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+
+                });
+
+
+        }
+        catch(ex)
+        {
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.GetMailRecipient] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+    server.del('/DVP/API/:version/CallCDR/MailRecipient/:id', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+            var id = req.params.id;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.DeleteMailRecipient] - [%s] - HTTP Request Received', reqId);
+
+            backendHandler.deleteEmailRecipientRecord(id, companyId, tenantId)
+                .then(function(response)
+                {
+                    var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, response);
+                    logger.debug('[DVP-CDRProcessor.DeleteMailRecipient] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+
+                }).catch(function(err)
+                {
+                    var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, false);
+                    logger.debug('[DVP-CDRProcessor.DeleteMailRecipient] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+
+                });
+
+
+        }
+        catch(ex)
+        {
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, false);
+            logger.debug('[DVP-CDRProcessor.DeleteMailRecipient] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
     var sendMail = function(companyId, tenantId, recipient, username, reportType, tz)
     {
         var fileName = null;

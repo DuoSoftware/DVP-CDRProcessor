@@ -1011,6 +1011,88 @@ var AddCDRRecord = function(cdrInfo, callback)
     }
 };
 
+var addEmailRecipientRecord = function(recipient, timeZone, reportType, companyId, tenantId)
+{
+    return new Promise(function(fulfill, reject)
+    {
+
+        try
+        {
+            var mailRecipient = dbModel.ReportMailRecipients.build({
+                ReportType: reportType,
+                Recipient: recipient,
+                TimeZone: timeZone,
+                CompanyId: companyId,
+                TenantId: tenantId
+
+            });
+
+            mailRecipient
+                .save()
+                .then(function (rsp)
+                {
+                    fulfill(rsp);
+
+                }).catch(function(err)
+                {
+                    reject(err);
+                })
+        }
+        catch(ex)
+        {
+            reject(ex);
+        }
+    });
+
+};
+
+var deleteEmailRecipientRecord = function(id, companyId, tenantId)
+{
+    return new Promise(function(fulfill, reject)
+    {
+
+        try
+        {
+            dbModel.ReportMailRecipients.destroy({ where: [{id: id},{CompanyId: companyId},{TenantId: tenantId}]}).then(function (destroyCount)
+            {
+                fulfill(true);
+
+            }).catch(function(err)
+            {
+                reject(err);
+            });
+        }
+        catch(ex)
+        {
+            reject(ex);
+        }
+    });
+
+};
+
+var getEmailRecipients = function(companyId, tenantId)
+{
+    return new Promise(function(fulfill, reject)
+    {
+
+        try
+        {
+            dbModel.ReportMailRecipients.findAll({ where: [{CompanyId: companyId},{TenantId: tenantId}]}).then(function (recipients)
+            {
+                fulfill(recipients);
+
+            }).catch(function(err)
+            {
+                reject(err);
+            });
+        }
+        catch(ex)
+        {
+            reject(ex);
+        }
+    });
+
+};
 
 module.exports.AddCDRRecord = AddCDRRecord;
 module.exports.GetCallRelatedLegs = GetCallRelatedLegs;
@@ -1027,3 +1109,6 @@ module.exports.GetProcessedCDRInDateRange = GetProcessedCDRInDateRange;
 module.exports.GetProcessedCDRInDateRangeAbandon = GetProcessedCDRInDateRangeAbandon;
 module.exports.GetProcessedCDRInDateRangeCustomer = GetProcessedCDRInDateRangeCustomer;
 module.exports.GetMailRecipients = GetMailRecipients;
+module.exports.addEmailRecipientRecord = addEmailRecipientRecord;
+module.exports.deleteEmailRecipientRecord = deleteEmailRecipientRecord;
+module.exports.getEmailRecipients = getEmailRecipients;
