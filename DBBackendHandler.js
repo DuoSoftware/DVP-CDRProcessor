@@ -961,14 +961,14 @@ var GetCallRelatedLegs = function(sessionId, callback)
     }
 };
 
-var GetMailRecipients = function(companyId, tenantId, reportType)
+/*var GetMailRecipients = function(companyId, tenantId, reportType)
 {
     return new Promise(function(fulfill, reject)
     {
 
         try
         {
-            dbModel.ReportMailRecipients.findAll({where :[{CompanyId: companyId, TenantId: tenantId, ReportType: reportType}]}).then(function(repMailRes)
+            dbModel.ReportMailRecipients.find({where :[{CompanyId: companyId, TenantId: tenantId, ReportType: reportType}]}).then(function(repMailRes)
             {
 
                 fulfill(repMailRes);
@@ -986,7 +986,7 @@ var GetMailRecipients = function(companyId, tenantId, reportType)
         }
     });
 
-};
+};*/
 
 var AddCDRRecord = function(cdrInfo, callback)
 {
@@ -1011,7 +1011,7 @@ var AddCDRRecord = function(cdrInfo, callback)
     }
 };
 
-var addEmailRecipientRecord = function(recipient, timeZone, reportType, companyId, tenantId)
+/*var addEmailRecipientRecord = function(recipients, reportType, companyId, tenantId)
 {
     return new Promise(function(fulfill, reject)
     {
@@ -1020,8 +1020,7 @@ var addEmailRecipientRecord = function(recipient, timeZone, reportType, companyI
         {
             var mailRecipient = dbModel.ReportMailRecipients.build({
                 ReportType: reportType,
-                Recipient: recipient,
-                TimeZone: timeZone,
+                Recipient: recipients,
                 CompanyId: companyId,
                 TenantId: tenantId
 
@@ -1044,9 +1043,9 @@ var addEmailRecipientRecord = function(recipient, timeZone, reportType, companyI
         }
     });
 
-};
+};*/
 
-var deleteEmailRecipientRecord = function(id, companyId, tenantId)
+/*var deleteEmailRecipientRecord = function(id, companyId, tenantId)
 {
     return new Promise(function(fulfill, reject)
     {
@@ -1068,9 +1067,9 @@ var deleteEmailRecipientRecord = function(id, companyId, tenantId)
         }
     });
 
-};
+};*/
 
-var getEmailRecipients = function(companyId, tenantId)
+/*var getEmailRecipients = function(companyId, tenantId)
 {
     return new Promise(function(fulfill, reject)
     {
@@ -1092,7 +1091,7 @@ var getEmailRecipients = function(companyId, tenantId)
         }
     });
 
-};
+};*/
 
 module.exports.AddCDRRecord = AddCDRRecord;
 module.exports.GetCallRelatedLegs = GetCallRelatedLegs;
@@ -1108,7 +1107,3 @@ module.exports.GetResourceStatusList = GetResourceStatusList;
 module.exports.GetProcessedCDRInDateRange = GetProcessedCDRInDateRange;
 module.exports.GetProcessedCDRInDateRangeAbandon = GetProcessedCDRInDateRangeAbandon;
 module.exports.GetProcessedCDRInDateRangeCustomer = GetProcessedCDRInDateRangeCustomer;
-module.exports.GetMailRecipients = GetMailRecipients;
-module.exports.addEmailRecipientRecord = addEmailRecipientRecord;
-module.exports.deleteEmailRecipientRecord = deleteEmailRecipientRecord;
-module.exports.getEmailRecipients = getEmailRecipients;

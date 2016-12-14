@@ -11,6 +11,7 @@
     var util = require('util');
     var config = require('config');
     var nodeUuid = require('node-uuid');
+    var mongoose = require('mongoose');
     var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
     var mailSender = require('./MailSender.js').PublishToQueue;
     var jwt = require('restify-jwt');
@@ -20,6 +21,7 @@
     var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
     var externalApi = require('./ExternalApiAccess.js');
     var redisHandler = require('./RedisHandler.js');
+    var mongoDbOp = require('./MongoDBOperations.js');
 
     var hostIp = config.Host.Ip;
     var hostPort = config.Host.Port;
@@ -44,6 +46,32 @@
     server.use(restify.acceptParser(server.acceptable));
     server.use(restify.queryParser());
     server.use(restify.bodyParser());
+
+    var mongoip=config.Mongo.ip;
+    var mongoport=config.Mongo.port;
+    var mongodb=config.Mongo.dbname;
+    var mongouser=config.Mongo.user;
+    var mongopass = config.Mongo.password;
+
+
+
+
+    var connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip,mongoport,mongodb)
+
+
+    mongoose.connection.on('error', function (err) {
+        throw new Error(err);
+    });
+
+    mongoose.connection.on('disconnected', function() {
+        throw new Error('Could not connect to database');
+    });
+
+    mongoose.connection.once('open', function() {
+        console.log("Connected to db");
+    });
+
+    mongoose.connect(connectionstring);
 
 
     var ProcessBatchCDR = function(cdrList)
@@ -3085,16 +3113,15 @@
     });
 
 
-    server.post('/DVP/API/:version/CallCDR/MailRecipient', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"write"}), function(req, res, next)
+    server.post('/DVP/API/:version/CallCDR/MailRecipient/ReportType/:repType', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var reqId = nodeUuid.v1();
         try
         {
             if(req.body)
             {
-                var recipient = req.body.recipient;
-                var tz = req.body.tz;
-                var reportType = req.body.reportType;
+                var recipients = req.body.recipients;
+                var reportType = req.params.repType;
 
                 var companyId = req.user.company;
                 var tenantId = req.user.tenant;
@@ -3104,22 +3131,34 @@
                     throw new Error("Invalid company or tenant");
                 }
 
-                logger.debug('[DVP-CDRProcessor.AddMailRecipient] - [%s] - HTTP Request Received - Params - Recipient : %s, ReportTime : %s, TimeZone : %s', reqId, recipient, reportTime, tz);
+                logger.debug('[DVP-CDRProcessor.AddMailRecipient] - [%s] - HTTP Request Received - Params', reqId);
 
-                backendHandler.addEmailRecipientRecord(recipient, tz, reportType, companyId, tenantId).
-                    then(function(response)
+                mongoDbOp.getEmailRecipients(companyId, tenantId, reportType)
+                    .then(function(reciInfo)
                     {
-                        var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, response);
+                        if(reciInfo)
+                        {
+                            return mongoDbOp.updateEmailRecipientRecord(reciInfo._id, recipients, reportType, companyId, tenantId);
+                        }
+                        else
+                        {
+                            return mongoDbOp.addEmailRecipientRecord(recipients, reportType, companyId, tenantId);
+                        }
+                    })
+                    .then(function(saveUpdateInfo)
+                    {
+                        var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, saveUpdateInfo);
                         logger.debug('[DVP-CDRProcessor.AddMailRecipient] - [%s] - API RESPONSE : %s', reqId, jsonString);
                         res.end(jsonString);
-
-                    }).catch(function(err)
+                    })
+                    .catch(function(err)
                     {
                         var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, null);
                         logger.debug('[DVP-CDRProcessor.AddMailRecipient] - [%s] - API RESPONSE : %s', reqId, jsonString);
                         res.end(jsonString);
 
                     });
+
 
             }
             else
@@ -3141,7 +3180,7 @@
         return next();
     });
 
-    server.get('/DVP/API/:version/CallCDR/MailRecipients', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    server.get('/DVP/API/:version/CallCDR/MailRecipients/ReportType/:repType', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
@@ -3149,6 +3188,7 @@
         {
             var companyId = req.user.company;
             var tenantId = req.user.tenant;
+            var repType = req.params.repType;
 
             if (!companyId || !tenantId)
             {
@@ -3157,7 +3197,7 @@
 
             logger.debug('[DVP-CDRProcessor.GetMailRecipient] - [%s] - HTTP Request Received', reqId);
 
-            backendHandler.getEmailRecipients(companyId, tenantId)
+            mongoDbOp.getEmailRecipients(companyId, tenantId, repType)
                 .then(function(response)
                 {
                     var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, response);
@@ -3186,7 +3226,7 @@
 
     server.del('/DVP/API/:version/CallCDR/MailRecipient/:id', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
-        var emptyArr = [];
+
         var reqId = nodeUuid.v1();
         try
         {
@@ -3228,7 +3268,7 @@
         return next();
     });
 
-    var sendMail = function(companyId, tenantId, recipient, username, reportType, tz)
+    var sendMail = function(reqId, companyId, tenantId, recipient, email, username, reportType)
     {
         var fileName = null;
 
@@ -3236,47 +3276,63 @@
         var fileServicePort = config.Services.fileServicePort;
         var fileServiceVersion = config.Services.fileServiceVersion;
 
-        if(reportType === 'CDR_DAILY_REPORT' || 'ABANDONCDR_DAILY_REPORT' || 'CALL_SUMMARY_HOURLY_REPORT')
-        {
-            var localTime = moment().utcOffset(tz);
+        mongoDbOp.getUserById(recipient, companyId, tenantId)
+            .then(function(user)
+            {
+                var tempEmail = email;
+                if(user && user.email && user.email.contact)
+                {
+                    tempEmail = user.email.contact;
+                }
 
-            var prevDay = localTime.subtract(1, 'days');
+                if(reportType === 'CDR_DAILY_REPORT' || 'ABANDONCDR_DAILY_REPORT' || 'CALL_SUMMARY_HOURLY_REPORT')
+                {
+                    var localTime = moment().utcOffset('+0530');
 
-            var startDateDateComponent = prevDay.format("YYYY-MM-DD");
+                    var prevDay = localTime.subtract(1, 'days');
 
-            fileName = reportType + '_' + tenantId + '_' + companyId + '_' + startDateDateComponent;
-        }
-        else if(reportType === 'CALL_SUMMARY_DAILY_REPORT')
-        {
-            var localTime = moment().utcOffset(tz);
+                    var startDateDateComponent = prevDay.format("YYYY-MM-DD");
 
-            var prevMonth = localTime.substract(1, 'months');
+                    fileName = reportType + '_' + tenantId + '_' + companyId + '_' + startDateDateComponent;
+                }
+                else if(reportType === 'CALL_SUMMARY_DAILY_REPORT')
+                {
+                    var localTime = moment().utcOffset('+0530');
 
-            var startDateMonth = prevMonth.startOf('month');
+                    var prevMonth = localTime.substract(1, 'months');
 
-            var startDateMonthComponent = startDateMonth.format("YYYY-MM");
+                    var startDateMonth = prevMonth.startOf('month');
 
-            fileName = reportType + '_' + tenantId + '_' + companyId + '_' + startDateMonthComponent;
-        }
+                    var startDateMonthComponent = startDateMonth.format("YYYY-MM");
 
-        var httpUrl = util.format('http://%s/DVP/API/%s/InternalFileService/File/DownloadLatest/%d/%d/%s.csv', fileServiceHost, fileServiceVersion, tenantId, companyId, fileName);
+                    fileName = reportType + '_' + tenantId + '_' + companyId + '_' + startDateMonthComponent;
+                }
 
-        if(validator.isIP(fileServiceHost))
-        {
-            httpUrl = util.format('http://%s:%s/DVP/API/%s/InternalFileService/File/DownloadLatest/%d/%d/%s.csv', fileServiceHost, fileServicePort, fileServiceVersion, tenantId, companyId, fileName);
-        }
+                var httpUrl = util.format('http://%s/DVP/API/%s/InternalFileService/File/DownloadLatest/%d/%d/%s.csv', fileServiceHost, fileServiceVersion, tenantId, companyId, fileName);
 
-        var sendObj = {
-            "company": 0,
-            "tenant": 1
-        };
-        sendObj.to =  recipient;
-        sendObj.from = "reports";
-        sendObj.template = "By-User Registration Confirmation";
-        sendObj.Parameters = {username: username,created_at: new Date()};
-        sendObj.attachments = [{name:fileName, url:httpUrl}];
+                if(validator.isIP(fileServiceHost))
+                {
+                    httpUrl = util.format('http://%s:%s/DVP/API/%s/InternalFileService/File/DownloadLatest/%d/%d/%s.csv', fileServiceHost, fileServicePort, fileServiceVersion, tenantId, companyId, fileName);
+                }
 
-        mailSender("EMAILOUT", sendObj);
+                var sendObj = {
+                    "company": 0,
+                    "tenant": 1
+                };
+                sendObj.to =  tempEmail;
+                sendObj.from = "reports";
+                sendObj.template = "By-User Registration Confirmation";
+                sendObj.Parameters = {username: username,created_at: new Date()};
+                sendObj.attachments = [{name:fileName, url:httpUrl}];
+
+                mailSender("EMAILOUT", sendObj);
+
+            })
+            .catch(function(err)
+            {
+                logger.error('[DVP-CDRProcessor.SendMail] - [%s] - API RESPONSE : %s', reqId, err);
+            });
+
     };
 
     server.post('/DVP/API/:version/CallCDR/Report/SendMail', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"write"}), function(req, res, next)
@@ -3302,17 +3358,18 @@
             logger.debug('[DVP-CDRProcessor.CDRSendMail] - [%s] - HTTP Request Received');
 
 
-            backendHandler.GetMailRecipients(companyId, tenantId, body.reportType)
+            mongoDbOp.getEmailRecipients(companyId, tenantId, body.reportType)
                 .then(function(resp)
                 {
                     var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, true);
                     logger.debug('[DVP-CDRProcessor.CallSummaryByCustomer] - [%s] - API RESPONSE : %s', reqId, jsonString);
                     res.end(jsonString);
-                    if(resp)
+                    if(resp && resp.users)
                     {
-                        resp.forEach(function(recipient)
+                        var arr = resp.users;
+                        arr.forEach(function(recipient)
                         {
-                            sendMail(companyId, tenantId, recipient.Recipient, req.user.username, body.reportType, recipient.TimeZone);
+                            sendMail(reqId, companyId, tenantId, recipient, req.user.username, body.reportType);
                         })
                     }
 

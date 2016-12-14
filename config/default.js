@@ -30,6 +30,15 @@ module.exports = {
     "password": "admin"
   },
 
+  "Mongo":
+  {
+    "ip":"45.55.142.207",
+    "port":"27017",
+    "dbname":"dvpdb",
+    "password":"DuoS123",
+    "user":"duo"
+  },
+
   "Services":
   {
 
