@@ -7,6 +7,7 @@
     var json2csv = require('json2csv');
     var validator = require('validator');
     var moment = require('moment');
+    var momentTz = require('moment-timezone');
     var async = require('async');
     var util = require('util');
     var config = require('config');
@@ -52,9 +53,6 @@
     var mongodb=config.Mongo.dbname;
     var mongouser=config.Mongo.user;
     var mongopass = config.Mongo.password;
-
-
-
 
     var connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip,mongoport,mongodb)
 
@@ -714,6 +712,25 @@
             logger.error('[DVP-CDRProcessor.PrepareDownloadAbandon] - [%s] - Exception occurred', reqId, ex);
             var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
             logger.debug('[DVP-CDRProcessor.PrepareDownloadAbandon] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+    server.get('/DVP/API/:version/CallCDR/TimeZones', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        try
+        {
+            var tzNames = momentTz.tz.names();
+            var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, tzNames);
+            res.end(jsonString);
+
+        }
+        catch(ex)
+        {
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.GetTimeZones] - [%s] - API RESPONSE : %s', reqId, jsonString);
             res.end(jsonString);
         }
 
