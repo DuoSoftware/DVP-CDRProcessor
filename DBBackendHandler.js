@@ -706,7 +706,7 @@ var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantI
         if(agentFilter)
         {
             sqlCond.$and = [];
-            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
+            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', RecievedBy: agentFilter},{DVPCallDirection: 'outbound', SipFromUser: agentFilter}]});
         }
         if(skillFilter)
         {
@@ -776,7 +776,7 @@ var GetProcessedCDRInDateRangeAbandon = function(startTime, endTime, companyId, 
         if(agentFilter)
         {
             sqlCond.$and = [];
-            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
+            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', RecievedBy: agentFilter},{DVPCallDirection: 'outbound', SipFromUser: agentFilter}]});
         }
         if(skillFilter)
         {
