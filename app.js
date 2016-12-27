@@ -1226,9 +1226,6 @@
         return next();
     });
 
-
-
-
     server.get('/DVP/API/:version/CallCDR/GetProcessedCallDetailsByRange', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
