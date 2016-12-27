@@ -22,6 +22,23 @@ module.exports = {
 
   },
 
+  "RabbitMQ":
+  {
+    "ip": "45.55.142.207",
+    "port": 5672,
+    "user": "admin",
+    "password": "admin"
+  },
+
+  "Mongo":
+  {
+    "ip":"45.55.142.207",
+    "port":"27017",
+    "dbname":"dvpdb",
+    "password":"DuoS123",
+    "user":"duo"
+  },
+
   "Services":
   {
 
