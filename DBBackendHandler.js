@@ -1,6 +1,7 @@
 var dbModel = require('dvp-dbmodels');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var config = require('config');
+var Promise = require('bluebird');
 
 var abandonCallThreshold = config.AbandonCallThreshold;
 
@@ -27,7 +28,7 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
         }
         if(offset)
         {
-            sqlCond.id = { gt: offset }
+            sqlCond.id = { lt: offset }
         }
         if(dirFilter)
         {
@@ -70,7 +71,7 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
 
         if(limit)
         {
-            dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime'], limit: limit}).then(function(callLeg)
+            dbModel.CallCDR.findAll({where :[sqlCond], order:'"CreatedTime" DESC', limit: limit}).then(function(callLeg)
             {
 
                 logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
@@ -88,7 +89,7 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
         else
         {
 
-            dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime']}).then(function(callLeg)
+            dbModel.CallCDR.findAll({where :[sqlCond], order:'"CreatedTime" DESC'}).then(function(callLeg)
             {
 
                 logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
@@ -132,7 +133,7 @@ var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyI
 
         if(offset)
         {
-            sqlCond.id = { gt: offset };
+            sqlCond.id = { lt: offset };
         }
 
         if(customerFilter)
@@ -160,7 +161,7 @@ var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyI
         if(limit)
         {
 
-            dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime'], limit: limit}).then(function(callLeg)
+            dbModel.CallCDR.findAll({where :[sqlCond], order:'"CreatedTime" DESC', limit: limit}).then(function(callLeg)
             {
 
                 logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
@@ -176,7 +177,7 @@ var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyI
         }
         else
         {
-            dbModel.CallCDR.findAll({where :[sqlCond], order:['CreatedTime']}).then(function(callLeg)
+            dbModel.CallCDR.findAll({where :[sqlCond], order:'"CreatedTime" DESC'}).then(function(callLeg)
             {
 
                 logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
@@ -678,7 +679,7 @@ var GetProcessedCDRInDateRangeCustomer = function(startTime, endTime, companyId,
         sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound'},{DVPCallDirection: 'outbound', ObjCategory: 'GATEWAY'}]});
 
 
-        dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:['CreatedTime']}).then(function(callLeg)
+        dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:'"CreatedTime" ASC'}).then(function(callLeg)
         {
             callback(undefined, callLeg);
 
@@ -705,7 +706,7 @@ var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantI
         if(agentFilter)
         {
             sqlCond.$and = [];
-            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
+            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', RecievedBy: agentFilter},{DVPCallDirection: 'outbound', SipFromUser: agentFilter}]});
         }
         if(skillFilter)
         {
@@ -748,7 +749,7 @@ var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantI
 
         }
 
-        dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:['CreatedTime']}).then(function(callLeg)
+        dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:'"CreatedTime" DESC'}).then(function(callLeg)
         {
             callback(undefined, callLeg);
 
@@ -775,7 +776,7 @@ var GetProcessedCDRInDateRangeAbandon = function(startTime, endTime, companyId, 
         if(agentFilter)
         {
             sqlCond.$and = [];
-            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
+            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', RecievedBy: agentFilter},{DVPCallDirection: 'outbound', SipFromUser: agentFilter}]});
         }
         if(skillFilter)
         {
@@ -818,7 +819,7 @@ var GetProcessedCDRInDateRangeAbandon = function(startTime, endTime, companyId, 
 
         }
 
-        dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:['CreatedTime']}).then(function(callLeg)
+        dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:'"CreatedTime" DESC'}).then(function(callLeg)
         {
             callback(undefined, callLeg);
 
@@ -960,6 +961,33 @@ var GetCallRelatedLegs = function(sessionId, callback)
     }
 };
 
+/*var GetMailRecipients = function(companyId, tenantId, reportType)
+{
+    return new Promise(function(fulfill, reject)
+    {
+
+        try
+        {
+            dbModel.ReportMailRecipients.find({where :[{CompanyId: companyId, TenantId: tenantId, ReportType: reportType}]}).then(function(repMailRes)
+            {
+
+                fulfill(repMailRes);
+
+
+            }).catch(function(err)
+            {
+                reject(err);
+            })
+
+        }
+        catch(ex)
+        {
+            reject(ex);
+        }
+    });
+
+};*/
+
 var AddCDRRecord = function(cdrInfo, callback)
 {
     try
@@ -983,6 +1011,87 @@ var AddCDRRecord = function(cdrInfo, callback)
     }
 };
 
+/*var addEmailRecipientRecord = function(recipients, reportType, companyId, tenantId)
+{
+    return new Promise(function(fulfill, reject)
+    {
+
+        try
+        {
+            var mailRecipient = dbModel.ReportMailRecipients.build({
+                ReportType: reportType,
+                Recipient: recipients,
+                CompanyId: companyId,
+                TenantId: tenantId
+
+            });
+
+            mailRecipient
+                .save()
+                .then(function (rsp)
+                {
+                    fulfill(rsp);
+
+                }).catch(function(err)
+                {
+                    reject(err);
+                })
+        }
+        catch(ex)
+        {
+            reject(ex);
+        }
+    });
+
+};*/
+
+/*var deleteEmailRecipientRecord = function(id, companyId, tenantId)
+{
+    return new Promise(function(fulfill, reject)
+    {
+
+        try
+        {
+            dbModel.ReportMailRecipients.destroy({ where: [{id: id},{CompanyId: companyId},{TenantId: tenantId}]}).then(function (destroyCount)
+            {
+                fulfill(true);
+
+            }).catch(function(err)
+            {
+                reject(err);
+            });
+        }
+        catch(ex)
+        {
+            reject(ex);
+        }
+    });
+
+};*/
+
+/*var getEmailRecipients = function(companyId, tenantId)
+{
+    return new Promise(function(fulfill, reject)
+    {
+
+        try
+        {
+            dbModel.ReportMailRecipients.findAll({ where: [{CompanyId: companyId},{TenantId: tenantId}]}).then(function (recipients)
+            {
+                fulfill(recipients);
+
+            }).catch(function(err)
+            {
+                reject(err);
+            });
+        }
+        catch(ex)
+        {
+            reject(ex);
+        }
+    });
+
+};*/
 
 module.exports.AddCDRRecord = AddCDRRecord;
 module.exports.GetCallRelatedLegs = GetCallRelatedLegs;
