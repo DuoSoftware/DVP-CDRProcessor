@@ -4,6 +4,7 @@
 var Promise = require('bluebird');
 var IntegrationData = require('dvp-mongomodels/model/IntegrationData').IntegrationData;
 var ReportEmail = require('dvp-mongomodels/model/ReportEmailConfig').ReportEmailConfig;
+var User = require('dvp-mongomodels/model/User');
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 
