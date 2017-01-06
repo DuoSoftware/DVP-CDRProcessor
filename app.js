@@ -3369,7 +3369,7 @@
                 throw new Error("Empty Body");
             }
 
-            logger.debug('[DVP-CDRProcessor.CDRSendMail] - [%s] - HTTP Request Received');
+            logger.debug('[DVP-CDRProcessor.CDRSendMail] - [%s] - HTTP Request Received - Body : ' + JSON.stringify(body));
 
 
             mongoDbOp.getEmailRecipients(companyId, tenantId, body.reportType)
