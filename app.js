@@ -3282,7 +3282,7 @@
         return next();
     });
 
-    var sendMail = function(reqId, companyId, tenantId, recipient, email, username, reportType, tz)
+    var sendMail = function(reqId, companyId, tenantId, email, username, reportType, tz)
     {
         var fileName = null;
 
@@ -3290,62 +3290,49 @@
         var fileServicePort = config.Services.fileServicePort;
         var fileServiceVersion = config.Services.fileServiceVersion;
 
-        mongoDbOp.getUserById(recipient, companyId, tenantId)
-            .then(function(user)
-            {
-                var tempEmail = email;
-                if(user && user.email && user.email.contact)
-                {
-                    tempEmail = user.email.contact;
-                }
+        var tempEmail = email;
 
-                if(reportType === 'CDR_DAILY_REPORT' || 'ABANDONCDR_DAILY_REPORT' || 'CALL_SUMMARY_HOURLY_REPORT')
-                {
-                    var localTime = moment().utcOffset(tz);
+        if(reportType === 'CDR_DAILY_REPORT' || 'ABANDONCDR_DAILY_REPORT' || 'CALL_SUMMARY_HOURLY_REPORT')
+        {
+            var localTime = moment().utcOffset(tz);
 
-                    var prevDay = localTime.subtract(1, 'days');
+            var prevDay = localTime.subtract(1, 'days');
 
-                    var startDateDateComponent = prevDay.format("YYYY-MM-DD");
+            var startDateDateComponent = prevDay.format("YYYY-MM-DD");
 
-                    fileName = reportType + '_' + tenantId + '_' + companyId + '_' + startDateDateComponent;
-                }
-                else if(reportType === 'CALL_SUMMARY_DAILY_REPORT')
-                {
-                    var localTime = moment().utcOffset('+0530');
+            fileName = reportType + '_' + tenantId + '_' + companyId + '_' + startDateDateComponent;
+        }
+        else if(reportType === 'CALL_SUMMARY_DAILY_REPORT')
+        {
+            var localTime = moment().utcOffset(tz);
 
-                    var prevMonth = localTime.substract(1, 'months');
+            var prevMonth = localTime.substract(1, 'months');
 
-                    var startDateMonth = prevMonth.startOf('month');
+            var startDateMonth = prevMonth.startOf('month');
 
-                    var startDateMonthComponent = startDateMonth.format("YYYY-MM");
+            var startDateMonthComponent = startDateMonth.format("YYYY-MM");
 
-                    fileName = reportType + '_' + tenantId + '_' + companyId + '_' + startDateMonthComponent;
-                }
+            fileName = reportType + '_' + tenantId + '_' + companyId + '_' + startDateMonthComponent;
+        }
 
-                var httpUrl = util.format('http://%s/DVP/API/%s/InternalFileService/File/DownloadLatest/%d/%d/%s.csv', fileServiceHost, fileServiceVersion, tenantId, companyId, fileName);
+        var httpUrl = util.format('http://%s/DVP/API/%s/InternalFileService/File/DownloadLatest/%d/%d/%s.csv', fileServiceHost, fileServiceVersion, tenantId, companyId, fileName);
 
-                if(validator.isIP(fileServiceHost))
-                {
-                    httpUrl = util.format('http://%s:%s/DVP/API/%s/InternalFileService/File/DownloadLatest/%d/%d/%s.csv', fileServiceHost, fileServicePort, fileServiceVersion, tenantId, companyId, fileName);
-                }
+        if(validator.isIP(fileServiceHost))
+        {
+            httpUrl = util.format('http://%s:%s/DVP/API/%s/InternalFileService/File/DownloadLatest/%d/%d/%s.csv', fileServiceHost, fileServicePort, fileServiceVersion, tenantId, companyId, fileName);
+        }
 
-                var sendObj = {
-                    "company": 0,
-                    "tenant": 1
-                };
-                sendObj.to =  tempEmail;
-                sendObj.from = "reports";
-                sendObj.template = "By-User Registration Confirmation";
-                sendObj.Parameters = {username: username,created_at: new Date()};
-                sendObj.attachments = [{name:fileName, url:httpUrl}];
+        var sendObj = {
+            "company": 0,
+            "tenant": 1
+        };
+        sendObj.to =  tempEmail;
+        sendObj.from = "reports";
+        sendObj.template = "By-User Registration Confirmation";
+        sendObj.Parameters = {username: username,created_at: new Date()};
+        sendObj.attachments = [{name:fileName + '.csv', url:httpUrl}];
 
-                mailSender("EMAILOUT", sendObj);
-
-            })
-            .catch(function(err)
-            {
-                logger.error('[DVP-CDRProcessor.SendMail] - [%s] - API RESPONSE : %s', reqId, err);
-            });
+        mailSender("EMAILOUT", sendObj);
 
     };
 
@@ -3369,8 +3356,6 @@
                 throw new Error("Empty Body");
             }
 
-            logger.debug('[DVP-CDRProcessor.CDRSendMail] - [%s] - HTTP Request Received - Body : ' + JSON.stringify(body));
-
 
             mongoDbOp.getEmailRecipients(companyId, tenantId, body.reportType)
                 .then(function(resp)
@@ -3383,8 +3368,11 @@
                         var arr = resp.users;
                         arr.forEach(function(recipient)
                         {
-                            console.log('username : ' + req.user.username + ' , reportType : ' + body.reportType + ' , tz : ' + body.tz);
-                            sendMail(reqId, companyId, tenantId, recipient, req.user.username, body.reportType, body.tz);
+                            if(recipient.email && recipient.email.contact && recipient.username)
+                            {
+                                sendMail(reqId, companyId, tenantId, recipient.email.contact, recipient.username, body.reportType, body.tz);
+                            }
+
                         })
                     }
 
