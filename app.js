@@ -3383,6 +3383,7 @@
                         var arr = resp.users;
                         arr.forEach(function(recipient)
                         {
+                            console.log('username : ' + req.user.username + ' , reportType : ' + body.reportType + ' , tz : ' + body.tz);
                             sendMail(reqId, companyId, tenantId, recipient, req.user.username, body.reportType, body.tz);
                         })
                     }
