@@ -3282,7 +3282,7 @@
         return next();
     });
 
-    var sendMail = function(reqId, companyId, tenantId, recipient, email, username, reportType)
+    var sendMail = function(reqId, companyId, tenantId, recipient, email, username, reportType, tz)
     {
         var fileName = null;
 
@@ -3301,7 +3301,7 @@
 
                 if(reportType === 'CDR_DAILY_REPORT' || 'ABANDONCDR_DAILY_REPORT' || 'CALL_SUMMARY_HOURLY_REPORT')
                 {
-                    var localTime = moment().utcOffset('+0530');
+                    var localTime = moment().utcOffset(tz);
 
                     var prevDay = localTime.subtract(1, 'days');
 
@@ -3383,7 +3383,7 @@
                         var arr = resp.users;
                         arr.forEach(function(recipient)
                         {
-                            sendMail(reqId, companyId, tenantId, recipient, req.user.username, body.reportType);
+                            sendMail(reqId, companyId, tenantId, recipient, req.user.username, body.reportType, body.tz);
                         })
                     }
 
