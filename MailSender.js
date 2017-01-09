@@ -24,7 +24,7 @@ queueConnection.on('error', function (error) {
 
 module.exports.PublishToQueue = function(messageType,sendObj ) {
 
-    logger.info("From: " + sendObj.from + " To: " + sendObj.to);
+    logger.info("Email Send : " + JSON.stringify(sendObj));
 
     try {
         if (sendObj) {
