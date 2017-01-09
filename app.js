@@ -1752,7 +1752,7 @@
                             }
                             else
                             {
-                                externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
+                                externalApi.UploadFile(reqId, null, fileName, companyId, tenantId, function(err, uploadResp)
                                 {
                                     fs.unlink(fileName);
                                     if(!err && uploadResp)
@@ -2383,7 +2383,7 @@
 
             var localTime = moment().utcOffset(tz);
 
-            var prevMonth = localTime.substract(1, 'months');
+            var prevMonth = localTime.subtract(1, 'months');
 
             var startDateMonth = prevMonth.startOf('month');
 
@@ -2499,7 +2499,7 @@
                             }
                             else
                             {
-                                externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
+                                externalApi.UploadFile(reqId, null, fileName, companyId, tenantId, function(err, uploadResp)
                                 {
                                     fs.unlink(fileName);
                                     if(!err && uploadResp)
@@ -2534,7 +2534,7 @@
         }
         catch(ex)
         {
-            var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, false);
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, false);
             logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - API RESPONSE : %s', reqId, jsonString);
             res.end(jsonString);
         }
