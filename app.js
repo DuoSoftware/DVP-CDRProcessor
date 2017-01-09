@@ -2387,12 +2387,11 @@
 
             var startDateMonth = prevMonth.startOf('month');
 
-            var endDateMonth = prevMonth.endOf('month');
-
             var startDateDateComponent = startDateMonth.format("YYYY-MM-DD");
-            var endDateDateComponent = endDateMonth.format("YYYY-MM-DD");
-
             var startDateMonthComponent = startDateMonth.format("YYYY-MM");
+
+            var endDateMonth = prevMonth.endOf('month');
+            var endDateDateComponent = endDateMonth.format("YYYY-MM-DD");
 
             var startDay = startDateDateComponent + ' 00:00:00.000' + tz;
             var endDay = endDateDateComponent + ' 23:59:59.999' + tz;
@@ -3292,7 +3291,7 @@
 
         var tempEmail = email;
 
-        if(reportType === 'CDR_DAILY_REPORT' || 'ABANDONCDR_DAILY_REPORT' || 'CALL_SUMMARY_HOURLY_REPORT')
+        if(reportType === 'CDR_DAILY_REPORT' || reportType === 'ABANDONCDR_DAILY_REPORT' || reportType === 'CALL_SUMMARY_HOURLY_REPORT')
         {
             var localTime = moment().utcOffset(tz);
 
@@ -3306,7 +3305,7 @@
         {
             var localTime = moment().utcOffset(tz);
 
-            var prevMonth = localTime.substract(1, 'months');
+            var prevMonth = localTime.subtract(1, 'months');
 
             var startDateMonth = prevMonth.startOf('month');
 
