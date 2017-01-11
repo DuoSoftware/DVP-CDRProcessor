@@ -696,6 +696,31 @@ var GetProcessedCDRInDateRangeCustomer = function(startTime, endTime, companyId,
     }
 };
 
+var GetProcessedCDRForSessions = function(sessionIdArr, companyId, tenantId, callback)
+{
+    var callLegList = [];
+
+    try
+    {
+
+        dbModel.CallCDRProcessed.findAll({where :[{Uuid: {in: sessionIdArr}}]})
+        .then(function(callLeg)
+        {
+            callback(undefined, callLeg);
+
+        }).catch(function(err)
+        {
+            callback(err, callLegList);
+        })
+
+
+    }
+    catch(ex)
+    {
+        callback(ex, callLegList);
+    }
+};
+
 var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, callback)
 {
     var callLegList = [];
@@ -1107,3 +1132,4 @@ module.exports.GetResourceStatusList = GetResourceStatusList;
 module.exports.GetProcessedCDRInDateRange = GetProcessedCDRInDateRange;
 module.exports.GetProcessedCDRInDateRangeAbandon = GetProcessedCDRInDateRangeAbandon;
 module.exports.GetProcessedCDRInDateRangeCustomer = GetProcessedCDRInDateRangeCustomer;
+module.exports.GetProcessedCDRForSessions = GetProcessedCDRForSessions;

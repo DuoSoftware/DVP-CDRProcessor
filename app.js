@@ -2799,6 +2799,52 @@
         return next();
     });
 
+    server.post('/DVP/API/:version/CallCDR/GetCallDetailsBySessions', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+
+        try
+        {
+            var sessionIdList = req.body;
+
+            logger.debug('[DVP-CDRProcessor.GetCallDetailsBySessions] - [%s] - HTTP Request Received', reqId);
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            backendHandler.GetProcessedCDRForSessions(sessionIdList, companyId, tenantId, function(err, result)
+            {
+                if(err)
+                {
+                    var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, emptyArr);
+                    logger.debug('[DVP-CDRProcessor.GetCallDetails] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+                }
+                else
+                {
+                    var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, result);
+                    res.end(jsonString);
+                }
+
+            })
+
+        }
+        catch(ex)
+        {
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.GetCallDetails] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
 
     var generateCDRListByCustomer = function(cdrList, tz)
     {
