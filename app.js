@@ -1178,7 +1178,7 @@
                             }
                             else
                             {
-                                externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
+                                externalApi.UploadFile(reqId, null, fileName, companyId, tenantId, function(err, uploadResp)
                                 {
                                     fs.unlink(fileName);
                                     if(!err && uploadResp)
