@@ -1121,7 +1121,7 @@
                 throw new Error("Invalid company or tenant");
             }
 
-            logger.debug('[DVP-CDRProcessor.GeneratePreviousDayAbandon] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s, Offset: %s, Limit : %s', reqId, startTime, endTime, offset, limit);
+            logger.debug('[DVP-CDRProcessor.GeneratePreviousDayAbandon] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startDay, endDay);
 
             //Create FILE NAME Key
             var fileName = 'ABANDONCDR_DAILY_REPORT_' + tenantId + '_' + companyId + '_' + startDateDateComponent;
@@ -3678,10 +3678,15 @@
                 });
 
 
-                if(ardsSipName && dvpCallDirection === 'inbound')
+                if(ardsResourceName && dvpCallDirection === 'inbound')
+                {
+                    cdr.SipResource = ardsResourceName;
+                }
+                else if(ardsSipName && dvpCallDirection === 'inbound')
                 {
                     cdr.SipResource = ardsSipName;
                 }
+
 
                 if(actionCat === 'CONFERENCE')
                 {
