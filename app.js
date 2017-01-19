@@ -3180,6 +3180,7 @@
             if(req.body)
             {
                 var recipients = req.body.recipients;
+                var template = req.body.template;
                 var reportType = req.params.repType;
 
                 var companyId = req.user.company;
@@ -3197,11 +3198,11 @@
                     {
                         if(reciInfo)
                         {
-                            return mongoDbOp.updateEmailRecipientRecord(reciInfo._id, recipients, reportType, companyId, tenantId);
+                            return mongoDbOp.updateEmailRecipientRecord(reciInfo._id, recipients, reportType, template, companyId, tenantId);
                         }
                         else
                         {
-                            return mongoDbOp.addEmailRecipientRecord(recipients, reportType, companyId, tenantId);
+                            return mongoDbOp.addEmailRecipientRecord(recipients, reportType, template, companyId, tenantId);
                         }
                     })
                     .then(function(saveUpdateInfo)
@@ -3327,7 +3328,7 @@
         return next();
     });
 
-    var sendMail = function(reqId, companyId, tenantId, email, username, reportType, tz)
+    var sendMail = function(reqId, companyId, tenantId, email, username, reportType, tz, template)
     {
         var fileName = null;
 
@@ -3367,13 +3368,20 @@
             httpUrl = util.format('http://%s:%s/DVP/API/%s/InternalFileService/File/DownloadLatest/%d/%d/%s.csv', fileServiceHost, fileServicePort, fileServiceVersion, tenantId, companyId, fileName);
         }
 
+        var templ = "By-User Registration Confirmation";
+
+        if(template)
+        {
+            templ = template;
+        }
+
         var sendObj = {
             "company": 0,
             "tenant": 1
         };
         sendObj.to =  tempEmail;
         sendObj.from = "reports";
-        sendObj.template = "By-User Registration Confirmation";
+        sendObj.template = templ;
         sendObj.Parameters = {username: username,created_at: new Date()};
         sendObj.attachments = [{name:fileName + '.csv', url:httpUrl}];
 
@@ -3410,12 +3418,13 @@
                     res.end(jsonString);
                     if(resp && resp.users)
                     {
+                        var template = resp.template;
                         var arr = resp.users;
                         arr.forEach(function(recipient)
                         {
                             if(recipient.email && recipient.email.contact && recipient.username)
                             {
-                                sendMail(reqId, companyId, tenantId, recipient.email.contact, recipient.username, body.reportType, body.tz);
+                                sendMail(reqId, companyId, tenantId, recipient.email.contact, recipient.username, body.reportType, body.tz, template);
                             }
 
                         })
