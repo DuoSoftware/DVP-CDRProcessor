@@ -3378,8 +3378,8 @@
         console.log(templ);
 
         var sendObj = {
-            "company": 0,
-            "tenant": 1
+            "company": companyId,
+            "tenant": tenantId
         };
         sendObj.to =  tempEmail;
         sendObj.from = "reports";
