@@ -3375,6 +3375,8 @@
             templ = template;
         }
 
+        console.log(templ);
+
         var sendObj = {
             "company": 0,
             "tenant": 1
