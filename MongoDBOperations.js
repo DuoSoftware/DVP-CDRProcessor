@@ -4,6 +4,7 @@
 var Promise = require('bluebird');
 var IntegrationData = require('dvp-mongomodels/model/IntegrationData').IntegrationData;
 var ReportEmail = require('dvp-mongomodels/model/ReportEmailConfig').ReportEmailConfig;
+var User = require('dvp-mongomodels/model/User');
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 
@@ -105,7 +106,7 @@ var deleteEmailRecipientRecord = function(id, companyId, tenantId)
 
 };
 
-var addEmailRecipientRecord = function(recipients, reportType, companyId, tenantId)
+var addEmailRecipientRecord = function(recipients, reportType, template, companyId, tenantId)
 {
     return new Promise(function(fulfill, reject)
     {
@@ -115,7 +116,8 @@ var addEmailRecipientRecord = function(recipients, reportType, companyId, tenant
                 reportType: reportType,
                 users: recipients,
                 company: companyId,
-                tenant: tenantId
+                tenant: tenantId,
+                template: template
             });
 
             mailRecipient.save(function (err, obj)
@@ -138,7 +140,7 @@ var addEmailRecipientRecord = function(recipients, reportType, companyId, tenant
 
 };
 
-var updateEmailRecipientRecord = function(id, recipients, reportType, companyId, tenantId)
+var updateEmailRecipientRecord = function(id, recipients, reportType, template, companyId, tenantId)
 {
     return new Promise(function(fulfill, reject)
     {
@@ -147,7 +149,8 @@ var updateEmailRecipientRecord = function(id, recipients, reportType, companyId,
 
             ReportEmail.findOneAndUpdate({company: companyId, tenant: tenantId, _id: id, reportType: reportType},
                 {
-                    users: recipients
+                    users: recipients,
+                    template: template
 
                 }, function (err, resp)
                 {

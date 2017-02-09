@@ -272,7 +272,7 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
                             summaryDetails.DropPercentage = 'N/A';
                         }
 
-                        dbModel.CallCDRProcessed.aggregate('HoldSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(holdAvg)
+                        dbModel.CallCDRProcessed.aggregate('HoldSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, HoldSec: {gt: 0}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(holdAvg)
                         {
                             if(holdAvg)
                             {
@@ -680,6 +680,31 @@ var GetProcessedCDRInDateRangeCustomer = function(startTime, endTime, companyId,
 
 
         dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:'"CreatedTime" ASC'}).then(function(callLeg)
+        {
+            callback(undefined, callLeg);
+
+        }).catch(function(err)
+        {
+            callback(err, callLegList);
+        })
+
+
+    }
+    catch(ex)
+    {
+        callback(ex, callLegList);
+    }
+};
+
+var GetProcessedCDRForSessions = function(sessionIdArr, companyId, tenantId, callback)
+{
+    var callLegList = [];
+
+    try
+    {
+
+        dbModel.CallCDRProcessed.findAll({where :[{Uuid: {in: sessionIdArr}}]})
+        .then(function(callLeg)
         {
             callback(undefined, callLeg);
 
@@ -1107,3 +1132,4 @@ module.exports.GetResourceStatusList = GetResourceStatusList;
 module.exports.GetProcessedCDRInDateRange = GetProcessedCDRInDateRange;
 module.exports.GetProcessedCDRInDateRangeAbandon = GetProcessedCDRInDateRangeAbandon;
 module.exports.GetProcessedCDRInDateRangeCustomer = GetProcessedCDRInDateRangeCustomer;
+module.exports.GetProcessedCDRForSessions = GetProcessedCDRForSessions;
