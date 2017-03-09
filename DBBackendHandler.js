@@ -2,6 +2,7 @@ var dbModel = require('dvp-dbmodels');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var config = require('config');
 var Promise = require('bluebird');
+var async = require('async');
 
 var abandonCallThreshold = config.AbandonCallThreshold;
 
@@ -198,6 +199,231 @@ var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyI
     {
         callback(ex, callLegList);
     }
+};
+
+var GetIVRCallCount = function(st, et, skill, companyId, tenantId, callback)
+{
+    if(skill)
+    {
+        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]}).then(function(callCount)
+        {
+            callback(null, callCount);
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+    }
+    else
+    {
+        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]}).then(function(callCount)
+        {
+            callback(null, callCount);
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+    }
+
+};
+
+var GetQueuedCallCount = function(st, et, skill, companyId, tenantId, callback)
+{
+    if(skill)
+    {
+        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', IsQueued: true, ObjType: 'HTTAPI'}]}).then(function(queuedCount)
+        {
+            callback(null, queuedCount);
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+    }
+    else
+    {
+        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', IsQueued: true, ObjType: 'HTTAPI'}]}).then(function(queuedCount)
+        {
+            callback(null, queuedCount);
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+    }
+
+};
+
+var GetAbandonCallsCount = function(st, et, skill, companyId, tenantId, callback)
+{
+    if(skill)
+    {
+        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(abandonCount)
+        {
+            callback(null, abandonCount);
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+    }
+    else
+    {
+        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(abandonCount)
+        {
+            callback(null, abandonCount);
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+    }
+
+};
+
+var GetDropCallsCount = function(st, et, skill, companyId, tenantId, callback)
+{
+    if(skill)
+    {
+        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {lte: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(dropCount)
+        {
+            callback(null, dropCount);
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+    }
+    else
+    {
+        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {lte: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(dropCount)
+        {
+            callback(null, dropCount);
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+    }
+
+};
+
+var GetHoldAverage = function(st, et, skill, companyId, tenantId, callback)
+{
+    if(skill)
+    {
+        dbModel.CallCDRProcessed.aggregate('HoldSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, HoldSec: {gt: 0}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(holdAvg)
+        {
+            callback(null, holdAvg);
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+    }
+    else
+    {
+        dbModel.CallCDRProcessed.aggregate('HoldSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, HoldSec: {gt: 0}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(holdAvg)
+        {
+            callback(null, holdAvg);
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+    }
+
+};
+
+var GetIvrAverage = function(st, et, skill, companyId, tenantId, callback)
+{
+    if(skill)
+    {
+        dbModel.CallCDRProcessed.aggregate('IvrConnectSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]}).then(function(ivrAvg)
+        {
+            callback(null, ivrAvg);
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+    }
+    else
+    {
+        dbModel.CallCDRProcessed.aggregate('IvrConnectSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]}).then(function(ivrAvg)
+        {
+            callback(null, ivrAvg);
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+    }
+
+};
+
+var GetRingAverage = function(st, et, skill, companyId, tenantId, callback)
+{
+    if(skill)
+    {
+        dbModel.CallCDRProcessed.aggregate('AnswerSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(ringAvg)
+        {
+            callback(null, ringAvg);
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+    }
+    else
+    {
+        dbModel.CallCDRProcessed.aggregate('AnswerSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(ringAvg)
+        {
+            callback(null, ringAvg);
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+    }
+
+};
+
+var GetTalkAverage = function(st, et, skill, companyId, tenantId, callback)
+{
+    if(skill)
+    {
+        dbModel.CallCDRProcessed.aggregate('BillSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(talkAvg)
+        {
+            callback(null, talkAvg);
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+    }
+    else
+    {
+        dbModel.CallCDRProcessed.aggregate('BillSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(talkAvg)
+        {
+            callback(null, talkAvg);
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+    }
+
+};
+
+var GetAnswerCount = function(st, et, skill, companyId, tenantId, callback)
+{
+    if(skill)
+    {
+        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(answerCount)
+        {
+            callback(null, answerCount);
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+    }
+    else
+    {
+        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(answerCount)
+        {
+            callback(null, answerCount);
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+    }
+
 };
 
 var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, companyId, tenantId, callback)
@@ -399,10 +625,115 @@ var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTi
     var summaryDetails = {};
     try
     {
+        var asyncArr = [];
+
         var st = startTime.toISOString();
         var et = endTime.toISOString();
 
-        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]}).then(function(callCount)
+        asyncArr.push(GetIVRCallCount.bind(this, st, et, skill, companyId, tenantId));
+        asyncArr.push(GetQueuedCallCount.bind(this, st, et, skill, companyId, tenantId));
+        asyncArr.push(GetAbandonCallsCount.bind(this, st, et, skill, companyId, tenantId));
+        asyncArr.push(GetDropCallsCount.bind(this, st, et, skill, companyId, tenantId));
+        asyncArr.push(GetHoldAverage.bind(this, st, et, skill, companyId, tenantId));
+        asyncArr.push(GetIvrAverage.bind(this, st, et, skill, companyId, tenantId));
+        asyncArr.push(GetRingAverage.bind(this, st, et, skill, companyId, tenantId));
+        asyncArr.push(GetTalkAverage.bind(this, st, et, skill, companyId, tenantId));
+        asyncArr.push(GetAnswerCount.bind(this, st, et, skill, companyId, tenantId));
+
+        async.parallel(asyncArr, function(err, results){
+
+            if(err)
+            {
+                callback(err, summaryDetails);
+            }
+            else
+            {
+                summaryDetails.IVRCallsCount = results[0];
+                summaryDetails.QueuedCallsCount = results[1];
+                summaryDetails.AbandonCallsCount = results[2];
+
+                if(summaryDetails.IVRCallsCount)
+                {
+                    summaryDetails.AbandonPercentage = Math.round((summaryDetails.AbandonCallsCount / summaryDetails.IVRCallsCount) * 100);
+                }
+                else
+                {
+                    summaryDetails.AbandonPercentage = 'N/A';
+                }
+
+                summaryDetails.DropCallsCount = results[3];
+
+                if(summaryDetails.IVRCallsCount)
+                {
+                    summaryDetails.DropPercentage = Math.round((summaryDetails.DropCallsCount / summaryDetails.IVRCallsCount) * 100);
+                }
+                else
+                {
+                    summaryDetails.DropPercentage = 'N/A';
+                }
+
+                if(results[4])
+                {
+                    summaryDetails.HoldAverage = results[4];
+                }
+                else
+                {
+                    summaryDetails.HoldAverage = 'N/A';
+                }
+
+                if(results[5])
+                {
+                    summaryDetails.IvrAverage = results[5];
+                }
+                else
+                {
+                    summaryDetails.IvrAverage = 'N/A';
+                }
+
+                if(results[6])
+                {
+                    summaryDetails.RingAverage = results[6];
+                }
+                else
+                {
+                    summaryDetails.RingAverage = 'N/A';
+                }
+
+                if(results[7])
+                {
+                    summaryDetails.TalkAverage = results[7];
+                }
+                else
+                {
+                    summaryDetails.TalkAverage = 'N/A';
+                }
+
+                if(results[8])
+                {
+                    summaryDetails.AnswerCount = results[8];
+                }
+                else
+                {
+                    summaryDetails.AnswerCount = 0;
+                }
+
+                if(summaryDetails.IVRCallsCount)
+                {
+                    summaryDetails.AnswerPercentage = Math.round((summaryDetails.AnswerCount / summaryDetails.IVRCallsCount) * 100);
+                }
+                else
+                {
+                    summaryDetails.AnswerPercentage = 'N/A';
+                }
+
+                summaryDetails.Caption = caption;
+
+                callback(null, summaryDetails);
+            }
+
+        });
+
+        /*dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]}).then(function(callCount)
         {
             if(callCount)
             {
@@ -578,7 +909,7 @@ var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTi
         }).catch(function(err)
         {
             callback(err, summaryDetails);
-        });
+        });*/
 
 
     }
