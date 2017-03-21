@@ -203,226 +203,167 @@ var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyI
 
 var GetIVRCallCount = function(st, et, skill, companyId, tenantId, callback)
 {
+    var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]};
     if(skill)
     {
-        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]}).then(function(callCount)
-        {
-            callback(null, callCount);
-        }).catch(function(err)
-        {
-            callback(err, 0);
-        });
+        query.where[0].AgentSkill = skill;
     }
-    else
+
+    dbModel.CallCDRProcessed.aggregate('*', 'count', query).then(function(callCount)
     {
-        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]}).then(function(callCount)
-        {
-            callback(null, callCount);
-        }).catch(function(err)
-        {
-            callback(err, 0);
-        });
-    }
+        callback(null, callCount);
+    }).catch(function(err)
+    {
+        callback(err, 0);
+    });
 
 };
 
 var GetQueuedCallCount = function(st, et, skill, companyId, tenantId, callback)
 {
+    var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', IsQueued: true, ObjType: 'HTTAPI'}]};
     if(skill)
     {
-        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', IsQueued: true, ObjType: 'HTTAPI'}]}).then(function(queuedCount)
-        {
-            callback(null, queuedCount);
-        }).catch(function(err)
-        {
-            callback(err, 0);
-        });
+        query.where[0].AgentSkill = skill;
     }
-    else
+
+    dbModel.CallCDRProcessed.aggregate('*', 'count', query).then(function(queuedCount)
     {
-        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', IsQueued: true, ObjType: 'HTTAPI'}]}).then(function(queuedCount)
-        {
-            callback(null, queuedCount);
-        }).catch(function(err)
-        {
-            callback(err, 0);
-        });
-    }
+        callback(null, queuedCount);
+    }).catch(function(err)
+    {
+        callback(err, 0);
+    });
 
 };
 
 var GetAbandonCallsCount = function(st, et, skill, companyId, tenantId, callback)
 {
+    var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]};
     if(skill)
     {
-        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(abandonCount)
-        {
-            callback(null, abandonCount);
-        }).catch(function(err)
-        {
-            callback(err, 0);
-        });
+        query.where[0].AgentSkill = skill;
     }
-    else
+
+    dbModel.CallCDRProcessed.aggregate('*', 'count', query).then(function(abandonCount)
     {
-        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(abandonCount)
-        {
-            callback(null, abandonCount);
-        }).catch(function(err)
-        {
-            callback(err, 0);
-        });
-    }
+        callback(null, abandonCount);
+    }).catch(function(err)
+    {
+        callback(err, 0);
+    });
 
 };
 
 var GetDropCallsCount = function(st, et, skill, companyId, tenantId, callback)
 {
+    var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {lte: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]};
     if(skill)
     {
-        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {lte: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(dropCount)
-        {
-            callback(null, dropCount);
-        }).catch(function(err)
-        {
-            callback(err, 0);
-        });
+        query.where[0].AgentSkill = skill;
     }
-    else
+
+
+    dbModel.CallCDRProcessed.aggregate('*', 'count', query).then(function(dropCount)
     {
-        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {lte: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(dropCount)
-        {
-            callback(null, dropCount);
-        }).catch(function(err)
-        {
-            callback(err, 0);
-        });
-    }
+        callback(null, dropCount);
+    }).catch(function(err)
+    {
+        callback(err, 0);
+    });
 
 };
 
 var GetHoldAverage = function(st, et, skill, companyId, tenantId, callback)
 {
+    var query = {where :[{CreatedTime : { gte: st , lt: et}, HoldSec: {gt: 0}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]};
+
     if(skill)
     {
-        dbModel.CallCDRProcessed.aggregate('HoldSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, HoldSec: {gt: 0}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(holdAvg)
-        {
-            callback(null, holdAvg);
-        }).catch(function(err)
-        {
-            callback(err, 0);
-        });
+        query.where[0].AgentSkill = skill;
     }
-    else
+
+    dbModel.CallCDRProcessed.aggregate('HoldSec', 'avg', query).then(function(holdAvg)
     {
-        dbModel.CallCDRProcessed.aggregate('HoldSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, HoldSec: {gt: 0}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(holdAvg)
-        {
-            callback(null, holdAvg);
-        }).catch(function(err)
-        {
-            callback(err, 0);
-        });
-    }
+        callback(null, holdAvg);
+    }).catch(function(err)
+    {
+        callback(err, 0);
+    });
 
 };
 
 var GetIvrAverage = function(st, et, skill, companyId, tenantId, callback)
 {
+    var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]};
     if(skill)
     {
-        dbModel.CallCDRProcessed.aggregate('IvrConnectSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]}).then(function(ivrAvg)
-        {
-            callback(null, ivrAvg);
-        }).catch(function(err)
-        {
-            callback(err, 0);
-        });
+        query.where[0].AgentSkill = skill;
     }
-    else
+
+
+    dbModel.CallCDRProcessed.aggregate('IvrConnectSec', 'avg', query).then(function(ivrAvg)
     {
-        dbModel.CallCDRProcessed.aggregate('IvrConnectSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]}).then(function(ivrAvg)
-        {
-            callback(null, ivrAvg);
-        }).catch(function(err)
-        {
-            callback(err, 0);
-        });
-    }
+        callback(null, ivrAvg);
+    }).catch(function(err)
+    {
+        callback(err, 0);
+    });
 
 };
 
 var GetRingAverage = function(st, et, skill, companyId, tenantId, callback)
 {
+    var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]};
     if(skill)
     {
-        dbModel.CallCDRProcessed.aggregate('AnswerSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(ringAvg)
-        {
-            callback(null, ringAvg);
-        }).catch(function(err)
-        {
-            callback(err, 0);
-        });
+        query.where[0].AgentSkill = skill;
     }
-    else
+
+    dbModel.CallCDRProcessed.aggregate('AnswerSec', 'avg', query).then(function(ringAvg)
     {
-        dbModel.CallCDRProcessed.aggregate('AnswerSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(ringAvg)
-        {
-            callback(null, ringAvg);
-        }).catch(function(err)
-        {
-            callback(err, 0);
-        });
-    }
+        callback(null, ringAvg);
+    }).catch(function(err)
+    {
+        callback(err, 0);
+    });
 
 };
 
 var GetTalkAverage = function(st, et, skill, companyId, tenantId, callback)
 {
+    var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]};
     if(skill)
     {
-        dbModel.CallCDRProcessed.aggregate('BillSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(talkAvg)
-        {
-            callback(null, talkAvg);
-        }).catch(function(err)
-        {
-            callback(err, 0);
-        });
+        query.where[0].AgentSkill = skill;
     }
-    else
+
+    dbModel.CallCDRProcessed.aggregate('BillSec', 'avg', query).then(function(talkAvg)
     {
-        dbModel.CallCDRProcessed.aggregate('BillSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(talkAvg)
-        {
-            callback(null, talkAvg);
-        }).catch(function(err)
-        {
-            callback(err, 0);
-        });
-    }
+        callback(null, talkAvg);
+    }).catch(function(err)
+    {
+        callback(err, 0);
+    });
 
 };
 
 var GetAnswerCount = function(st, et, skill, companyId, tenantId, callback)
 {
+    var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]};
     if(skill)
     {
-        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, AgentSkill: skill, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(answerCount)
-        {
-            callback(null, answerCount);
-        }).catch(function(err)
-        {
-            callback(err, 0);
-        });
+        query.where[0].AgentSkill = skill;
     }
-    else
+
+
+    dbModel.CallCDRProcessed.aggregate('*', 'count', query).then(function(answerCount)
     {
-        dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]}).then(function(answerCount)
-        {
-            callback(null, answerCount);
-        }).catch(function(err)
-        {
-            callback(err, 0);
-        });
-    }
+        callback(null, answerCount);
+    }).catch(function(err)
+    {
+        callback(err, 0);
+    });
 
 };
 
