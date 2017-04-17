@@ -902,6 +902,14 @@
                                                     cdrProcessed.QueueSec = convertToMMSS(cdrProcessed.QueueSec);
                                                     cdrProcessed.HoldSec = convertToMMSS(cdrProcessed.HoldSec);
 
+                                                    cdrProcessed.CallAnswered = cdrProcessed.AgentAnswered;
+
+                                                    if(!cdrProcessed.AgentAnswered && cdrProcessed.ObjType !== 'HTTAPI')
+                                                    {
+                                                        cdrProcessed.CallAnswered = cdrProcessed.IsAnswered;
+
+                                                    }
+
                                                     var localTime = moment(cdrProcessed.CreatedTime).utcOffset(tz).format("YYYY-MM-DD HH:mm:ss");
 
                                                     cdrProcessed.CreatedLocalTime = localTime;
@@ -912,7 +920,7 @@
 
                                                 var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Answered', 'Call Time', 'Total Duration', 'Bill Duration', 'Answer Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party', 'Transferred Parties'];
 
-                                                var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'AgentAnswered', 'CreatedLocalTime', 'Duration', 'BillSec', 'AnswerSec', 'QueueSec', 'HoldSec', 'ObjType', 'ObjCategory', 'HangupParty', 'TransferredParties'];
+                                                var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CallAnswered', 'CreatedLocalTime', 'Duration', 'BillSec', 'AnswerSec', 'QueueSec', 'HoldSec', 'ObjType', 'ObjCategory', 'HangupParty', 'TransferredParties'];
 
                                                 var csvFileData = json2csv({ data: cdrList, fields: fields, fieldNames : fieldNames });
 
@@ -1070,6 +1078,14 @@
                             cdrProcessed.QueueSec = convertToMMSS(cdrProcessed.QueueSec);
                             cdrProcessed.HoldSec = convertToMMSS(cdrProcessed.HoldSec);
 
+                            cdrProcessed.CallAnswered = cdrProcessed.AgentAnswered;
+
+                            if(!cdrProcessed.AgentAnswered && cdrProcessed.ObjType !== 'HTTAPI')
+                            {
+                                cdrProcessed.CallAnswered = cdrProcessed.IsAnswered;
+
+                            }
+
                             var localTime = moment(cdrProcessed.CreatedTime).utcOffset(tz).format("YYYY-MM-DD HH:mm:ss");
 
                             cdrProcessed.CreatedLocalTime = localTime;
@@ -1080,7 +1096,7 @@
 
                         var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Answered', 'Call Time', 'Total Duration', 'Bill Duration', 'Answer Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party', 'Transferred Parties'];
 
-                        var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'AgentAnswered', 'CreatedLocalTime', 'Duration', 'BillSec', 'AnswerSec', 'QueueSec', 'HoldSec', 'ObjType', 'ObjCategory', 'HangupParty', 'TransferredParties'];
+                        var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CallAnswered', 'CreatedLocalTime', 'Duration', 'BillSec', 'AnswerSec', 'QueueSec', 'HoldSec', 'ObjType', 'ObjCategory', 'HangupParty', 'TransferredParties'];
 
                         var csvFileData = json2csv({ data: cdrList, fields: fields, fieldNames : fieldNames });
 
@@ -1835,7 +1851,7 @@
         return next();
     });
 
-    server.get('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    /*server.get('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
@@ -1890,6 +1906,61 @@
         catch(ex)
         {
             var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueue] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });*/
+
+    server.get('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var summaryDate = req.query.date;
+            var tz = req.query.tz;
+            var hr = req.query.hour;
+
+            var skill = req.query.skill;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueue] - [%s] - HTTP Request Received - Params - summaryDate : %s', reqId, summaryDate);
+
+            //Generate 24 hrs moment time array
+
+            var sd = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(hr - 1, 'hours');
+            var ed = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(hr, 'hours');
+
+            processSummaryData(hr, sd, ed, companyId, tenantId, skill, function(err, result)
+            {
+                if(err)
+                {
+                    var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, null);
+                    logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueue] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+                }
+                else
+                {
+                    var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, result);
+                    logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueue] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+                }
+
+            });
+
+
+        }
+        catch(ex)
+        {
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, null);
             logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueue] - [%s] - API RESPONSE : %s', reqId, jsonString);
             res.end(jsonString);
         }
