@@ -3293,7 +3293,7 @@
     });
 
 
-    server.post('/DVP/API/:version/CallCDR/MailRecipient/ReportType/:repType', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    server.post('/DVP/API/:version/CallCDR/MailRecipient/ReportType/:repType', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"write"}), function(req, res, next)
     {
         var reqId = nodeUuid.v1();
         try
