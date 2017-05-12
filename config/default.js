@@ -36,7 +36,8 @@ module.exports = {
     "port":"27017",
     "dbname":"dvpdb",
     "password":"DuoS123",
-    "user":"duo"
+    "user":"duo",
+    "replicaset" :"104.236.231.11"
   },
 
   "Services":
