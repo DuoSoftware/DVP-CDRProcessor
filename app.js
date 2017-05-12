@@ -56,8 +56,27 @@
     var mongouser=config.Mongo.user;
     var mongopass = config.Mongo.password;
 
-    var connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip,mongoport,mongodb)
+    var connectionstring = '';
+    mongoip = mongoip.split(',');
 
+if(util.isArray(mongoip)){
+
+    mongoip.forEach(function(item){
+        connectionstring += util.format('%s:%d,',item,mongoport)
+    });
+
+    connectionstring = connectionstring.substring(0, connectionstring.length - 1);
+    connectionstring = util.format('mongodb://%s:%s@%s/%s',mongouser,mongopass,connectionstring,mongodbase);
+
+    if(mongoreplicaset){
+        connectionstring = util.format('%s?replicaSet=%s',connectionstring,mongoreplicaset) ;
+        console.log("connectionstring ...   "+connectionstring);
+    }
+}else{
+
+    connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip,mongoport,mongodbase);
+    console.log("connectionstring ...   "+connectionstring);
+}
 
     mongoose.connection.on('error', function (err) {
         throw new Error(err);
