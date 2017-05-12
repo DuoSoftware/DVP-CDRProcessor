@@ -55,6 +55,7 @@
     var mongodb=config.Mongo.dbname;
     var mongouser=config.Mongo.user;
     var mongopass = config.Mongo.password;
+    var mongoreplicaset=config.Mongo.replicaset;
 
     var connectionstring = '';
     mongoip = mongoip.split(',');
