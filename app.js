@@ -55,9 +55,29 @@
     var mongodb=config.Mongo.dbname;
     var mongouser=config.Mongo.user;
     var mongopass = config.Mongo.password;
+    var mongoreplicaset=config.Mongo.replicaset;
 
-    var connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip,mongoport,mongodb)
+    var connectionstring = '';
+    mongoip = mongoip.split(',');
 
+if(util.isArray(mongoip)){
+
+    mongoip.forEach(function(item){
+        connectionstring += util.format('%s:%d,',item,mongoport)
+    });
+
+    connectionstring = connectionstring.substring(0, connectionstring.length - 1);
+    connectionstring = util.format('mongodb://%s:%s@%s/%s',mongouser,mongopass,connectionstring,mongodbase);
+
+    if(mongoreplicaset){
+        connectionstring = util.format('%s?replicaSet=%s',connectionstring,mongoreplicaset) ;
+        console.log("connectionstring ...   "+connectionstring);
+    }
+}else{
+
+    connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip,mongoport,mongodbase);
+    console.log("connectionstring ...   "+connectionstring);
+}
 
     mongoose.connection.on('error', function (err) {
         throw new Error(err);
@@ -3293,7 +3313,7 @@
     });
 
 
-    server.post('/DVP/API/:version/CallCDR/MailRecipient/ReportType/:repType', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    server.post('/DVP/API/:version/CallCDR/MailRecipient/ReportType/:repType', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"write"}), function(req, res, next)
     {
         var reqId = nodeUuid.v1();
         try
