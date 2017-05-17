@@ -78,7 +78,7 @@ if(util.isArray(mongoip)){
     else
     {
         connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip[0],mongoport,mongodbase);
-    }0
+    }
 }else{
 
     connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip,mongoport,mongodbase);
