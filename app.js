@@ -68,7 +68,7 @@ if(util.isArray(mongoip)){
     });
 
     connectionstring = connectionstring.substring(0, connectionstring.length - 1);
-    connectionstring = util.format('mongodb://%s:%s@%s/%s',mongouser,mongopass,connectionstring,mongodbase);
+    connectionstring = util.format('mongodb://%s:%s@%s/%s',mongouser,mongopass,connectionstring,mongodb);
 
     if(mongoreplicaset){
         connectionstring = util.format('%s?replicaSet=%s',connectionstring,mongoreplicaset) ;
@@ -77,11 +77,11 @@ if(util.isArray(mongoip)){
      }
     else
     {
-        connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip[0],mongoport,mongodbase);
+        connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip[0],mongoport,mongodb);
     }
 }else{
 
-    connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip,mongoport,mongodbase);
+    connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip,mongoport,mongodb);
     
 }
 console.log("connectionstring ...   "+connectionstring);
