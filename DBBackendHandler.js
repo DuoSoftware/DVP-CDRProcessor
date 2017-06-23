@@ -398,7 +398,7 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
                 }
 
 
-                dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(abandonCount)
+                dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, IsQueued: true, ObjType: 'HTTAPI'}]}).then(function(abandonCount)
                 {
                     if(abandonCount)
                     {
@@ -419,7 +419,7 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
                     }
 
 
-                    dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {lte: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(dropCount)
+                    dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {lte: abandonCallThreshold}, IsQueued: true, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(dropCount)
                     {
                         if(dropCount)
                         {
