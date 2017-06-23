@@ -494,9 +494,9 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
                                                 summaryDetails.AnswerCount = 0;
                                             }
 
-                                            if(summaryDetails.IVRCallsCount)
+                                            if(summaryDetails.QueuedCallsCount)
                                             {
-                                                summaryDetails.AnswerPercentage = Math.round((summaryDetails.AnswerCount / summaryDetails.IVRCallsCount) * 100);
+                                                summaryDetails.AnswerPercentage = Math.round((summaryDetails.AnswerCount / summaryDetails.QueuedCallsCount) * 100);
                                             }
                                             else
                                             {
@@ -658,9 +658,9 @@ var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTi
                     summaryDetails.AnswerCount = 0;
                 }
 
-                if(summaryDetails.IVRCallsCount)
+                if(summaryDetails.QueuedCallsCount)
                 {
-                    summaryDetails.AnswerPercentage = Math.round((summaryDetails.AnswerCount / summaryDetails.IVRCallsCount) * 100);
+                    summaryDetails.AnswerPercentage = Math.round((summaryDetails.AnswerCount / summaryDetails.QueuedCallsCount) * 100);
                 }
                 else
                 {
