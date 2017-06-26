@@ -3635,11 +3635,6 @@ console.log("connectionstring ...   "+connectionstring);
                     sipFromUser = varSec['sip_from_user'];
                 }
 
-                if(!sipToUser)
-                {
-                    sipToUser = varSec['sip_to_user'];
-                }
-
                 var hangupCause = varSec['hangup_cause'];
                 var direction = varSec['direction'];
                 var switchName = cdrObj['switchname'];
@@ -3662,6 +3657,11 @@ console.log("connectionstring ...   "+connectionstring);
                 var createdDate = undefined;
                 var bridgeDate = undefined;
                 var hangupDate = undefined;
+
+                if(!sipToUser || (actionCat === 'FORWARDING' && direction === 'inbound'))
+                {
+                    sipToUser = varSec['sip_to_user'];
+                }
 
                 if(!sipFromUser)
                 {
