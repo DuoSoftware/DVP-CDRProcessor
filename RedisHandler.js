@@ -1,5 +1,5 @@
 var redis = require("ioredis");
-var Config = require('Config');
+var Config = require('config');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 
 

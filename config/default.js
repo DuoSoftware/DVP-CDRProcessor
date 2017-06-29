@@ -50,7 +50,7 @@ module.exports = {
 
   "Mongo":
   {
-    "ip":"45.55.142.207",
+    "ip":"104.236.231.11",
     "port":"27017",
     "dbname":"dvpdb",
     "password":"DuoS123",
