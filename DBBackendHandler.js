@@ -239,7 +239,7 @@ var GetQueuedCallCount = function(st, et, skill, companyId, tenantId, callback)
 
 var GetAbandonCallsCount = function(st, et, skill, companyId, tenantId, callback)
 {
-    var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]};
+    var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, IsQueued: true, DVPCallDirection: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]};
     if(skill)
     {
         query.where[0].AgentSkill = skill;
@@ -257,7 +257,7 @@ var GetAbandonCallsCount = function(st, et, skill, companyId, tenantId, callback
 
 var GetDropCallsCount = function(st, et, skill, companyId, tenantId, callback)
 {
-    var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {lte: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]};
+    var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, IsQueued: true, DVPCallDirection: 'inbound', QueueSec: {lte: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]};
     if(skill)
     {
         query.where[0].AgentSkill = skill;
@@ -398,7 +398,7 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
                 }
 
 
-                dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(abandonCount)
+                dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, IsQueued: true, ObjType: 'HTTAPI'}]}).then(function(abandonCount)
                 {
                     if(abandonCount)
                     {
@@ -409,9 +409,9 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
                         summaryDetails.AbandonCallsCount = 0;
                     }
 
-                    if(summaryDetails.IVRCallsCount)
+                    if(summaryDetails.QueuedCallsCount)
                     {
-                        summaryDetails.AbandonPercentage = Math.round((summaryDetails.AbandonCallsCount / summaryDetails.IVRCallsCount) * 100);
+                        summaryDetails.AbandonPercentage = Math.round((summaryDetails.AbandonCallsCount / summaryDetails.QueuedCallsCount) * 100);
                     }
                     else
                     {
@@ -419,7 +419,7 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
                     }
 
 
-                    dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {lte: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(dropCount)
+                    dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', QueueSec: {lte: abandonCallThreshold}, IsQueued: true, AgentAnswered: false, ObjType: 'HTTAPI'}]}).then(function(dropCount)
                     {
                         if(dropCount)
                         {
@@ -430,9 +430,9 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
                             summaryDetails.DropCallsCount = 0;
                         }
 
-                        if(summaryDetails.IVRCallsCount)
+                        if(summaryDetails.QueuedCallsCount)
                         {
-                            summaryDetails.DropPercentage = Math.round((summaryDetails.DropCallsCount / summaryDetails.IVRCallsCount) * 100);
+                            summaryDetails.DropPercentage = Math.round((summaryDetails.DropCallsCount / summaryDetails.QueuedCallsCount) * 100);
                         }
                         else
                         {
@@ -494,9 +494,9 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
                                                 summaryDetails.AnswerCount = 0;
                                             }
 
-                                            if(summaryDetails.IVRCallsCount)
+                                            if(summaryDetails.QueuedCallsCount)
                                             {
-                                                summaryDetails.AnswerPercentage = Math.round((summaryDetails.AnswerCount / summaryDetails.IVRCallsCount) * 100);
+                                                summaryDetails.AnswerPercentage = Math.round((summaryDetails.AnswerCount / summaryDetails.QueuedCallsCount) * 100);
                                             }
                                             else
                                             {
@@ -593,9 +593,9 @@ var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTi
                 summaryDetails.QueuedCallsCount = results[1];
                 summaryDetails.AbandonCallsCount = results[2];
 
-                if(summaryDetails.IVRCallsCount)
+                if(summaryDetails.QueuedCallsCount)
                 {
-                    summaryDetails.AbandonPercentage = Math.round((summaryDetails.AbandonCallsCount / summaryDetails.IVRCallsCount) * 100);
+                    summaryDetails.AbandonPercentage = Math.round((summaryDetails.AbandonCallsCount / summaryDetails.QueuedCallsCount) * 100);
                 }
                 else
                 {
@@ -604,9 +604,9 @@ var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTi
 
                 summaryDetails.DropCallsCount = results[3];
 
-                if(summaryDetails.IVRCallsCount)
+                if(summaryDetails.QueuedCallsCount)
                 {
-                    summaryDetails.DropPercentage = Math.round((summaryDetails.DropCallsCount / summaryDetails.IVRCallsCount) * 100);
+                    summaryDetails.DropPercentage = Math.round((summaryDetails.DropCallsCount / summaryDetails.QueuedCallsCount) * 100);
                 }
                 else
                 {
@@ -658,9 +658,9 @@ var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTi
                     summaryDetails.AnswerCount = 0;
                 }
 
-                if(summaryDetails.IVRCallsCount)
+                if(summaryDetails.QueuedCallsCount)
                 {
-                    summaryDetails.AnswerPercentage = Math.round((summaryDetails.AnswerCount / summaryDetails.IVRCallsCount) * 100);
+                    summaryDetails.AnswerPercentage = Math.round((summaryDetails.AnswerCount / summaryDetails.QueuedCallsCount) * 100);
                 }
                 else
                 {
