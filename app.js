@@ -818,7 +818,7 @@ console.log("connectionstring ...   "+connectionstring);
             if(err)
             {
                 //can delete file reserve
-                callback(err, cdrList);
+                callback(err, false);
             }
             else
             {
@@ -925,7 +925,7 @@ console.log("connectionstring ...   "+connectionstring);
                 {
                     cdrList = null;
                     global.gc();
-                    callback(err, false);
+                    callback(null, true);
                 }
 
 
