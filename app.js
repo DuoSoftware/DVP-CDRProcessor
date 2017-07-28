@@ -4103,7 +4103,7 @@ console.log("connectionstring ...   "+connectionstring);
                     tenantId = '-1';
                 }
 
-                var agentSkill = varSec['ards_skill_display'];
+                var agentSkill = decodeURIComponent(varSec['ards_skill_display']);
 
                 var duration = varSec['duration'];
                 var billSec = varSec['billsec'];
