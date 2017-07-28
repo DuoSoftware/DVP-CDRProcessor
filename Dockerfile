@@ -14,4 +14,4 @@ RUN cd /usr/local/src/cdrprocessor;
 WORKDIR /usr/local/src/cdrprocessor
 RUN npm install
 EXPOSE 8809
-CMD [ "node", "/usr/local/src/cdrprocessor/app.js" ]
+CMD [ "node --expose-gc", "/usr/local/src/cdrprocessor/app.js" ]
