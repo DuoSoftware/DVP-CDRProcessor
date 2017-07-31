@@ -993,7 +993,7 @@ var GetProcessedCDRForSessions = function(sessionIdArr, companyId, tenantId, cal
     }
 };
 
-var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, callback)
+var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, limit, offset, callback)
 {
     var callLegList = [];
 
@@ -1048,7 +1048,19 @@ var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantI
 
         }
 
-        dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:'"CreatedTime" DESC'}).then(function(callLeg)
+        var query = {where :[sqlCond], order:'"CreatedTime" DESC'};
+
+        if(limit >= 0)
+        {
+            query.limit = limit;
+        }
+
+        if(offset >= 0)
+        {
+            query.offset = offset;
+        }
+
+        dbModel.CallCDRProcessed.findAll(query).then(function(callLeg)
         {
             callback(undefined, callLeg);
 
@@ -1062,6 +1074,78 @@ var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantI
     catch(ex)
     {
         callback(ex, callLegList);
+    }
+};
+
+var GetProcessedCDRInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, callback)
+{
+    try
+    {
+        var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId};
+        if(agentFilter)
+        {
+            sqlCond.$and = [];
+            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', RecievedBy: agentFilter},{DVPCallDirection: 'outbound', SipFromUser: agentFilter}]});
+        }
+        if(skillFilter)
+        {
+            sqlCond.AgentSkill = skillFilter;
+        }
+        if(dirFilter)
+        {
+            sqlCond.DVPCallDirection = dirFilter;
+        }
+        if(recFilter == 'true' || recFilter == 'false')
+        {
+            if(recFilter == 'true')
+            {
+                sqlCond.BillSec = { gt: 0 }
+            }
+            else
+            {
+                sqlCond.BillSec = 0
+            }
+
+        }
+
+        if(customerFilter)
+        {
+            if(!sqlCond.$and)
+            {
+                sqlCond.$and = [];
+            }
+
+            sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
+
+        }
+
+        if(didFilter)
+        {
+            if(!sqlCond.$and)
+            {
+                sqlCond.$and = [];
+            }
+
+            sqlCond.$and.push({DVPCallDirection: 'inbound', SipToUser: didFilter});
+
+        }
+
+        var query = {where :[sqlCond]};
+
+        dbModel.CallCDRProcessed.aggregate('*', 'count', query).then(function(recCount)
+        {
+            callback(undefined, recCount);
+
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        })
+
+
+    }
+    catch(ex)
+    {
+        callback(ex, 0);
     }
 };
 
@@ -1410,3 +1494,4 @@ module.exports.GetProcessedCDRInDateRange = GetProcessedCDRInDateRange;
 module.exports.GetProcessedCDRInDateRangeAbandon = GetProcessedCDRInDateRangeAbandon;
 module.exports.GetProcessedCDRInDateRangeCustomer = GetProcessedCDRInDateRangeCustomer;
 module.exports.GetProcessedCDRForSessions = GetProcessedCDRForSessions;
+module.exports.GetProcessedCDRInDateRangeCount = GetProcessedCDRInDateRangeCount;
