@@ -997,7 +997,7 @@ console.log("connectionstring ...   "+connectionstring);
 
 
             //check file exists
-            var fileCheckKey = 'CDR_' + tenantId + '_' + companyId + '_' + stInReadableFormat + '_' + etInReadableFormat;
+            var fileCheckKey = 'CDRFILE:' + tenantId + ':' + companyId + ':' + stInReadableFormat + ':' + etInReadableFormat;
 
             redisHandler.GetSetObject(fileCheckKey, true, function(err, redisResp)
             {
