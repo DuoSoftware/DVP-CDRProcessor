@@ -810,10 +810,343 @@ console.log("connectionstring ...   "+connectionstring);
 
 
 
+    var getProcessedCDRPageWise = function(reqId, uniqueId, fileName, tz, startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, limit, offset, callback)
+    {
+        var newLine= "\r\n";
+        backendHandler.GetProcessedCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, limit, offset, function(err, cdrList)
+        {
+            if(err)
+            {
+                //can delete file reserve
+                callback(err, false);
+            }
+            else
+            {
+                //Convert CDR LIST TO FILE AND UPLOAD
 
 
+                if(cdrList && cdrList.length > 0)
+                {
+                    cdrList.forEach(function(cdrProcessed)
+                    {
+                        cdrProcessed.BillSec = convertToMMSS(cdrProcessed.BillSec);
+                        cdrProcessed.Duration = convertToMMSS(cdrProcessed.Duration);
+                        cdrProcessed.AnswerSec = convertToMMSS(cdrProcessed.AnswerSec);
+                        cdrProcessed.QueueSec = convertToMMSS(cdrProcessed.QueueSec);;
+                        cdrProcessed.HoldSec = convertToMMSS(cdrProcessed.HoldSec);
+
+                        cdrProcessed.CallAnswered = cdrProcessed.AgentAnswered;
+
+                        if(!cdrProcessed.AgentAnswered && cdrProcessed.ObjType !== 'HTTAPI')
+                        {
+                            cdrProcessed.CallAnswered = cdrProcessed.IsAnswered;
+
+                        }
+
+                        var localTime = moment(cdrProcessed.CreatedTime).utcOffset(tz).format("YYYY-MM-DD HH:mm:ss");
+
+                        cdrProcessed.CreatedLocalTime = localTime;
+
+
+
+                    });
+
+                    //Convert to CSV
+
+                    //var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Answered', 'Call Time', 'Total Duration', 'Bill Duration', 'Answer Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party', 'Transferred Parties'];
+
+                    var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CallAnswered', 'CreatedLocalTime', 'Duration', 'BillSec', 'AnswerSec', 'QueueSec', 'HoldSec', 'ObjType', 'ObjCategory', 'HangupParty', 'TransferredParties'];
+
+                    fs.stat(fileName, function (err)
+                    {
+                        if (err == null)
+                        {
+                            //write the actual data and end with newline
+                            var csv = json2csv({ data: cdrList, fields: fields, hasCSVColumnTitle: false }) + newLine;
+
+                            fs.appendFile(fileName, csv, function (err) {
+                                if (err)
+                                {
+                                    cdrList = null;
+                                    global.gc();
+                                    callback(err, false);
+
+                                }
+                                else
+                                {
+                                    cdrList = null;
+                                    global.gc();
+                                    callback(null, true);
+                                }
+
+                            });
+                        }
+                        else
+                        {
+                            var headerFields = fields + newLine;
+
+                            fs.writeFile(fileName, headerFields, function (err, stat)
+                            {
+                                if (err)
+                                {
+                                    cdrList = null;
+                                    global.gc();
+                                    callback(err, false);
+                                }
+                                else
+                                {
+                                    var csv = json2csv({ data: cdrList, fields: fields, hasCSVColumnTitle: false }) + newLine;
+
+                                    fs.appendFile(fileName, csv, function (err) {
+                                        if (err)
+                                        {
+                                            cdrList = null;
+                                            global.gc();
+                                            callback(err, false);
+
+                                        }
+                                        else
+                                        {
+                                            cdrList = null;
+                                            global.gc();
+                                            callback(null, true);
+                                        }
+
+                                    });
+                                }
+                            });
+                        }
+                    });
+
+
+                }
+                else
+                {
+                    cdrList = null;
+                    global.gc();
+                    callback(null, true);
+                }
+
+
+            }
+
+        });
+    };
 
     server.get('/DVP/API/:version/CallCDR/PrepareDownload', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        var jsonString = '';
+        try
+        {
+            var startTime = req.query.startTime;
+            var endTime = req.query.endTime;
+            var offset = req.query.offset;
+            var limit = req.query.limit;
+            var agent = req.query.agent;
+            var skill = req.query.skill;
+            var direction = req.query.direction;
+            var recording = req.query.recording;
+            var custNum = req.query.custnumber;
+            var didNum = req.query.didnumber;
+            var fileType = req.query.fileType;
+            var tz = req.query.tz;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+
+            offset = parseInt(offset);
+            limit = parseInt(limit);
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.DownloadCDR] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s, Offset: %s, Limit : %s', reqId, startTime, endTime, offset, limit);
+
+            var stInReadableFormat = moment(startTime).unix();
+            var etInReadableFormat = moment(endTime).unix();
+
+            //Create FILE NAME Key
+            var fileName = 'CDR_' + tenantId + '_' + companyId + '_' + stInReadableFormat + '_' + etInReadableFormat;
+
+            if(agent)
+            {
+                fileName = fileName + '_' + agent;
+            }
+
+            if(custNum)
+            {
+                fileName = fileName + '_' + custNum;
+            }
+
+            if(skill)
+            {
+                fileName = fileName + '_' + skill;
+            }
+
+            if(direction)
+            {
+                fileName = fileName + '_' + direction;
+            }
+
+            fileName = fileName.replace(/:/g, "-") + '.' + fileType;
+
+
+            //check file exists
+            var fileCheckKey = 'CDRFILE:' + tenantId + ':' + companyId + ':' + stInReadableFormat + ':' + etInReadableFormat;
+
+            redisHandler.GetSetObject(fileCheckKey, true, function(err, redisResp)
+            {
+                if(redisResp)
+                {
+                    jsonString = messageFormatter.FormatMessage(new Error('Another user generating same file, please try again'), "ERROR", false, null);
+                    logger.debug('[DVP-CDRProcessor.DownloadCDR] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                    res.end(jsonString);
+                }
+                else
+                {
+                    fileCheckAndDelete(reqId, fileName, companyId, tenantId)
+                        .then(function(chkResult)
+                        {
+                            if(chkResult)
+                            {
+                                externalApi.FileUploadReserve(reqId, fileName, companyId, tenantId, function(err, fileResResp)
+                                {
+                                    if (err)
+                                    {
+                                        redisHandler.DeleteObject(fileCheckKey);
+                                        jsonString = messageFormatter.FormatMessage(err, "ERROR", false, null);
+                                        logger.debug('[DVP-CDRProcessor.DownloadCDR] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                        res.end(jsonString);
+                                    }
+                                    else
+                                    {
+                                        if(fileResResp)
+                                        {
+                                            var uniqueId = fileResResp;
+
+                                            //should respose end
+                                            jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
+                                            logger.debug('[DVP-CDRProcessor.DownloadCDR] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                            res.end(jsonString);
+
+                                            var offset = 0;
+                                            var limit = 5000;
+
+                                            backendHandler.GetProcessedCDRInDateRangeCount(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, function(err, cnt)
+                                            {
+                                                if(!err && cnt)
+                                                {
+                                                    var arr = [];
+                                                    while(cnt > offset)
+                                                    {
+                                                        arr.push(getProcessedCDRPageWise.bind(this, reqId, uniqueId, fileName, tz, startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, limit, offset));
+                                                        offset = offset + limit;
+
+                                                    }
+
+                                                    async.series(arr, function(err, results)
+                                                    {
+                                                        if(err)
+                                                        {
+                                                            redisHandler.DeleteObject(fileCheckKey);
+                                                            externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                                if(err)
+                                                                {
+                                                                    logger.error('[DVP-CDRProcessor.DownloadCDR] - [%s] - Delete Failed : %s', reqId, err);
+                                                                }
+                                                            });
+                                                        }
+                                                        else
+                                                        {
+                                                            externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
+                                                            {
+                                                                fs.unlink(fileName);
+                                                                redisHandler.DeleteObject(fileCheckKey);
+                                                                if (!(!err && uploadResp))
+                                                                {
+                                                                    externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function (err, delData)
+                                                                    {
+                                                                        if (err)
+                                                                        {
+                                                                            logger.error('[DVP-CDRProcessor.DownloadCDR] - [%s] - Delete Failed : %s', reqId, err);
+                                                                        }
+                                                                    });
+                                                                }
+
+                                                            });
+                                                        }
+
+                                                    })
+
+                                                }
+                                                else
+                                                {
+                                                    redisHandler.DeleteObject(fileCheckKey);
+                                                    externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                        if(err)
+                                                        {
+                                                            logger.error('[DVP-CDRProcessor.DownloadCDR] - [%s] - Delete Failed : %s', reqId, err);
+                                                        }
+                                                    });
+                                                }
+
+                                            });
+
+
+                                        }
+                                        else
+                                        {
+                                            redisHandler.DeleteObject(fileCheckKey);
+                                            jsonString = messageFormatter.FormatMessage(new Error('Failed to reserve file'), "ERROR", false, null);
+                                            logger.debug('[DVP-CDRProcessor.DownloadCDR] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                            res.end(jsonString);
+                                        }
+
+
+
+
+                                    }
+                                });
+                            }
+                            else
+                            {
+                                redisHandler.DeleteObject(fileCheckKey);
+                                jsonString = messageFormatter.FormatMessage(new Error('Error deleting file'), "ERROR", false, null);
+                                logger.debug('[DVP-CDRProcessor.DownloadCDR] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                res.end(jsonString);
+                            }
+                        })
+                        .catch(function(err)
+                        {
+                            redisHandler.DeleteObject(fileCheckKey);
+                            jsonString = messageFormatter.FormatMessage(err, "ERROR", false, null);
+                            logger.debug('[DVP-CDRProcessor.DownloadCDR] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                            res.end(jsonString);
+                        });
+                }
+            });
+
+
+
+        }
+        catch(ex)
+        {
+            logger.error('[DVP-CDRProcessor.DownloadCDR] - [%s] - Exception occurred', reqId, ex);
+            jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.DownloadCDR] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+
+    /*server.get('/DVP/API/:version/CallCDR/PrepareDownload', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
@@ -900,61 +1233,23 @@ console.log("connectionstring ...   "+connectionstring);
                                     logger.debug('[DVP-CDRProcessor.DownloadCDR] - [%s] - API RESPONSE : %s', reqId, jsonString);
                                     res.end(jsonString);
 
-                                    backendHandler.GetProcessedCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, function(err, cdrList)
+                                    var offset = 0;
+                                    var limit = 5000;
+
+                                    backendHandler.GetProcessedCDRInDateRangeCount(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, function(err, cnt)
                                     {
-                                        logger.debug('[DVP-CDRProcessor.DownloadCDR] - [%s] - CDR Processing Done', reqId);
-
-                                        var jsonString = "";
-                                        if(err)
+                                        if(!err && cnt)
                                         {
-                                            //can delete file reserve
-                                            externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
-                                                if(err)
-                                                {
-                                                    logger.error('[DVP-CDRProcessor.DownloadCDR] - [%s] - Delete Failed : %s', reqId, err);
-                                                }
-                                            });
-                                        }
-                                        else
-                                        {
-                                            //Convert CDR LIST TO FILE AND UPLOAD
-
-                                            if(cdrList && cdrList.length > 0)
+                                            while(cnt > offset)
                                             {
-                                                cdrList.forEach(function(cdrProcessed)
+                                                backendHandler.GetProcessedCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, limit, offset, function(err, cdrList)
                                                 {
-                                                    cdrProcessed.BillSec = convertToMMSS(cdrProcessed.BillSec);
-                                                    cdrProcessed.Duration = convertToMMSS(cdrProcessed.Duration);
-                                                    cdrProcessed.AnswerSec = convertToMMSS(cdrProcessed.AnswerSec);
-                                                    cdrProcessed.QueueSec = convertToMMSS(cdrProcessed.QueueSec);
-                                                    cdrProcessed.HoldSec = convertToMMSS(cdrProcessed.HoldSec);
+                                                    logger.debug('[DVP-CDRProcessor.DownloadCDR] - [%s] - CDR Processing Done', reqId);
 
-                                                    cdrProcessed.CallAnswered = cdrProcessed.AgentAnswered;
-
-                                                    if(!cdrProcessed.AgentAnswered && cdrProcessed.ObjType !== 'HTTAPI')
+                                                    var jsonString = "";
+                                                    if(err)
                                                     {
-                                                        cdrProcessed.CallAnswered = cdrProcessed.IsAnswered;
-
-                                                    }
-
-                                                    var localTime = moment(cdrProcessed.CreatedTime).utcOffset(tz).format("YYYY-MM-DD HH:mm:ss");
-
-                                                    cdrProcessed.CreatedLocalTime = localTime;
-
-                                                });
-
-                                                //Convert to CSV
-
-                                                var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Answered', 'Call Time', 'Total Duration', 'Bill Duration', 'Answer Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party', 'Transferred Parties'];
-
-                                                var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CallAnswered', 'CreatedLocalTime', 'Duration', 'BillSec', 'AnswerSec', 'QueueSec', 'HoldSec', 'ObjType', 'ObjCategory', 'HangupParty', 'TransferredParties'];
-
-                                                var csvFileData = json2csv({ data: cdrList, fields: fields, fieldNames : fieldNames });
-
-                                                fs.writeFile(fileName, csvFileData, function(err)
-                                                {
-                                                    if (err)
-                                                    {
+                                                        //can delete file reserve
                                                         externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
                                                             if(err)
                                                             {
@@ -964,44 +1259,108 @@ console.log("connectionstring ...   "+connectionstring);
                                                     }
                                                     else
                                                     {
-                                                        externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
+                                                        //Convert CDR LIST TO FILE AND UPLOAD
+
+                                                        if(cdrList && cdrList.length > 0)
                                                         {
-                                                            fs.unlink(fileName);
-                                                            if(!err && uploadResp)
+                                                            cdrList.forEach(function(cdrProcessed)
                                                             {
+                                                                cdrProcessed.BillSec = convertToMMSS(cdrProcessed.BillSec);
+                                                                cdrProcessed.Duration = convertToMMSS(cdrProcessed.Duration);
+                                                                cdrProcessed.AnswerSec = convertToMMSS(cdrProcessed.AnswerSec);
+                                                                cdrProcessed.QueueSec = convertToMMSS(cdrProcessed.QueueSec);
+                                                                cdrProcessed.HoldSec = convertToMMSS(cdrProcessed.HoldSec);
 
-                                                            }
-                                                            else
+                                                                cdrProcessed.CallAnswered = cdrProcessed.AgentAnswered;
+
+                                                                if(!cdrProcessed.AgentAnswered && cdrProcessed.ObjType !== 'HTTAPI')
+                                                                {
+                                                                    cdrProcessed.CallAnswered = cdrProcessed.IsAnswered;
+
+                                                                }
+
+                                                                var localTime = moment(cdrProcessed.CreatedTime).utcOffset(tz).format("YYYY-MM-DD HH:mm:ss");
+
+                                                                cdrProcessed.CreatedLocalTime = localTime;
+
+                                                            });
+
+                                                            //Convert to CSV
+
+                                                            var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Answered', 'Call Time', 'Total Duration', 'Bill Duration', 'Answer Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party', 'Transferred Parties'];
+
+                                                            var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CallAnswered', 'CreatedLocalTime', 'Duration', 'BillSec', 'AnswerSec', 'QueueSec', 'HoldSec', 'ObjType', 'ObjCategory', 'HangupParty', 'TransferredParties'];
+
+                                                            var csvFileData = json2csv({ data: cdrList, fields: fields, fieldNames : fieldNames });
+
+                                                            fs.writeFile(fileName, csvFileData, function(err)
                                                             {
-                                                                externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
-                                                                    if(err)
+                                                                if (err)
+                                                                {
+                                                                    externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                                        if(err)
+                                                                        {
+                                                                            logger.error('[DVP-CDRProcessor.DownloadCDR] - [%s] - Delete Failed : %s', reqId, err);
+                                                                        }
+                                                                    });
+                                                                }
+                                                                else
+                                                                {
+                                                                    externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
                                                                     {
-                                                                        logger.error('[DVP-CDRProcessor.DownloadCDR] - [%s] - Delete Failed : %s', reqId, err);
-                                                                    }
-                                                                });
-                                                            }
+                                                                        fs.unlink(fileName);
+                                                                        if(!err && uploadResp)
+                                                                        {
 
-                                                        });
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                                                if(err)
+                                                                                {
+                                                                                    logger.error('[DVP-CDRProcessor.DownloadCDR] - [%s] - Delete Failed : %s', reqId, err);
+                                                                                }
+                                                                            });
+                                                                        }
+
+                                                                    });
+
+                                                                }
+                                                            });
+
+
+                                                        }
+                                                        else
+                                                        {
+                                                            externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                                if(err)
+                                                                {
+                                                                    logger.error('[DVP-CDRProcessor.DownloadCDR] - [%s] - Delete Failed : %s', reqId, err);
+                                                                }
+                                                            });
+                                                        }
+
 
                                                     }
+
                                                 });
 
-
-                                            }
-                                            else
-                                            {
-                                                externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
-                                                    if(err)
-                                                    {
-                                                        logger.error('[DVP-CDRProcessor.DownloadCDR] - [%s] - Delete Failed : %s', reqId, err);
-                                                    }
-                                                });
                                             }
 
-
+                                        }
+                                        else
+                                        {
+                                            externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                if(err)
+                                                {
+                                                    logger.error('[DVP-CDRProcessor.DownloadCDR] - [%s] - Delete Failed : %s', reqId, err);
+                                                }
+                                            });
                                         }
 
                                     });
+
+
                                 }
                                 else
                                 {
@@ -1040,7 +1399,7 @@ console.log("connectionstring ...   "+connectionstring);
         }
 
         return next();
-    });
+    });*/
 
     server.post('/DVP/API/:version/CallCDR/GeneratePreviousDay', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"write"}), function(req, res, next)
     {
@@ -3764,7 +4123,7 @@ console.log("connectionstring ...   "+connectionstring);
                     tenantId = '-1';
                 }
 
-                var agentSkill = varSec['ards_skill_display'];
+                var agentSkill = decodeURIComponent(varSec['ards_skill_display']);
 
                 var duration = varSec['duration'];
                 var billSec = varSec['billsec'];

@@ -83,8 +83,7 @@ if(redismode != "cluster") {
 
 }
 
-
-var SetObject = function(key, value, callback)
+var SetObject = function(key, value)
 {
     try
     {
@@ -92,7 +91,27 @@ var SetObject = function(key, value, callback)
         {
             if(err)
             {
-                logger.error('[DVP-DynamicConfigurationGenerator.SetObject] - REDIS ERROR', err)
+                logger.error('[DVP-CDRProcessor.SetObject] - REDIS ERROR', err)
+            }
+        });
+
+    }
+    catch(ex)
+    {
+        logger.error('[DVP-CDRProcessor.SetObject] - REDIS ERROR', ex)
+    }
+
+};
+
+var GetSetObject = function(key, value, callback)
+{
+    try
+    {
+        client.getset(key, value, function(err, response)
+        {
+            if(err)
+            {
+                logger.error('[DVP-CDRProcessor.SetObject] - REDIS ERROR', err)
             }
             callback(err, response);
         });
@@ -100,12 +119,13 @@ var SetObject = function(key, value, callback)
     }
     catch(ex)
     {
-        callback(ex, undefined);
+        logger.error('[DVP-CDRProcessor.SetObject] - REDIS ERROR', ex)
+        callback(ex, null);
     }
 
 };
 
-var DeleteObject = function(key, callback)
+var DeleteObject = function(key)
 {
     try
     {
@@ -113,15 +133,14 @@ var DeleteObject = function(key, callback)
         {
             if(err)
             {
-                logger.error('[DVP-DynamicConfigurationGenerator.DeleteObject] - REDIS ERROR', err)
+                logger.error('[DVP-CDRProcessor.DeleteObject] - REDIS ERROR', err)
             }
-            callback(err, response);
         });
 
     }
     catch(ex)
     {
-        callback(ex, undefined);
+        logger.error('[DVP-CDRProcessor.DeleteObject] - REDIS ERROR', ex)
     }
 
 };
@@ -134,3 +153,4 @@ client.on('error', function(msg)
 
 module.exports.SetObject = SetObject;
 module.exports.DeleteObject = DeleteObject;
+module.exports.GetSetObject = GetSetObject;
