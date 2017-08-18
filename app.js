@@ -757,9 +757,6 @@ console.log("connectionstring ...   "+connectionstring);
                                     res.end(jsonString);
                                 }
 
-
-
-
                             }
                         });
                     }
@@ -1706,7 +1703,7 @@ console.log("connectionstring ...   "+connectionstring);
 
             logger.debug('[DVP-CDRProcessor.GetProcessedCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
 
-            backendHandler.GetProcessedCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, function(err, cdrList)
+            backendHandler.GetProcessedCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, -1, -1, function(err, cdrList)
             {
                 logger.debug('[DVP-CDRProcessor.GetProcessedCallDetailsByRange] - [%s] - CDR Processing Done', reqId);
 
