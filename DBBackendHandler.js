@@ -27,10 +27,6 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
         {
             sqlCond.AgentSkill = skillFilter;
         }
-        if(offset)
-        {
-            sqlCond.id = { lt: offset }
-        }
         if(dirFilter)
         {
             sqlCond.DVPCallDirection = dirFilter;
@@ -72,7 +68,14 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
 
         if(limit)
         {
-            dbModel.CallCDR.findAll({where :[sqlCond], order:'"CreatedTime" DESC', limit: limit}).then(function(callLeg)
+            var query = {where :[sqlCond], order:'"CreatedTime" DESC', limit: limit};
+
+            if(offset)
+            {
+                query.offset = offset;
+            }
+
+            dbModel.CallCDR.findAll(query).then(function(callLeg)
             {
 
                 logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
@@ -104,6 +107,79 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
                 callback(err, callLegList);
             });
         }
+
+
+    }
+    catch(ex)
+    {
+        callback(ex, callLegList);
+    }
+};
+
+var GetCallRelatedLegsInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, callback)
+{
+    try
+    {
+        var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjType: 'FAX_INBOUND'},{ObjCategory: 'DND'},{ObjCategory: 'OUTBOUND_DENIED'}]}]};
+        if(agentFilter)
+        {
+            sqlCond.$and = [];
+            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
+        }
+        if(skillFilter)
+        {
+            sqlCond.AgentSkill = skillFilter;
+        }
+        if(dirFilter)
+        {
+            sqlCond.DVPCallDirection = dirFilter;
+        }
+        if(recFilter == 'true' || recFilter == 'false')
+        {
+            if(recFilter == 'true')
+            {
+                sqlCond.BillSec = { gt: 0 }
+            }
+            else
+            {
+                sqlCond.BillSec = 0
+            }
+
+        }
+
+        if(customerFilter)
+        {
+            if(!sqlCond.$and)
+            {
+                sqlCond.$and = [];
+            }
+
+            sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
+
+        }
+
+        if(didFilter)
+        {
+            if(!sqlCond.$and)
+            {
+                sqlCond.$and = [];
+            }
+
+            sqlCond.$and.push({DVPCallDirection: 'inbound', SipToUser: didFilter});
+
+        }
+
+
+
+        dbModel.CallCDR.aggregate('*', 'count', sqlCond).then(function(cdrCount)
+        {
+
+            callback(null, cdrCount);
+
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
 
 
     }
@@ -1482,6 +1558,7 @@ var AddCDRRecord = function(cdrInfo, callback)
 module.exports.AddCDRRecord = AddCDRRecord;
 module.exports.GetCallRelatedLegs = GetCallRelatedLegs;
 module.exports.GetCallRelatedLegsInDateRange = GetCallRelatedLegsInDateRange;
+module.exports.GetCallRelatedLegsInDateRangeCount = GetCallRelatedLegsInDateRangeCount;
 module.exports.GetConferenceRelatedLegsInDateRange = GetConferenceRelatedLegsInDateRange;
 module.exports.GetCallRelatedLegsForAppId = GetCallRelatedLegsForAppId;
 module.exports.GetSpecificLegByUuid = GetSpecificLegByUuid;
