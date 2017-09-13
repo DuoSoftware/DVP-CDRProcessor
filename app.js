@@ -4098,13 +4098,16 @@ console.log("connectionstring ...   "+connectionstring);
                 var sipFromUser = callerProfileSec['caller_id_number'];
                 var sipToUser = callerProfileSec['destination_number'];
 
-                if(!sipFromUser)
+                var direction = varSec['direction'];
+                var dvpCallDirection = varSec['DVP_CALL_DIRECTION'];
+
+                if(direction === 'inbound' && dvpCallDirection === 'inbound')
                 {
+                    //get sip_from_user as from user for all inbound direction calls
                     sipFromUser = varSec['sip_from_user'];
                 }
 
                 var hangupCause = varSec['hangup_cause'];
-                var direction = varSec['direction'];
                 var switchName = cdrObj['switchname'];
                 var callerContext = callerProfileSec['context'];
                 var appId = varSec['dvp_app_id'];
@@ -4115,7 +4118,7 @@ console.log("connectionstring ...   "+connectionstring);
                 var actionCat = varSec['DVP_ACTION_CAT'];
                 var advOpAction = varSec['DVP_ADVANCED_OP_ACTION'];
                 var confName = varSec['DVP_CONFERENCE_NAME'];
-                var dvpCallDirection = varSec['DVP_CALL_DIRECTION'];
+
                 var sipHangupDisposition = varSec['sip_hangup_disposition'];
                 var memberuuid = varSec['memberuuid'];
                 var conferenceUuid = varSec['conference_uuid'];
