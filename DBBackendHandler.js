@@ -1438,6 +1438,41 @@ var GetResourceStatusList = function(startTime, endTime, statusList, agents, com
     }
 };
 
+
+var GetMyResourceStatusList = function(startTime, endTime, agent, companyId, tenantId, callback)
+{
+    var emptyArr = [];
+
+    try
+    {
+        var defaultQuery = {where :[{CompanyId: companyId, TenantId: tenantId, StatusType: 'ResourceStatus', createdAt: {between:[startTime, endTime]}}], order: ['createdAt'], include: [{model: dbModel.ResResource, as: 'ResResource'}]};
+
+        defaultQuery.include[0].where = {ResourceName: agent};
+            //[{$or:[]}];
+
+        //var tempOrCondArr = defaultQuery.include[0].where[0].$or;
+
+        //tempOrCondArr.push({ResourceName: agent});
+
+
+
+
+        dbModel.ResResourceStatusChangeInfo.findAll(defaultQuery).then(function(resourceInfoList)
+        {
+            callback(null, resourceInfoList)
+
+        }).catch(function(err)
+        {
+            callback(err, emptyArr)
+        });
+
+    }
+    catch(ex)
+    {
+        callback(ex, emptyArr);
+    }
+};
+
 var GetCallRelatedLegs = function(sessionId, callback)
 {
     var callLegList = [];
@@ -1626,6 +1661,7 @@ module.exports.GetAbandonCallRelatedLegsInDateRange = GetAbandonCallRelatedLegsI
 module.exports.GetCallSummaryDetailsDateRange = GetCallSummaryDetailsDateRange;
 module.exports.GetCallSummaryDetailsDateRangeWithSkill = GetCallSummaryDetailsDateRangeWithSkill;
 module.exports.GetResourceStatusList = GetResourceStatusList;
+module.exports.GetMyResourceStatusList = GetMyResourceStatusList;
 module.exports.GetProcessedCDRInDateRange = GetProcessedCDRInDateRange;
 module.exports.GetProcessedCDRInDateRangeAbandon = GetProcessedCDRInDateRangeAbandon;
 module.exports.GetProcessedCDRInDateRangeCustomer = GetProcessedCDRInDateRangeCustomer;

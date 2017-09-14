@@ -3259,6 +3259,55 @@ console.log("connectionstring ...   "+connectionstring);
     });
 
 
+    server.get('/DVP/API/:version/CallCDR/MyAgentStatus', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var startDate = req.query.startDate;
+            var endDate = req.query.endDate;
+            var status = req.query.status;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.AgentStatus] - [%s] - HTTP Request Received - Params - startDate : %s, endDate : %s', reqId, startDate, endDate);
+
+            //Get all agent status data
+
+            //var sessionList = [];
+
+            backendHandler.GetMyResourceStatusList(startDate, endDate,req.user.iss, companyId, tenantId, function(err, resList)
+            {
+                //var currentSession = {};
+                //
+                //currentSession.SessionList = [];
+
+
+                var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, resList);
+                logger.debug('[DVP-CDRProcessor.AgentStatus] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                res.end(jsonString);
+
+            });
+
+        }
+        catch(ex)
+        {
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.AgentStatus] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+
     //query_string : ?startTime=2016-05-09&endTime=2016-05-12
     server.get('/DVP/API/:version/CallCDR/GetConferenceDetailsByRange', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
