@@ -3269,6 +3269,13 @@ console.log("connectionstring ...   "+connectionstring);
             var endDate = req.query.endDate;
             var status = req.query.status;
 
+            if(!startDate && !endDate){
+
+                var currentDate = new Date();
+                startDate = new Date(currentDate.setHours(0));
+                endDate =  new Date(currentDate.setHours(24));
+            }
+
             var companyId = req.user.company;
             var tenantId = req.user.tenant;
 

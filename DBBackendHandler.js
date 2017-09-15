@@ -1448,15 +1448,7 @@ var GetMyResourceStatusList = function(startTime, endTime, agent, companyId, ten
         var defaultQuery = {where :[{CompanyId: companyId, TenantId: tenantId, StatusType: 'ResourceStatus', createdAt: {between:[startTime, endTime]}}], order: ['createdAt'], include: [{model: dbModel.ResResource, as: 'ResResource'}]};
 
         defaultQuery.include[0].where = {ResourceName: agent};
-            //[{$or:[]}];
-
-        //var tempOrCondArr = defaultQuery.include[0].where[0].$or;
-
-        //tempOrCondArr.push({ResourceName: agent});
-
-
-
-
+        
         dbModel.ResResourceStatusChangeInfo.findAll(defaultQuery).then(function(resourceInfoList)
         {
             callback(null, resourceInfoList)
