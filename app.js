@@ -3259,7 +3259,7 @@ console.log("connectionstring ...   "+connectionstring);
     });
 
 
-    server.get('/DVP/API/:version/CallCDR/MyAgentStatus', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    server.get('/DVP/API/:version/CallCDR/MyAgentStatus', jwt({secret: secret.Secret}), authorization({resource:"myUserProfile", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
         var reqId = nodeUuid.v1();
