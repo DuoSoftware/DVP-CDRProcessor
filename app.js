@@ -3259,6 +3259,62 @@ console.log("connectionstring ...   "+connectionstring);
     });
 
 
+    server.get('/DVP/API/:version/CallCDR/MyAgentStatus', jwt({secret: secret.Secret}), authorization({resource:"myUserProfile", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var startDate = req.query.startDate;
+            var endDate = req.query.endDate;
+            var status = req.query.status;
+
+            if(!startDate && !endDate){
+
+                var currentDate = new Date();
+                startDate = new Date(currentDate.setHours(0));
+                endDate =  new Date(currentDate.setHours(24));
+            }
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.AgentStatus] - [%s] - HTTP Request Received - Params - startDate : %s, endDate : %s', reqId, startDate, endDate);
+
+            //Get all agent status data
+
+            //var sessionList = [];
+
+            backendHandler.GetMyResourceStatusList(startDate, endDate,req.user.iss, companyId, tenantId, function(err, resList)
+            {
+                //var currentSession = {};
+                //
+                //currentSession.SessionList = [];
+
+
+                var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, resList);
+                logger.debug('[DVP-CDRProcessor.AgentStatus] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                res.end(jsonString);
+
+            });
+
+        }
+        catch(ex)
+        {
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.AgentStatus] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+
     //query_string : ?startTime=2016-05-09&endTime=2016-05-12
     server.get('/DVP/API/:version/CallCDR/GetConferenceDetailsByRange', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
@@ -4098,13 +4154,16 @@ console.log("connectionstring ...   "+connectionstring);
                 var sipFromUser = callerProfileSec['caller_id_number'];
                 var sipToUser = callerProfileSec['destination_number'];
 
-                if(!sipFromUser)
+                var direction = varSec['direction'];
+                var dvpCallDirection = varSec['DVP_CALL_DIRECTION'];
+
+                if(direction === 'inbound' && dvpCallDirection === 'inbound')
                 {
+                    //get sip_from_user as from user for all inbound direction calls
                     sipFromUser = varSec['sip_from_user'];
                 }
 
                 var hangupCause = varSec['hangup_cause'];
-                var direction = varSec['direction'];
                 var switchName = cdrObj['switchname'];
                 var callerContext = callerProfileSec['context'];
                 var appId = varSec['dvp_app_id'];
@@ -4115,7 +4174,7 @@ console.log("connectionstring ...   "+connectionstring);
                 var actionCat = varSec['DVP_ACTION_CAT'];
                 var advOpAction = varSec['DVP_ADVANCED_OP_ACTION'];
                 var confName = varSec['DVP_CONFERENCE_NAME'];
-                var dvpCallDirection = varSec['DVP_CALL_DIRECTION'];
+
                 var sipHangupDisposition = varSec['sip_hangup_disposition'];
                 var memberuuid = varSec['memberuuid'];
                 var conferenceUuid = varSec['conference_uuid'];
