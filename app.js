@@ -574,6 +574,59 @@ console.log("connectionstring ...   "+connectionstring);
         return next();
     });
 
+    server.get('/DVP/API/:version/CallCDR/GetAbandonCallDetailsByRange/Count', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var startTime = req.query.startTime;
+            var endTime = req.query.endTime;
+            var agent = req.query.agent;
+            var skill = req.query.skill;
+            var custNum = req.query.custnumber;
+            var didNum = req.query.didnumber;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.GetAbandonCallDetailsByRangeCount] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
+
+            backendHandler.GetAbandonCallRelatedLegsInDateRangeCount(startTime, endTime, companyId, tenantId, agent, skill, custNum, didNum, function(err, count)
+            {
+                var jsonString = "";
+
+                if(err)
+                {
+                    jsonString = messageFormatter.FormatMessage(err, "ERROR", false, 0);
+
+                }
+                else
+                {
+                    jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, count);
+                }
+                res.end(jsonString);
+
+
+            })
+
+        }
+        catch(ex)
+        {
+            logger.error('[DVP-CDRProcessor.GetAbandonCallDetailsByRangeCount] - [%s] - Exception occurred', reqId, ex);
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, 0);
+            logger.debug('[DVP-CDRProcessor.GetAbandonCallDetailsByRangeCount] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
 
     server.get('/DVP/API/:version/CallCDR/PrepareDownloadAbandon', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
@@ -689,9 +742,9 @@ console.log("connectionstring ...   "+connectionstring);
 
                                                 //Convert to CSV
 
-                                                var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Call Time', 'Total Duration', 'Answer Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party'];
+                                                var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Call Time', 'Total Duration', 'Ring Duration', 'Queue Duration', 'Call Type', 'Call Category'];
 
-                                                var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CreatedLocalTime', 'Duration', 'AnswerSec', 'QueueSec', 'HoldSec', 'ObjType', 'ObjCategory', 'HangupParty'];
+                                                var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CreatedLocalTime', 'Duration', 'AnswerSec', 'QueueSec', 'ObjType', 'ObjCategory'];
 
                                                 var csvFileData = json2csv({ data: cdrList, fields: fields, fieldNames : fieldNames });
 
@@ -756,9 +809,6 @@ console.log("connectionstring ...   "+connectionstring);
                                     logger.debug('[DVP-CDRProcessor.PrepareDownloadAbandon] - [%s] - API RESPONSE : %s', reqId, jsonString);
                                     res.end(jsonString);
                                 }
-
-
-
 
                             }
                         });
@@ -853,7 +903,7 @@ console.log("connectionstring ...   "+connectionstring);
 
                     //Convert to CSV
 
-                    //var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Answered', 'Call Time', 'Total Duration', 'Bill Duration', 'Answer Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party', 'Transferred Parties'];
+                    var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Answered', 'Call Time', 'Total Duration', 'Bill Duration', 'Ring Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party', 'Transferred Parties'];
 
                     var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CallAnswered', 'CreatedLocalTime', 'Duration', 'BillSec', 'AnswerSec', 'QueueSec', 'HoldSec', 'ObjType', 'ObjCategory', 'HangupParty', 'TransferredParties'];
 
@@ -883,7 +933,7 @@ console.log("connectionstring ...   "+connectionstring);
                         }
                         else
                         {
-                            var headerFields = fields + newLine;
+                            var headerFields = fieldNames + newLine;
 
                             fs.writeFile(fileName, headerFields, function (err, stat)
                             {
@@ -1480,7 +1530,7 @@ console.log("connectionstring ...   "+connectionstring);
 
                         //Convert to CSV
 
-                        var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Answered', 'Call Time', 'Total Duration', 'Bill Duration', 'Answer Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party', 'Transferred Parties'];
+                        var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Answered', 'Call Time', 'Total Duration', 'Bill Duration', 'Ring Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party', 'Transferred Parties'];
 
                         var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CallAnswered', 'CreatedLocalTime', 'Duration', 'BillSec', 'AnswerSec', 'QueueSec', 'HoldSec', 'ObjType', 'ObjCategory', 'HangupParty', 'TransferredParties'];
 
@@ -1612,7 +1662,7 @@ console.log("connectionstring ...   "+connectionstring);
 
                         //Convert to CSV
 
-                        var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Call Time', 'Total Duration', 'Answer Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party'];
+                        var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Call Time', 'Total Duration', 'Ring Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party'];
 
                         var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CreatedLocalTime', 'Duration', 'AnswerSec', 'QueueSec', 'HoldSec', 'ObjType', 'ObjCategory', 'HangupParty'];
 
@@ -1706,7 +1756,7 @@ console.log("connectionstring ...   "+connectionstring);
 
             logger.debug('[DVP-CDRProcessor.GetProcessedCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
 
-            backendHandler.GetProcessedCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, function(err, cdrList)
+            backendHandler.GetProcessedCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, -1, -1, function(err, cdrList)
             {
                 logger.debug('[DVP-CDRProcessor.GetProcessedCallDetailsByRange] - [%s] - CDR Processing Done', reqId);
 
@@ -1816,6 +1866,65 @@ console.log("connectionstring ...   "+connectionstring);
             logger.error('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - Exception occurred', reqId, ex);
             var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
             logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+    server.get('/DVP/API/:version/CallCDR/GetCallDetailsByRange/Count', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var startTime = req.query.startTime;
+            var endTime = req.query.endTime;
+            var agent = req.query.agent;
+            var skill = req.query.skill;
+            var direction = req.query.direction;
+            var recording = req.query.recording;
+            var custNum = req.query.custnumber;
+            var didNum = req.query.didnumber;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.GetCallDetailsByRangeCount] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
+
+
+            backendHandler.GetCallRelatedLegsInDateRangeCount(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, function(err, cdrCount)
+            {
+                var jsonString = "";
+                if(err)
+                {
+                    logger.error('[DVP-CDRProcessor.GetCallDetailsByRangeCount] - [%s] - Exception occurred on method GetCallRelatedLegsInDateRange', reqId, err);
+
+                    jsonString = messageFormatter.FormatMessage(err, "ERROR", false, 0);
+                }
+                else
+                {
+                    logger.debug('[DVP-CDRProcessor.GetCallDetailsByRangeCount] - [%s] - Get call cdr details by date success', reqId);
+
+                    jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, cdrCount);
+                }
+
+                res.end(jsonString);
+
+            })
+
+        }
+        catch(ex)
+        {
+            logger.error('[DVP-CDRProcessor.GetCallDetailsByRangeCount] - [%s] - Exception occurred', reqId, ex);
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, 0);
+            logger.debug('[DVP-CDRProcessor.GetCallDetailsByRangeCount] - [%s] - API RESPONSE : %s', reqId, jsonString);
             res.end(jsonString);
         }
 
@@ -3150,6 +3259,62 @@ console.log("connectionstring ...   "+connectionstring);
     });
 
 
+    server.get('/DVP/API/:version/CallCDR/MyAgentStatus', jwt({secret: secret.Secret}), authorization({resource:"myUserProfile", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var startDate = req.query.startDate;
+            var endDate = req.query.endDate;
+            var status = req.query.status;
+
+            if(!startDate && !endDate){
+
+                var currentDate = new Date();
+                startDate = new Date(currentDate.setHours(0));
+                endDate =  new Date(currentDate.setHours(24));
+            }
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.AgentStatus] - [%s] - HTTP Request Received - Params - startDate : %s, endDate : %s', reqId, startDate, endDate);
+
+            //Get all agent status data
+
+            //var sessionList = [];
+
+            backendHandler.GetMyResourceStatusList(startDate, endDate,req.user.iss, companyId, tenantId, function(err, resList)
+            {
+                //var currentSession = {};
+                //
+                //currentSession.SessionList = [];
+
+
+                var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, resList);
+                logger.debug('[DVP-CDRProcessor.AgentStatus] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                res.end(jsonString);
+
+            });
+
+        }
+        catch(ex)
+        {
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.AgentStatus] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+
     //query_string : ?startTime=2016-05-09&endTime=2016-05-12
     server.get('/DVP/API/:version/CallCDR/GetConferenceDetailsByRange', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
@@ -3989,13 +4154,16 @@ console.log("connectionstring ...   "+connectionstring);
                 var sipFromUser = callerProfileSec['caller_id_number'];
                 var sipToUser = callerProfileSec['destination_number'];
 
-                if(!sipFromUser)
+                var direction = varSec['direction'];
+                var dvpCallDirection = varSec['DVP_CALL_DIRECTION'];
+
+                if(direction === 'inbound' && dvpCallDirection === 'inbound')
                 {
+                    //get sip_from_user as from user for all inbound direction calls
                     sipFromUser = varSec['sip_from_user'];
                 }
 
                 var hangupCause = varSec['hangup_cause'];
-                var direction = varSec['direction'];
                 var switchName = cdrObj['switchname'];
                 var callerContext = callerProfileSec['context'];
                 var appId = varSec['dvp_app_id'];
@@ -4006,7 +4174,7 @@ console.log("connectionstring ...   "+connectionstring);
                 var actionCat = varSec['DVP_ACTION_CAT'];
                 var advOpAction = varSec['DVP_ADVANCED_OP_ACTION'];
                 var confName = varSec['DVP_CONFERENCE_NAME'];
-                var dvpCallDirection = varSec['DVP_CALL_DIRECTION'];
+
                 var sipHangupDisposition = varSec['sip_hangup_disposition'];
                 var memberuuid = varSec['memberuuid'];
                 var conferenceUuid = varSec['conference_uuid'];

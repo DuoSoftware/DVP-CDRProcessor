@@ -27,10 +27,6 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
         {
             sqlCond.AgentSkill = skillFilter;
         }
-        if(offset)
-        {
-            sqlCond.id = { lt: offset }
-        }
         if(dirFilter)
         {
             sqlCond.DVPCallDirection = dirFilter;
@@ -72,7 +68,14 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
 
         if(limit)
         {
-            dbModel.CallCDR.findAll({where :[sqlCond], order:'"CreatedTime" DESC', limit: limit}).then(function(callLeg)
+            var query = {where :[sqlCond], order:'"CreatedTime" DESC', limit: limit};
+
+            if(offset)
+            {
+                query.offset = offset;
+            }
+
+            dbModel.CallCDR.findAll(query).then(function(callLeg)
             {
 
                 logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
@@ -113,6 +116,138 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
     }
 };
 
+var GetCallRelatedLegsInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, callback)
+{
+    try
+    {
+        var sqlCond = {where:[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjType: 'FAX_INBOUND'},{ObjCategory: 'DND'},{ObjCategory: 'OUTBOUND_DENIED'}]}]}]};
+        //var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'inbound', ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjType: 'FAX_INBOUND'},{ObjCategory: 'DND'},{ObjCategory: 'OUTBOUND_DENIED'}]}]};
+        if(agentFilter)
+        {
+            sqlCond.where[0].$and = [];
+            sqlCond.where[0].$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
+        }
+        if(skillFilter)
+        {
+            sqlCond.where[0].AgentSkill = skillFilter;
+        }
+        if(dirFilter)
+        {
+            sqlCond.where[0].DVPCallDirection = dirFilter;
+        }
+        if(recFilter == 'true' || recFilter == 'false')
+        {
+            if(recFilter == 'true')
+            {
+                sqlCond.where[0].BillSec = { gt: 0 }
+            }
+            else
+            {
+                sqlCond.where[0].BillSec = 0
+            }
+
+        }
+
+        if(customerFilter)
+        {
+            if(!sqlCond.where[0].$and)
+            {
+                sqlCond.where[0].$and = [];
+            }
+
+            sqlCond.where[0].$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
+
+        }
+
+        if(didFilter)
+        {
+            if(!sqlCond.where[0].$and)
+            {
+                sqlCond.where[0].$and = [];
+            }
+
+            sqlCond.where[0].$and.push({DVPCallDirection: 'inbound', SipToUser: didFilter});
+
+        }
+
+
+
+        dbModel.CallCDR.aggregate('*', 'count', sqlCond).then(function(cdrCount)
+        {
+
+            callback(null, cdrCount);
+
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+
+
+    }
+    catch(ex)
+    {
+        callback(ex, callLegList);
+    }
+};
+
+var GetAbandonCallRelatedLegsInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, customerFilter, didFilter, callback)
+{
+    try
+    {
+        var sqlCond = {where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjType: 'HTTAPI', Direction: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'},{ObjCategory: 'OUTBOUND_DENIED'}]}]}]}
+
+        //var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjType: 'HTTAPI', Direction: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'},{ObjCategory: 'OUTBOUND_DENIED'}]}]};
+
+        if(agentFilter)
+        {
+            sqlCond.where[0].$and = [];
+            sqlCond.where[0].$and.push({$or :[{DVPCallDirection: 'inbound', SipResource: agentFilter},{DVPCallDirection: 'outbound', $or:[{SipResource: agentFilter}, {SipFromUser: agentFilter}]}]});
+        }
+        if(skillFilter)
+        {
+            sqlCond.where[0].AgentSkill = skillFilter;
+        }
+
+        if(customerFilter)
+        {
+            if(!sqlCond.where[0].$and)
+            {
+                sqlCond.where[0].$and = [];
+            }
+
+            sqlCond.where[0].$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
+
+        }
+
+        if(didFilter)
+        {
+            if(!sqlCond.where[0].$and)
+            {
+                sqlCond.where[0].$and = [];
+            }
+
+            sqlCond.where[0].$and.push({DVPCallDirection: 'inbound', SipToUser: didFilter});
+
+        }
+
+        dbModel.CallCDR.aggregate('*', 'count', sqlCond).then(function(abandonCdrCount)
+        {
+
+            callback(null, abandonCdrCount);
+
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+
+
+    }
+    catch(ex)
+    {
+        callback(ex, 0);
+    }
+};
+
 var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, skillFilter, customerFilter, didFilter, callback)
 {
     var callLegList = [];
@@ -130,11 +265,6 @@ var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyI
         if(skillFilter)
         {
             sqlCond.AgentSkill = skillFilter;
-        }
-
-        if(offset)
-        {
-            sqlCond.id = { lt: offset };
         }
 
         if(customerFilter)
@@ -161,8 +291,13 @@ var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyI
 
         if(limit)
         {
+            var query = {where :[sqlCond], order:'"CreatedTime" DESC', limit: limit};
+            if(offset)
+            {
+                query.offset = offset;
+            }
 
-            dbModel.CallCDR.findAll({where :[sqlCond], order:'"CreatedTime" DESC', limit: limit}).then(function(callLeg)
+            dbModel.CallCDR.findAll(query).then(function(callLeg)
             {
 
                 logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
@@ -1303,6 +1438,33 @@ var GetResourceStatusList = function(startTime, endTime, statusList, agents, com
     }
 };
 
+
+var GetMyResourceStatusList = function(startTime, endTime, agent, companyId, tenantId, callback)
+{
+    var emptyArr = [];
+
+    try
+    {
+        var defaultQuery = {where :[{CompanyId: companyId, TenantId: tenantId, StatusType: 'ResourceStatus', createdAt: {between:[startTime, endTime]}}], order: ['createdAt'], include: [{model: dbModel.ResResource, as: 'ResResource'}]};
+
+        defaultQuery.include[0].where = {ResourceName: agent};
+
+        dbModel.ResResourceStatusChangeInfo.findAll(defaultQuery).then(function(resourceInfoList)
+        {
+            callback(null, resourceInfoList)
+
+        }).catch(function(err)
+        {
+            callback(err, emptyArr)
+        });
+
+    }
+    catch(ex)
+    {
+        callback(ex, emptyArr);
+    }
+};
+
 var GetCallRelatedLegs = function(sessionId, callback)
 {
     var callLegList = [];
@@ -1482,6 +1644,7 @@ var AddCDRRecord = function(cdrInfo, callback)
 module.exports.AddCDRRecord = AddCDRRecord;
 module.exports.GetCallRelatedLegs = GetCallRelatedLegs;
 module.exports.GetCallRelatedLegsInDateRange = GetCallRelatedLegsInDateRange;
+module.exports.GetCallRelatedLegsInDateRangeCount = GetCallRelatedLegsInDateRangeCount;
 module.exports.GetConferenceRelatedLegsInDateRange = GetConferenceRelatedLegsInDateRange;
 module.exports.GetCallRelatedLegsForAppId = GetCallRelatedLegsForAppId;
 module.exports.GetSpecificLegByUuid = GetSpecificLegByUuid;
@@ -1490,8 +1653,10 @@ module.exports.GetAbandonCallRelatedLegsInDateRange = GetAbandonCallRelatedLegsI
 module.exports.GetCallSummaryDetailsDateRange = GetCallSummaryDetailsDateRange;
 module.exports.GetCallSummaryDetailsDateRangeWithSkill = GetCallSummaryDetailsDateRangeWithSkill;
 module.exports.GetResourceStatusList = GetResourceStatusList;
+module.exports.GetMyResourceStatusList = GetMyResourceStatusList;
 module.exports.GetProcessedCDRInDateRange = GetProcessedCDRInDateRange;
 module.exports.GetProcessedCDRInDateRangeAbandon = GetProcessedCDRInDateRangeAbandon;
 module.exports.GetProcessedCDRInDateRangeCustomer = GetProcessedCDRInDateRangeCustomer;
 module.exports.GetProcessedCDRForSessions = GetProcessedCDRForSessions;
 module.exports.GetProcessedCDRInDateRangeCount = GetProcessedCDRInDateRangeCount;
+module.exports.GetAbandonCallRelatedLegsInDateRangeCount = GetAbandonCallRelatedLegsInDateRangeCount;
