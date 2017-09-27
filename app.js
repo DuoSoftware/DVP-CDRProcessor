@@ -4086,6 +4086,12 @@ console.log("connectionstring ...   "+connectionstring);
             var varSec = cdrObj['variables'];
             var callFlowSec = cdrObj['callflow'];
 
+
+
+            cdrObj.uuid = varSec['uuid'];
+
+            mongoDbOp.addRawCDRRecord(cdrObj);
+
             if(callFlowSec && callFlowSec.length > 0)
             {
 
@@ -4235,7 +4241,12 @@ console.log("connectionstring ...   "+connectionstring);
                     tenantId = '-1';
                 }
 
-                var agentSkill = decodeURIComponent(varSec['ards_skill_display']);
+                var agentSkill = '';
+
+                if(varSec['ards_skill_display'])
+                {
+                    agentSkill = decodeURIComponent(varSec['ards_skill_display']);
+                }
 
                 var duration = varSec['duration'];
                 var billSec = varSec['billsec'];
