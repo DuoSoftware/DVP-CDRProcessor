@@ -170,8 +170,6 @@ var GetCallRelatedLegsInDateRangeCount = function(startTime, endTime, companyId,
 
         }
 
-
-
         dbModel.CallCDR.aggregate('*', 'count', sqlCond).then(function(cdrCount)
         {
 
@@ -181,6 +179,123 @@ var GetCallRelatedLegsInDateRangeCount = function(startTime, endTime, companyId,
         {
             callback(err, 0);
         });
+
+
+    }
+    catch(ex)
+    {
+        callback(ex, 0);
+    }
+};
+
+var GetCampaignCallLegsInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, recFilter, customerFilter, callback)
+{
+    try
+    {
+        var sqlCond = {where:[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'outbound', ObjCategory: 'DIALER'}]};
+
+        if(agentFilter)
+        {
+            sqlCond.where[0].SipResource = agentFilter;
+        }
+        if(recFilter == 'true' || recFilter == 'false')
+        {
+            if(recFilter == 'true')
+            {
+                sqlCond.where[0].BillSec = { gt: 0 }
+            }
+            else
+            {
+                sqlCond.where[0].BillSec = 0
+            }
+
+        }
+
+        if(customerFilter)
+        {
+            sqlCond.where[0].SipToUser = customerFilter;
+
+        }
+
+        dbModel.CallCDR.aggregate('*', 'count', sqlCond).then(function(cdrCount)
+        {
+            callback(null, cdrCount);
+
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        });
+
+
+    }
+    catch(ex)
+    {
+        callback(ex, 0);
+    }
+};
+
+var GetCampaignCallLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, recFilter, customerFilter, callback)
+{
+    var callLegList = [];
+
+    try
+    {
+        var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'outbound', ObjCategory: 'DIALER'};
+
+        if(agentFilter)
+        {
+            sqlCond.where[0].SipResource = agentFilter;
+        }
+        if(recFilter == 'true' || recFilter == 'false')
+        {
+            if(recFilter == 'true')
+            {
+                sqlCond.where[0].BillSec = { gt: 0 }
+            }
+            else
+            {
+                sqlCond.where[0].BillSec = 0
+            }
+
+        }
+
+        if(customerFilter)
+        {
+            sqlCond.where[0].SipToUser = customerFilter;
+
+        }
+
+        if(limit)
+        {
+            var query = {where :[sqlCond], order:'"CreatedTime" DESC', limit: limit};
+
+            if(offset)
+            {
+                query.offset = offset;
+            }
+
+            dbModel.CallCDR.findAll(query).then(function(callLeg)
+            {
+                callback(undefined, callLeg);
+
+            }).catch(function(err)
+            {
+                callback(err, callLegList);
+            });
+
+        }
+        else
+        {
+
+            dbModel.CallCDR.findAll({where :[sqlCond], order:'"CreatedTime" DESC'}).then(function(callLeg)
+            {
+                callback(undefined, callLeg);
+
+            }).catch(function(err)
+            {
+                callback(err, callLegList);
+            });
+        }
 
 
     }
@@ -1660,3 +1775,5 @@ module.exports.GetProcessedCDRInDateRangeCustomer = GetProcessedCDRInDateRangeCu
 module.exports.GetProcessedCDRForSessions = GetProcessedCDRForSessions;
 module.exports.GetProcessedCDRInDateRangeCount = GetProcessedCDRInDateRangeCount;
 module.exports.GetAbandonCallRelatedLegsInDateRangeCount = GetAbandonCallRelatedLegsInDateRangeCount;
+module.exports.GetCampaignCallLegsInDateRangeCount = GetCampaignCallLegsInDateRangeCount;
+module.exports.GetCampaignCallLegsInDateRange = GetCampaignCallLegsInDateRange;

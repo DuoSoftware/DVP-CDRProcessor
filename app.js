@@ -1872,6 +1872,83 @@ console.log("connectionstring ...   "+connectionstring);
         return next();
     });
 
+    server.get('/DVP/API/:version/CallCDR/GetCampaignCallDetailsByRange', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var startTime = req.query.startTime;
+            var endTime = req.query.endTime;
+            var offset = req.query.offset;
+            var limit = req.query.limit;
+            var agent = req.query.agent;
+            var recording = req.query.recording;
+            var custNum = req.query.custnumber;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+            offset = parseInt(offset);
+            limit = parseInt(limit);
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s, Offset: %s, Limit : %s', reqId, startTime, endTime, offset, limit);
+
+
+            backendHandler.GetCampaignCallLegsInDateRange(startTime, endTime, companyId, tenantId, offset, limit, agent, recording, custNum, function(err, legs)
+            {
+                if(err)
+                {
+                    logger.error('[DVP-CDRProcessor.GetCampaignCallDetailsByRange] - [%s] - Exception occurred on method GetCallRelatedLegsInDateRange', reqId, err);
+                }
+                else
+                {
+                    logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRange] - [%s] - Get call cdr details by date success', reqId);
+                }
+
+                var processedCdr = ProcessBatchCDR(legs);
+
+                var cdrList = {};
+
+                ProcessCDRLegs(processedCdr, cdrList, function(err, resp)
+                {
+                    logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRange] - [%s] - CDR Processing Done', reqId);
+
+                    var jsonString = "";
+
+                    if(err)
+                    {
+                        jsonString = messageFormatter.FormatMessage(err, "ERROR OCCURRED", false, cdrList);
+
+                    }
+                    else
+                    {
+                        jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, cdrList);
+                    }
+                    res.end(jsonString);
+                })
+
+
+
+            })
+
+        }
+        catch(ex)
+        {
+            logger.error('[DVP-CDRProcessor.GetCampaignCallDetailsByRange] - [%s] - Exception occurred', reqId, ex);
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+            logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRange] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
     server.get('/DVP/API/:version/CallCDR/GetCallDetailsByRange/Count', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
     {
         var emptyArr = [];
@@ -1925,6 +2002,62 @@ console.log("connectionstring ...   "+connectionstring);
             logger.error('[DVP-CDRProcessor.GetCallDetailsByRangeCount] - [%s] - Exception occurred', reqId, ex);
             var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, 0);
             logger.debug('[DVP-CDRProcessor.GetCallDetailsByRangeCount] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+        }
+
+        return next();
+    });
+
+    server.get('/DVP/API/:version/CallCDR/GetCampaignCallDetailsByRange/Count', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+    {
+        var emptyArr = [];
+        var reqId = nodeUuid.v1();
+        try
+        {
+            var startTime = req.query.startTime;
+            var endTime = req.query.endTime;
+            var agent = req.query.agent;
+            var recording = req.query.recording;
+            var custNum = req.query.custnumber;
+
+            var companyId = req.user.company;
+            var tenantId = req.user.tenant;
+
+
+            if (!companyId || !tenantId)
+            {
+                throw new Error("Invalid company or tenant");
+            }
+
+            logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
+
+
+            backendHandler.GetCampaignCallLegsInDateRangeCount(startTime, endTime, companyId, tenantId, agent, recording, custNum, function(err, cdrCount)
+            {
+                var jsonString = "";
+                if(err)
+                {
+                    logger.error('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - Exception occurred on method GetCallRelatedLegsInDateRange', reqId, err);
+
+                    jsonString = messageFormatter.FormatMessage(err, "ERROR", false, 0);
+                }
+                else
+                {
+                    logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - Get call cdr details by date success', reqId);
+
+                    jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, cdrCount);
+                }
+
+                res.end(jsonString);
+
+            })
+
+        }
+        catch(ex)
+        {
+            logger.error('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - Exception occurred', reqId, ex);
+            var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, 0);
+            logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - API RESPONSE : %s', reqId, jsonString);
             res.end(jsonString);
         }
 
@@ -4163,7 +4296,45 @@ console.log("connectionstring ...   "+connectionstring);
                 var direction = varSec['direction'];
                 var dvpCallDirection = varSec['DVP_CALL_DIRECTION'];
 
-                if(direction === 'inbound' && dvpCallDirection === 'inbound')
+                var opCat = varSec['DVP_OPERATION_CAT'];
+                var actionCat = varSec['DVP_ACTION_CAT'];
+                var advOpAction = varSec['DVP_ADVANCED_OP_ACTION'];
+
+                var isAgentAnswered = false;
+
+                var ardsAddedTimeStamp = varSec['ards_added'];
+                var queueLeftTimeStamp = varSec['ards_queue_left'];
+                var ardsRoutedTimeStamp = varSec['ards_routed'];
+                var ardsResourceName = varSec['ards_resource_name'];
+                var ardsSipName = varSec['ARDS-SIP-Name'];
+                var sipResource = null;
+
+                var isQueued = false;
+
+                if(ardsResourceName && dvpCallDirection === 'inbound')
+                {
+                    sipResource = ardsResourceName;
+                }
+                else if(ardsSipName && dvpCallDirection === 'inbound')
+                {
+                    sipResource = ardsSipName;
+                }
+
+                if(actionCat === 'DIALER')
+                {
+                    if(opCat === 'AGENT')
+                    {
+                        sipFromUser = varSec['sip_to_user'];
+                        sipResource = varSec['sip_to_user'];
+                        sipToUser = varSec['sip_from_user'];
+                    }
+                    else if(opCat === 'CUSTOMER')
+                    {
+                        //NEED TO IMPLEMENT
+
+                    }
+                }
+                else if(direction === 'inbound' && dvpCallDirection === 'inbound')
                 {
                     //get sip_from_user as from user for all inbound direction calls
                     sipFromUser = varSec['sip_from_user'];
@@ -4176,9 +4347,6 @@ console.log("connectionstring ...   "+connectionstring);
                 var companyId = varSec['companyid'];
                 var tenantId = varSec['tenantid'];
                 var currentApp = varSec['current_application'];
-                var opCat = varSec['DVP_OPERATION_CAT'];
-                var actionCat = varSec['DVP_ACTION_CAT'];
-                var advOpAction = varSec['DVP_ADVANCED_OP_ACTION'];
                 var confName = varSec['DVP_CONFERENCE_NAME'];
 
                 var sipHangupDisposition = varSec['sip_hangup_disposition'];
@@ -4251,16 +4419,6 @@ console.log("connectionstring ...   "+connectionstring);
                     var hangupTStamp = parseInt(hangupTimeStamp)/1000;
                     hangupDate = new Date(hangupTStamp);
                 }
-
-                var isAgentAnswered = false;
-
-                var ardsAddedTimeStamp = varSec['ards_added'];
-                var queueLeftTimeStamp = varSec['ards_queue_left'];
-                var ardsRoutedTimeStamp = varSec['ards_routed'];
-                var ardsResourceName = varSec['ards_resource_name'];
-                var ardsSipName = varSec['ARDS-SIP-Name'];
-
-                var isQueued = false;
 
                 if(ardsAddedTimeStamp)
                 {
@@ -4371,18 +4529,12 @@ console.log("connectionstring ...   "+connectionstring);
                     DVPCallDirection: dvpCallDirection,
                     HangupDisposition:sipHangupDisposition,
                     AgentAnswered: isAgentAnswered,
-                    IsQueued: isQueued
+                    IsQueued: isQueued,
+                    SipResource: sipResource
                 });
 
 
-                if(ardsResourceName && dvpCallDirection === 'inbound')
-                {
-                    cdr.SipResource = ardsResourceName;
-                }
-                else if(ardsSipName && dvpCallDirection === 'inbound')
-                {
-                    cdr.SipResource = ardsSipName;
-                }
+
 
 
                 if(actionCat === 'CONFERENCE')
