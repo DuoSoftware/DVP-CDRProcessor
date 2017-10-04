@@ -4299,6 +4299,8 @@ console.log("connectionstring ...   "+connectionstring);
                 var opCat = varSec['DVP_OPERATION_CAT'];
                 var actionCat = varSec['DVP_ACTION_CAT'];
                 var advOpAction = varSec['DVP_ADVANCED_OP_ACTION'];
+                var campaignId = varSec['CampaignId'];
+                var campaignName = varSec['CampaignName'];
 
                 var isAgentAnswered = false;
 
@@ -4530,7 +4532,9 @@ console.log("connectionstring ...   "+connectionstring);
                     HangupDisposition:sipHangupDisposition,
                     AgentAnswered: isAgentAnswered,
                     IsQueued: isQueued,
-                    SipResource: sipResource
+                    SipResource: sipResource,
+                    CampaignId: campaignId,
+                    CampaignName: campaignName
                 });
 
 
