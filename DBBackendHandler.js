@@ -1249,7 +1249,7 @@ var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantI
 
     try
     {
-        var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId};
+        var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjCategory: {ne: 'DIALER'}};
         if(agentFilter)
         {
             sqlCond.$and = [];
@@ -1391,7 +1391,7 @@ var GetProcessedCDRInDateRangeCount = function(startTime, endTime, companyId, te
 {
     try
     {
-        var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId};
+        var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjCategory: {ne: 'DIALER'}};
         if(agentFilter)
         {
             sqlCond.$and = [];
