@@ -1333,7 +1333,7 @@ var GetProcessedCampaignCDRInDateRange = function(startTime, endTime, companyId,
 
     try
     {
-        var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'outbound', ObjCategory: 'DIALER'};
+        var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjCategory: 'DIALER'};
 
         if(agentFilter)
         {
@@ -1463,7 +1463,7 @@ var GetProcessedCampaignCDRInDateRangeCount = function(startTime, endTime, compa
 {
     try
     {
-        var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'outbound', ObjCategory: 'DIALER'};
+        var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjCategory: 'DIALER'};
 
         if(agentFilter)
         {
