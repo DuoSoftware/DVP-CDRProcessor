@@ -1327,6 +1327,66 @@ var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantI
     }
 };
 
+var GetProcessedCampaignCDRInDateRange = function(startTime, endTime, companyId, tenantId, agentFilter, recFilter, customerFilter, limit, offset, callback)
+{
+    var callLegList = [];
+
+    try
+    {
+        var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'outbound', ObjCategory: 'DIALER'};
+
+        if(agentFilter)
+        {
+            sqlCond.where[0].SipResource = agentFilter;
+        }
+        if(recFilter == 'true' || recFilter == 'false')
+        {
+            if(recFilter == 'true')
+            {
+                sqlCond.where[0].BillSec = { gt: 0 }
+            }
+            else
+            {
+                sqlCond.where[0].BillSec = 0
+            }
+
+        }
+
+        if(customerFilter)
+        {
+            sqlCond.where[0].SipToUser = customerFilter;
+
+        }
+
+        var query = {where :[sqlCond], order:'"CreatedTime" DESC'};
+
+        if(limit >= 0)
+        {
+            query.limit = limit;
+        }
+
+        if(offset >= 0)
+        {
+            query.offset = offset;
+        }
+
+        dbModel.CallCDRProcessed.findAll(query).then(function(callLeg)
+        {
+            callback(undefined, callLeg);
+
+        }).catch(function(err)
+        {
+            callback(err, callLegList);
+        })
+
+
+    }
+    catch(ex)
+    {
+        callback(ex, callLegList);
+    }
+};
+
 var GetProcessedCDRInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, callback)
 {
     try
@@ -1377,6 +1437,54 @@ var GetProcessedCDRInDateRangeCount = function(startTime, endTime, companyId, te
             }
 
             sqlCond.$and.push({DVPCallDirection: 'inbound', SipToUser: didFilter});
+
+        }
+
+        var query = {where :[sqlCond]};
+
+        dbModel.CallCDRProcessed.aggregate('*', 'count', query).then(function(recCount)
+        {
+            callback(undefined, recCount);
+
+        }).catch(function(err)
+        {
+            callback(err, 0);
+        })
+
+
+    }
+    catch(ex)
+    {
+        callback(ex, 0);
+    }
+};
+
+var GetProcessedCampaignCDRInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, recFilter, customerFilter, callback)
+{
+    try
+    {
+        var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, Direction: 'outbound', ObjCategory: 'DIALER'};
+
+        if(agentFilter)
+        {
+            sqlCond.where[0].SipResource = agentFilter;
+        }
+        if(recFilter == 'true' || recFilter == 'false')
+        {
+            if(recFilter == 'true')
+            {
+                sqlCond.where[0].BillSec = { gt: 0 }
+            }
+            else
+            {
+                sqlCond.where[0].BillSec = 0
+            }
+
+        }
+
+        if(customerFilter)
+        {
+            sqlCond.where[0].SipToUser = customerFilter;
 
         }
 
@@ -1777,3 +1885,5 @@ module.exports.GetProcessedCDRInDateRangeCount = GetProcessedCDRInDateRangeCount
 module.exports.GetAbandonCallRelatedLegsInDateRangeCount = GetAbandonCallRelatedLegsInDateRangeCount;
 module.exports.GetCampaignCallLegsInDateRangeCount = GetCampaignCallLegsInDateRangeCount;
 module.exports.GetCampaignCallLegsInDateRange = GetCampaignCallLegsInDateRange;
+module.exports.GetProcessedCampaignCDRInDateRange = GetProcessedCampaignCDRInDateRange;
+module.exports.GetProcessedCampaignCDRInDateRangeCount = GetProcessedCampaignCDRInDateRangeCount;
