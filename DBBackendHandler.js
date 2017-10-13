@@ -1619,7 +1619,7 @@ var GetResourceStatusList = function(startTime, endTime, statusList, agents, com
 
     try
     {
-        var defaultQuery = {where :[{CompanyId: companyId, TenantId: tenantId, StatusType: 'ResourceStatus', createdAt: {between:[startTime, endTime]}}], order: ['createdAt'], include: [{model: dbModel.ResResource, as: 'ResResource'}]};
+        var defaultQuery = {where :[{CompanyId: companyId, TenantId: tenantId,StatusType: 'ResourceStatus', createdAt: {between:[startTime, endTime]}}], order: ['createdAt'], include: [{model: dbModel.ResResource, as: 'ResResource'}]};
 
         if(statusList && statusList.length > 0)
         {
@@ -1661,7 +1661,6 @@ var GetResourceStatusList = function(startTime, endTime, statusList, agents, com
     }
 };
 
-
 var GetMyResourceStatusList = function(startTime, endTime, agent, companyId, tenantId, callback)
 {
     var emptyArr = [];
@@ -1687,6 +1686,67 @@ var GetMyResourceStatusList = function(startTime, endTime, agent, companyId, ten
         callback(ex, emptyArr);
     }
 };
+
+
+var GetResourceStatusListWithACW = function(startTime, endTime, statusList, agents, companyId, tenantId, callback)
+{
+    var emptyArr = [];
+
+    try
+    {
+        var defaultQuery = {where :[{CompanyId: companyId, TenantId: tenantId,$or:[{StatusType: 'ResourceStatus'},{Reason: 'AfterWork'}], createdAt: {between:[startTime, endTime]}}], order: ['createdAt'], include: [{model: dbModel.ResResource, as: 'ResResource'}]};
+
+
+        if(statusList && statusList.length > 0)
+        {
+            defaultQuery ={where :[{CompanyId: companyId, TenantId: tenantId, createdAt: {between:[startTime, endTime]}}], order: ['createdAt'], include: [{model: dbModel.ResResource, as: 'ResResource'}]};
+            defaultQuery.where[0].$or = [];
+
+            statusList.forEach(function(status)
+            {
+                if(status.Status=="AfterWork")
+                {
+                    defaultQuery.where[0].$or.push({StatusType: 'SloatStatus' ,Reason: status.Status});
+                }
+                else
+                {
+                    defaultQuery.where[0].$or.push({StatusType: 'ResourceStatus' ,Reason: status.Status});
+                }
+
+
+            });
+        }
+
+        if(agents && agents.length > 0)
+        {
+            defaultQuery.include[0].where = [{$or:[]}];
+
+            var tempOrCondArr = defaultQuery.include[0].where[0].$or;
+            agents.forEach(function(agent)
+            {
+                tempOrCondArr.push({ResourceName: agent.ResourceName});
+
+            });
+        }
+
+
+        dbModel.ResResourceStatusChangeInfo.findAll(defaultQuery).then(function(resourceInfoList)
+        {
+            callback(null, resourceInfoList)
+
+        }).catch(function(err)
+        {
+            callback(err, emptyArr)
+        });
+
+    }
+    catch(ex)
+    {
+        callback(ex, emptyArr);
+    }
+};
+
+
 
 var GetCallRelatedLegs = function(sessionId, callback)
 {
@@ -1887,3 +1947,4 @@ module.exports.GetCampaignCallLegsInDateRangeCount = GetCampaignCallLegsInDateRa
 module.exports.GetCampaignCallLegsInDateRange = GetCampaignCallLegsInDateRange;
 module.exports.GetProcessedCampaignCDRInDateRange = GetProcessedCampaignCDRInDateRange;
 module.exports.GetProcessedCampaignCDRInDateRangeCount = GetProcessedCampaignCDRInDateRangeCount;
+module.exports.GetResourceStatusListWithACW = GetResourceStatusListWithACW;
