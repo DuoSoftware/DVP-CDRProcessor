@@ -1694,7 +1694,7 @@ var GetResourceStatusListWithACW = function(startTime, endTime, statusList, agen
 
     try
     {
-        var defaultQuery = {where :[{CompanyId: companyId, TenantId: tenantId,$or:[{StatusType: 'ResourceStatus'},{Reason: 'AfterWork'}], createdAt: {between:[startTime, endTime]}}], order: ['createdAt'], include: [{model: dbModel.ResResource, as: 'ResResource'}]};
+        var defaultQuery = {where :[{CompanyId: companyId, TenantId: tenantId,$or:[{StatusType: 'ResourceStatus'}], createdAt: {between:[startTime, endTime]}}], order: ['createdAt'], include: [{model: dbModel.ResResource, as: 'ResResource'}]};
 
 
         if(statusList && statusList.length > 0)
