@@ -4732,19 +4732,6 @@ server.post('/DVP/API/:version/CallCDR/Report/SendMail', jwt({secret: secret.Sec
     return next();
 });
 
-
-server.get('/testMe',function(req,res,next)
-{
-    var obj =
-        {
-            name:"Pawan",
-            age:"27",
-            nic:"903321130v"
-        }
-    res.end(JSON.stringify(obj));
-    return next();
-});
-
 //server.post('/DVP/API/' + hostVersion + '/CallCDR/ProcessCDR', function(req,res,next)
 server.post('/DVP/API/:version/CallCDR/ProcessCDR', function(req,res,next)
 {

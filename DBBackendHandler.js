@@ -250,30 +250,30 @@ var GetCampaignCallLegsInDateRange = function(startTime, endTime, companyId, ten
 
         if(agentFilter)
         {
-            sqlCond.where[0].SipResource = agentFilter;
+            sqlCond.SipResource = agentFilter;
         }
         if(recFilter == 'true' || recFilter == 'false')
         {
             if(recFilter == 'true')
             {
-                sqlCond.where[0].BillSec = { gt: 0 }
+                sqlCond.BillSec = { gt: 0 }
             }
             else
             {
-                sqlCond.where[0].BillSec = 0
+                sqlCond.BillSec = 0
             }
 
         }
 
         if(customerFilter)
         {
-            sqlCond.where[0].SipToUser = customerFilter;
+            sqlCond.SipToUser = customerFilter;
 
         }
 
         if(campaignFilter)
         {
-            sqlCond.where[0].CampaignId = campaignFilter;
+            sqlCond.CampaignId = campaignFilter;
         }
 
         if(limit)
