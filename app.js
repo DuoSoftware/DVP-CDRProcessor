@@ -4804,10 +4804,10 @@ server.post('/DVP/API/:version/CallCDR/ProcessCDR', function(req,res,next)
                     sipResource = varSec['sip_to_user'];
                     sipToUser = varSec['sip_from_user'];
                 }
-                else if(opCat === 'CUSTOMER')
+                else if((advOpAction === 'BLAST' || advOpAction === 'DIRECT' || advOpAction === 'IVRCALLBACK') && opCat === 'CUSTOMER')
                 {
                     //NEED TO IMPLEMENT
-
+                    sipFromUser = varSec['origination_caller_id_number'];
                 }
             }
             else if(direction === 'inbound' && dvpCallDirection === 'inbound')
