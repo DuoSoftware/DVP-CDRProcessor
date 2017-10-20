@@ -4808,6 +4808,7 @@ server.post('/DVP/API/:version/CallCDR/ProcessCDR', function(req,res,next)
                 {
                     //NEED TO IMPLEMENT
                     sipFromUser = varSec['origination_caller_id_number'];
+                    sipToUser = varSec['sip_to_user'];
                 }
             }
             else if(direction === 'inbound' && dvpCallDirection === 'inbound')
@@ -5037,6 +5038,11 @@ server.post('/DVP/API/:version/CallCDR/ProcessCDR', function(req,res,next)
             if(advOpAction === 'INTERCEPT')
             {
                 cdr.ObjCategory = 'INTERCEPT';
+            }
+
+            if(actionCat === 'DIALER' && advOpAction)
+            {
+                cdr.ObjType = advOpAction;
             }
 
             backendHandler.AddCDRRecord(cdr, function(err, result)
