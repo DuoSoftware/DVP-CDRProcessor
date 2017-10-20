@@ -1717,7 +1717,7 @@ var GetResourceStatusListWithACW = function(startTime, endTime, statusList, agen
 
     try
     {
-        var defaultQuery = {where :[{CompanyId: companyId, TenantId: tenantId,$or:[{StatusType: 'ResourceStatus'}], createdAt: {between:[startTime, endTime]}}], order: ['createdAt'], include: [{model: dbModel.ResResource, as: 'ResResource'}]};
+        var defaultQuery = {where :[{CompanyId: companyId, TenantId: tenantId,$or:[{StatusType: 'ResourceStatus'},{Reason:"CALL"},{Reason:"CHAT"}], createdAt: {between:[startTime, endTime]}}], order: ['createdAt'], include: [{model: dbModel.ResResource, as: 'ResResource'}]};
 
 
         if(statusList && statusList.length > 0)
@@ -1727,10 +1727,11 @@ var GetResourceStatusListWithACW = function(startTime, endTime, statusList, agen
 
             statusList.forEach(function(status)
             {
-                if(status.Status=="AfterWork")
+                if(status.Status=="AfterWork" || status.Status=="CALL" || status.Status=="CHAT")
                 {
                     defaultQuery.where[0].$or.push({StatusType: 'SloatStatus' ,Reason: status.Status});
                 }
+
                 else
                 {
                     defaultQuery.where[0].$or.push({StatusType: 'ResourceStatus' ,Reason: status.Status});
