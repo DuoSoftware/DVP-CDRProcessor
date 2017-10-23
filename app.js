@@ -858,10 +858,10 @@ server.get('/DVP/API/:version/CallCDR/TimeZones', jwt({secret: secret.Secret}), 
     return next();
 });
 
-var getProcessedCampaignCDRPageWise = function(reqId, uniqueId, fileName, tz, startTime, endTime, companyId, tenantId, agent, recording, custNum, campaignId, limit, offset, callback)
+var getProcessedCampaignCDRPageWise = function(reqId, uniqueId, fileName, tz, startTime, endTime, companyId, tenantId, agent, recording, custNum, campaignName, limit, offset, callback)
 {
     var newLine= "\r\n";
-    backendHandler.GetProcessedCampaignCDRInDateRange(startTime, endTime, companyId, tenantId, agent, recording, custNum, campaignId, limit, offset, function(err, cdrList)
+    backendHandler.GetProcessedCampaignCDRInDateRange(startTime, endTime, companyId, tenantId, agent, recording, custNum, campaignName, limit, offset, function(err, cdrList)
     {
         if(err)
         {
@@ -1324,7 +1324,7 @@ server.get('/DVP/API/:version/CallCDR/PrepareDownloadCampaign', jwt({secret: sec
         var agent = req.query.agent;
         var recording = req.query.recording;
         var custNum = req.query.custnumber;
-        var campaignId = req.query.campaignId;
+        var campaignName = req.query.campaignName;
         var fileType = req.query.fileType;
         var tz = req.query.tz;
 
@@ -1402,14 +1402,14 @@ server.get('/DVP/API/:version/CallCDR/PrepareDownloadCampaign', jwt({secret: sec
                                         var offset = 0;
                                         var limit = 5000;
 
-                                        backendHandler.GetProcessedCampaignCDRInDateRangeCount(startTime, endTime, companyId, tenantId, agent, recording, custNum, campaignId, function(err, cnt)
+                                        backendHandler.GetProcessedCampaignCDRInDateRangeCount(startTime, endTime, companyId, tenantId, agent, recording, custNum, campaignName, function(err, cnt)
                                         {
                                             if(!err && cnt)
                                             {
                                                 var arr = [];
                                                 while(cnt > offset)
                                                 {
-                                                    arr.push(getProcessedCampaignCDRPageWise.bind(this, reqId, uniqueId, fileName, tz, startTime, endTime, companyId, tenantId, agent, recording, custNum, campaignId, limit, offset));
+                                                    arr.push(getProcessedCampaignCDRPageWise.bind(this, reqId, uniqueId, fileName, tz, startTime, endTime, companyId, tenantId, agent, recording, custNum, campaignName, limit, offset));
                                                     offset = offset + limit;
 
                                                 }
@@ -2200,7 +2200,7 @@ server.get('/DVP/API/:version/CallCDR/GetCampaignCallDetailsByRange', jwt({secre
         var agent = req.query.agent;
         var recording = req.query.recording;
         var custNum = req.query.custnumber;
-        var campaignId = req.query.campaignId;
+        var campaignName = req.query.campaignName;
 
         var companyId = req.user.company;
         var tenantId = req.user.tenant;
@@ -2216,7 +2216,7 @@ server.get('/DVP/API/:version/CallCDR/GetCampaignCallDetailsByRange', jwt({secre
         logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s, Offset: %s, Limit : %s', reqId, startTime, endTime, offset, limit);
 
 
-        backendHandler.GetCampaignCallLegsInDateRange(startTime, endTime, companyId, tenantId, offset, limit, agent, recording, custNum, campaignId, function(err, legs)
+        backendHandler.GetCampaignCallLegsInDateRange(startTime, endTime, companyId, tenantId, offset, limit, agent, recording, custNum, campaignName, function(err, legs)
         {
             if(err)
             {
@@ -2335,7 +2335,7 @@ server.get('/DVP/API/:version/CallCDR/GetCampaignCallDetailsByRange/Count', jwt(
         var agent = req.query.agent;
         var recording = req.query.recording;
         var custNum = req.query.custnumber;
-        var campaignId = req.query.campaignId;
+        var campaignName = req.query.campaignName;
 
         var companyId = req.user.company;
         var tenantId = req.user.tenant;
@@ -2349,7 +2349,7 @@ server.get('/DVP/API/:version/CallCDR/GetCampaignCallDetailsByRange/Count', jwt(
         logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
 
 
-        backendHandler.GetCampaignCallLegsInDateRangeCount(startTime, endTime, companyId, tenantId, agent, recording, custNum, campaignId, function(err, cdrCount)
+        backendHandler.GetCampaignCallLegsInDateRangeCount(startTime, endTime, companyId, tenantId, agent, recording, custNum, campaignName, function(err, cdrCount)
         {
             var jsonString = "";
             if(err)

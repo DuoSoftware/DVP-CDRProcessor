@@ -219,7 +219,7 @@ var GetCampaignCallLegsInDateRangeCount = function(startTime, endTime, companyId
 
         if(campaignFilter)
         {
-            sqlCond.where[0].CampaignId = campaignFilter;
+            sqlCond.where[0].CampaignName = campaignFilter;
 
         }
 
@@ -273,7 +273,7 @@ var GetCampaignCallLegsInDateRange = function(startTime, endTime, companyId, ten
 
         if(campaignFilter)
         {
-            sqlCond.CampaignId = campaignFilter;
+            sqlCond.CampaignName = campaignFilter;
         }
 
         if(limit)
@@ -1371,7 +1371,7 @@ var GetProcessedCampaignCDRInDateRange = function(startTime, endTime, companyId,
 
         if(campaignFilter)
         {
-            sqlCond.where[0].CampaignId = campaignFilter;
+            sqlCond.where[0].CampaignName = campaignFilter;
 
         }
 
@@ -1507,7 +1507,7 @@ var GetProcessedCampaignCDRInDateRangeCount = function(startTime, endTime, compa
 
         if(campaignFilter)
         {
-            sqlCond.where[0].CampaignId = campaignFilter;
+            sqlCond.where[0].CampaignName = campaignFilter;
 
         }
 
