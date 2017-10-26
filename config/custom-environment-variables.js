@@ -77,5 +77,6 @@ module.exports = {
         "Version":"HOST_VERSION"
     },
 
-    "Token": "HOST_TOKEN"
+    "Token": "HOST_TOKEN",
+    "SaveRawCDRMongo": "HOST_SAVE_CDR_MONGO"
 };
