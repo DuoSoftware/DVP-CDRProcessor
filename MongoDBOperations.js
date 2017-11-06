@@ -4,9 +4,12 @@
 var Promise = require('bluebird');
 var IntegrationData = require('dvp-mongomodels/model/IntegrationData').IntegrationData;
 var ReportEmail = require('dvp-mongomodels/model/ReportEmailConfig').ReportEmailConfig;
+var RawCdr = require('dvp-mongomodels/model/Cdr').Cdr;
 var User = require('dvp-mongomodels/model/User');
 var mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
+
+var config = require('config');
 
 
 var getUserById = function(id, companyId, tenantId)
@@ -140,6 +143,23 @@ var addEmailRecipientRecord = function(recipients, reportType, template, company
 
 };
 
+var addRawCDRRecord = function(obj)
+{
+    if(config.SaveRawCDRMongo == 'true')
+    {
+        var cdr = RawCdr(obj);
+
+        cdr.save(function (err, obj)
+        {
+            if (err)
+            {
+                console.log(JSON.stringify(err));
+            }
+        });
+    }
+
+};
+
 var updateEmailRecipientRecord = function(id, recipients, reportType, template, companyId, tenantId)
 {
     return new Promise(function(fulfill, reject)
@@ -187,3 +207,4 @@ module.exports.getEmailRecipients = getEmailRecipients;
 module.exports.deleteEmailRecipientRecord = deleteEmailRecipientRecord;
 module.exports.addEmailRecipientRecord = addEmailRecipientRecord;
 module.exports.updateEmailRecipientRecord = updateEmailRecipientRecord;
+module.exports.addRawCDRRecord = addRawCDRRecord;

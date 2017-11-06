@@ -29,7 +29,7 @@ var redisSetting =  {
 
 if(redismode == 'sentinel'){
 
-    if(Config.Redis.sentinels && Config.Redis.sentinels.hosts && Config.Redis.sentinels.port, Config.Redis.sentinels.name){
+    if(Config.Redis.sentinels && Config.Redis.sentinels.hosts && Config.Redis.sentinels.port && Config.Redis.sentinels.name){
         var sentinelHosts = Config.Redis.sentinels.hosts.split(',');
         if(Array.isArray(sentinelHosts) && sentinelHosts.length > 2){
             var sentinelConnections = [];
