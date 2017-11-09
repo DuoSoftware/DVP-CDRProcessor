@@ -1346,7 +1346,7 @@ server.get('/DVP/API/:version/CallCDR/PrepareDownloadCampaign', jwt({secret: sec
         var etInReadableFormat = moment(endTime).unix();
 
         //Create FILE NAME Key
-        var fileName = 'CDR_' + tenantId + '_' + companyId + '_' + stInReadableFormat + '_' + etInReadableFormat;
+        var fileName = 'CAMPAIGN_CDR_' + tenantId + '_' + companyId + '_' + stInReadableFormat + '_' + etInReadableFormat;
 
         if(agent)
         {
