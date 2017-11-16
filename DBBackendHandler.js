@@ -188,7 +188,7 @@ var GetCallRelatedLegsInDateRangeCount = function(startTime, endTime, companyId,
     }
 };
 
-var GetCampaignCallLegsInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, recFilter, customerFilter, campaignFilter, callback)
+var GetCampaignCallLegsInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, recFilter, customerFilter, campaignFilter, callback)
 {
     try
     {
@@ -197,6 +197,10 @@ var GetCampaignCallLegsInDateRangeCount = function(startTime, endTime, companyId
         if(agentFilter)
         {
             sqlCond.where[0].SipResource = agentFilter;
+        }
+        if(skillFilter)
+        {
+            sqlCond.where[0].AgentSkill = skillFilter;
         }
         if(recFilter == 'true' || recFilter == 'false')
         {
@@ -240,7 +244,7 @@ var GetCampaignCallLegsInDateRangeCount = function(startTime, endTime, companyId
     }
 };
 
-var GetCampaignCallLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, recFilter, customerFilter, campaignFilter, callback)
+var GetCampaignCallLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, skillFilter, recFilter, customerFilter, campaignFilter, callback)
 {
     var callLegList = [];
 
@@ -252,6 +256,12 @@ var GetCampaignCallLegsInDateRange = function(startTime, endTime, companyId, ten
         {
             sqlCond.SipResource = agentFilter;
         }
+
+        if(skillFilter)
+        {
+            sqlCond.AgentSkill = skillFilter;
+        }
+
         if(recFilter == 'true' || recFilter == 'false')
         {
             if(recFilter == 'true')
@@ -1338,7 +1348,7 @@ var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantI
     }
 };
 
-var GetProcessedCampaignCDRInDateRange = function(startTime, endTime, companyId, tenantId, agentFilter, recFilter, customerFilter, campaignFilter, limit, offset, callback)
+var GetProcessedCampaignCDRInDateRange = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, recFilter, customerFilter, campaignFilter, limit, offset, callback)
 {
     var callLegList = [];
 
@@ -1349,6 +1359,10 @@ var GetProcessedCampaignCDRInDateRange = function(startTime, endTime, companyId,
         if(agentFilter)
         {
             sqlCond.SipResource = agentFilter;
+        }
+        if(skillFilter)
+        {
+            sqlCond.AgentSkill = skillFilter;
         }
         if(recFilter == 'true' || recFilter == 'false')
         {
@@ -1476,7 +1490,7 @@ var GetProcessedCDRInDateRangeCount = function(startTime, endTime, companyId, te
     }
 };
 
-var GetProcessedCampaignCDRInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, recFilter, customerFilter, campaignFilter, callback)
+var GetProcessedCampaignCDRInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, recFilter, customerFilter, campaignFilter, callback)
 {
     try
     {
@@ -1486,6 +1500,12 @@ var GetProcessedCampaignCDRInDateRangeCount = function(startTime, endTime, compa
         {
             sqlCond.SipResource = agentFilter;
         }
+
+        if(skillFilter)
+        {
+            sqlCond.AgentSkill = skillFilter;
+        }
+
         if(recFilter == 'true' || recFilter == 'false')
         {
             if(recFilter == 'true')
