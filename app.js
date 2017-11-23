@@ -2966,7 +2966,7 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly/Download', j
         //Create FILE NAME Key
         var fileName = 'CALL_SUMMARY_QUEUE_HOURLY_' + tenantId + '_' + companyId + '_' + dateTimestamp;
 
-        if(skills && skills.length > 0)
+        /*if(skills && skills.length > 0)
         {
             skills.forEach(function(skill)
             {
@@ -2975,7 +2975,7 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly/Download', j
                     fileName = fileName + '_' + skill;
                 }
             })
-        }
+        }*/
 
         fileName = fileName.replace(/:/g, "-") + '.' + fileType;
 
