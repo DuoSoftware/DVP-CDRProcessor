@@ -4841,17 +4841,17 @@ server.post('/DVP/API/:version/CallCDR/ProcessCDR', function(req,res,next)
 
             if(!sipToUser || (actionCat === 'FORWARDING' && direction === 'inbound'))
             {
-                sipToUser = varSec['sip_to_user'];
+                sipToUser = decodeURIComponent(varSec['sip_to_user']);
             }
 
             if(!sipFromUser)
             {
-                sipFromUser = varSec['origination_caller_id_number'];
+                sipFromUser = decodeURIComponent(varSec['origination_caller_id_number']);
             }
 
             if(!sipToUser)
             {
-                sipToUser = varSec['dialed_user'];
+                sipToUser = decodeURIComponent(varSec['dialed_user']);
             }
 
             if(memberuuid)
