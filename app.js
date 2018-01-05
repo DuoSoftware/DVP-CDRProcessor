@@ -4873,6 +4873,8 @@ server.post('/DVP/API/:version/CallCDR/ProcessCDR', function(req,res,next)
                 callUuid = conferenceUuid;
             }
 
+            sipFromUser = decodeURIComponent(sipFromUser);
+
 
             var answeredTimeStamp = timesSec['answered_time'];
             if(answeredTimeStamp)
