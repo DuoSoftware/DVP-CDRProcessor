@@ -1809,7 +1809,7 @@ server.post('/DVP/API/:version/CallCDR/GeneratePreviousDay', jwt({secret: secret
 
         //check file exists
 
-        backendHandler.GetProcessedCDRInDateRange(startDay, endDay, companyId, tenantId, null, null, null, null, null, null, function(err, cdrList)
+        backendHandler.GetProcessedCDRInDateRange(startDay, endDay, companyId, tenantId, null, null, null, null, null, null, null, null, null, function(err, cdrList)
         {
             logger.debug('[DVP-CDRProcessor.GeneratePreviousDay] - [%s] - CDR Processing Done', reqId);
 
@@ -1948,7 +1948,7 @@ server.post('/DVP/API/:version/CallCDR/Abandon/GeneratePreviousDay', jwt({secret
 
         fileName = fileName.replace(/:/g, "-") + '.' + fileType;
 
-        backendHandler.GetProcessedCDRInDateRangeAbandon(startDay, endDay, companyId, tenantId, null, null, null, null, null, null, null, function(err, cdrList)
+        backendHandler.GetProcessedCDRInDateRangeAbandon(startDay, endDay, companyId, tenantId, null, null, null, null, null, null, null, null, function(err, cdrList)
         {
             logger.debug('[DVP-CDRProcessor.GeneratePreviousDayAbandon] - [%s] - CDR Processing Done', reqId);
 
@@ -2062,6 +2062,7 @@ server.get('/DVP/API/:version/CallCDR/GetProcessedCallDetailsByRange', jwt({secr
         var recording = req.query.recording;
         var custNum = req.query.custnumber;
         var didNum = req.query.didnumber;
+        var bUnit = req.query.businessunit;
 
         var companyId = req.user.company;
         var tenantId = req.user.tenant;
@@ -2076,7 +2077,7 @@ server.get('/DVP/API/:version/CallCDR/GetProcessedCallDetailsByRange', jwt({secr
 
         logger.debug('[DVP-CDRProcessor.GetProcessedCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
 
-        backendHandler.GetProcessedCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, -1, -1, function(err, cdrList)
+        backendHandler.GetProcessedCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, -1, -1, bUnit, function(err, cdrList)
         {
             logger.debug('[DVP-CDRProcessor.GetProcessedCallDetailsByRange] - [%s] - CDR Processing Done', reqId);
 
