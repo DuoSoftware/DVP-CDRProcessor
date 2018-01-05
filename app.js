@@ -745,9 +745,9 @@ server.get('/DVP/API/:version/CallCDR/PrepareDownloadAbandon', jwt({secret: secr
 
                                             //Convert to CSV
 
-                                            var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Call Time', 'Total Duration', 'Ring Duration', 'Queue Duration', 'Call Type', 'Call Category'];
+                                            var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Call Time', 'Total Duration', 'Ring Duration', 'Queue Duration', 'Call Type', 'Call Category', 'Business Unit'];
 
-                                            var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CreatedLocalTime', 'Duration', 'AnswerSec', 'QueueSec', 'ObjType', 'ObjCategory'];
+                                            var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CreatedLocalTime', 'Duration', 'AnswerSec', 'QueueSec', 'ObjType', 'ObjCategory', 'BusinessUnit'];
 
                                             var csvFileData = json2csv({ data: cdrList, fields: fields, fieldNames : fieldNames });
 
@@ -1021,9 +1021,9 @@ var getProcessedCDRPageWise = function(reqId, uniqueId, fileName, tz, startTime,
 
                 //Convert to CSV
 
-                var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Answered', 'Call Time', 'Total Duration', 'Bill Duration', 'Ring Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party', 'Transferred Parties'];
+                var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Answered', 'Call Time', 'Total Duration', 'Bill Duration', 'Ring Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party', 'Transferred Parties', 'Business Unit'];
 
-                var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CallAnswered', 'CreatedLocalTime', 'Duration', 'BillSec', 'AnswerSec', 'QueueSec', 'HoldSec', 'ObjType', 'ObjCategory', 'HangupParty', 'TransferredParties'];
+                var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CallAnswered', 'CreatedLocalTime', 'Duration', 'BillSec', 'AnswerSec', 'QueueSec', 'HoldSec', 'ObjType', 'ObjCategory', 'HangupParty', 'TransferredParties', 'BusinessUnit'];
 
                 fs.stat(fileName, function (err)
                 {
@@ -1850,9 +1850,9 @@ server.post('/DVP/API/:version/CallCDR/GeneratePreviousDay', jwt({secret: secret
 
                     //Convert to CSV
 
-                    var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Answered', 'Call Time', 'Total Duration', 'Bill Duration', 'Ring Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party', 'Transferred Parties'];
+                    var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Answered', 'Call Time', 'Total Duration', 'Bill Duration', 'Ring Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party', 'Transferred Parties', 'Business Unit'];
 
-                    var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CallAnswered', 'CreatedLocalTime', 'Duration', 'BillSec', 'AnswerSec', 'QueueSec', 'HoldSec', 'ObjType', 'ObjCategory', 'HangupParty', 'TransferredParties'];
+                    var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CallAnswered', 'CreatedLocalTime', 'Duration', 'BillSec', 'AnswerSec', 'QueueSec', 'HoldSec', 'ObjType', 'ObjCategory', 'HangupParty', 'TransferredParties', 'BusinessUnit'];
 
                     var csvFileData = json2csv({ data: cdrList, fields: fields, fieldNames : fieldNames });
 
@@ -1982,9 +1982,9 @@ server.post('/DVP/API/:version/CallCDR/Abandon/GeneratePreviousDay', jwt({secret
 
                     //Convert to CSV
 
-                    var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Call Time', 'Total Duration', 'Ring Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party'];
+                    var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Call Time', 'Total Duration', 'Ring Duration', 'Queue Duration', 'Hold Duration', 'Call Type', 'Call Category', 'Hangup Party', 'Business Unit'];
 
-                    var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CreatedLocalTime', 'Duration', 'AnswerSec', 'QueueSec', 'HoldSec', 'ObjType', 'ObjCategory', 'HangupParty'];
+                    var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CreatedLocalTime', 'Duration', 'AnswerSec', 'QueueSec', 'HoldSec', 'ObjType', 'ObjCategory', 'HangupParty', 'BusinessUnit'];
 
                     var csvFileData = json2csv({ data: cdrList, fields: fields, fieldNames : fieldNames });
 
