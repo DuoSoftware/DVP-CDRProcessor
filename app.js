@@ -187,7 +187,7 @@ var ProcessCDRLegs = function(processedCdr, cdrList, callback)
             }
             else
             {
-                if(processedCdr[i].ObjType === 'HTTAPI' || processedCdr[i].ObjType === 'SOCKET')
+                if(processedCdr[i].ObjType === 'HTTAPI' || processedCdr[i].ObjType === 'SOCKET' || processedCdr[i].ObjCategory === 'DIALER')
                 {
                     CollectBLeg(cdrList[processedCdr[i].Uuid], processedCdr[i].Uuid, processedCdr[i].CallUuid, function(err, resp)
                     {
