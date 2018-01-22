@@ -3775,6 +3775,63 @@ server.post('/DVP/API/:version/CallCDR/Agent/AgentStatus', jwt({secret: secret.S
 });
 
 
+server.post('/DVP/API/:version/CallCDR/consolidatedAgent/AgentStatus', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+{
+    var emptyArr = [];
+    var reqId = nodeUuid.v1();
+    try
+    {
+        var startDate = req.query.startDate;
+        var endDate = req.query.endDate;
+        var status = req.query.status;
+
+        var agentList = null;
+        var statusList = null;
+
+        if(req.body)
+        {
+            agentList = req.body.agentList;
+            statusList = req.body.statusList;
+        }
+
+
+        var companyId = req.user.company;
+        var tenantId = req.user.tenant;
+
+        if (!companyId || !tenantId)
+        {
+            throw new Error("Invalid company or tenant");
+        }
+
+        logger.debug('[DVP-CDRProcessor.AgentStatus] - [%s] - HTTP Request Received - Params - startDate : %s, endDate : %s', reqId, startDate, endDate);
+
+        backendHandler.GetCOnsolidatedResourceStatusListWithACW(startDate, endDate, statusList, agentList, companyId, tenantId, function(err, resList)
+        {
+
+            var groupedList = underscore.groupBy(resList, function(event)
+            {
+                return event.ResourceId;
+            });
+
+
+            var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, groupedList);
+            logger.debug('[DVP-CDRProcessor.AgentStatus] - [%s] - API RESPONSE : %s', reqId, jsonString);
+            res.end(jsonString);
+
+        });
+
+    }
+    catch(ex)
+    {
+        var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+        logger.debug('[DVP-CDRProcessor.AgentStatus] - [%s] - API RESPONSE : %s', reqId, jsonString);
+        res.end(jsonString);
+    }
+
+    return next();
+});
+
+
 /*   server.post('/DVP/API/:version/CallCDR/Agent/ACWRecords', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
  {
  var emptyArr = [];
