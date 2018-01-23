@@ -492,6 +492,8 @@ var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyI
     }
 };
 
+
+
 var GetIVRCallCount = function(st, et, skill, companyId, tenantId, callback)
 {
     var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]};
@@ -851,6 +853,11 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
         callback(ex, summaryDetails);
     }
 };
+
+var GetCampaignSummary = function(startDate, endDate, companyId, tenantId, campaignId, agent, callback)
+{
+
+}
 
 var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTime, companyId, tenantId, skill, callback)
 {
