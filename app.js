@@ -3242,7 +3242,6 @@ server.get('/DVP/API/:version/CallCDR/CampaignCallSummary', jwt({secret: secret.
     {
         var startDate = req.query.StartDate;
         var endDate = req.query.EndDate;
-        var campaignId = req.query.Campaign;
 
         var companyId = req.user.company;
         var tenantId = req.user.tenant;
