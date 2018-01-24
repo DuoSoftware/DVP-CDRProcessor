@@ -3237,14 +3237,12 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Daily', jwt({secret: secret
 
 server.get('/DVP/API/:version/CallCDR/CampaignCallSummary', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
 {
-    var emptyArr = [];
     var reqId = nodeUuid.v1();
     try
     {
         var startDate = req.query.StartDate;
         var endDate = req.query.EndDate;
-        var campaignId = req.query.CampaignId;
-        var agent = req.query.Agent;
+        var campaignId = req.query.Campaign;
 
         var companyId = req.user.company;
         var tenantId = req.user.tenant;
@@ -3258,55 +3256,29 @@ server.get('/DVP/API/:version/CallCDR/CampaignCallSummary', jwt({secret: secret.
 
         //Generate 24 hrs moment time array
 
-        var dayFuncArr = [];
-        var cnt = 0;
-
-        while(momentSD <= momentED)
-        {
-            var sd = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt, 'days');
-            var ed = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt+1, 'days');
-
-            //fixed momentSD
-
-            momentSD = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt+1, 'days');
-
-            dayFuncArr.push(processSummaryData.bind(this, sd.utcOffset(tz).format('YYYY-MM-DD'), sd, ed, companyId, tenantId, null));
-
-            cnt++;
-        }
-
-        /*var hrFuncArr = [];
-
-         for(i=0; i<daysOfMonth; i++)
-         {
-         var sd = moment(summaryDate + "-01 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i, 'days');
-         var ed = moment(summaryDate + "-01 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i+1, 'days');
-
-         hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId));
-         }*/
-
-
-        async.parallel(dayFuncArr, function(err, results)
+        backendHandler.GetCampaignSummary(startDate, endDate, companyId, tenantId, function(err, result)
         {
             if(err)
             {
-                var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, emptyArr);
+                var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, null);
                 logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - API RESPONSE : %s', reqId, jsonString);
                 res.end(jsonString);
             }
             else
             {
-                var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, results);
+                var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, result);
                 logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - API RESPONSE : %s', reqId, jsonString);
                 res.end(jsonString);
             }
         });
 
 
+
+
     }
     catch(ex)
     {
-        var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+        var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, null);
         logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourly] - [%s] - API RESPONSE : %s', reqId, jsonString);
         res.end(jsonString);
     }

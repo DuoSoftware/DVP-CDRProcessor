@@ -492,7 +492,74 @@ var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyI
     }
 };
 
+var GetCampaignAnsweredCount = function(st, et, campaign, companyId, tenantId, callback)
+{
+    var query = {where :[{CompanyId: companyId, TenantId: tenantId, ObjCategory: 'DIALER'}]};
 
+    if(st && et)
+    {
+        query.where[0].CreatedTime = { gte: st , lt: et}
+    }
+    if(campaign)
+    {
+        query.where[0].CampaignName = campaign;
+    }
+
+    dbModel.CallCDRProcessed.aggregate('*', 'count', query).then(function(callCount)
+    {
+        callback(null, callCount);
+    }).catch(function(err)
+    {
+        callback(err, 0);
+    });
+
+};
+
+var GetCampaignQueuedCount = function(st, et, campaign, companyId, tenantId, callback)
+{
+    var query = {where :[{CompanyId: companyId, TenantId: tenantId, ObjCategory: 'DIALER', IsQueued: true}]};
+
+    if(st && et)
+    {
+        query.where[0].CreatedTime = { gte: st , lt: et}
+    }
+    if(campaign)
+    {
+        query.where[0].CampaignName = campaign;
+    }
+
+    dbModel.CallCDRProcessed.aggregate('*', 'count', query).then(function(callCount)
+    {
+        callback(null, callCount);
+    }).catch(function(err)
+    {
+        callback(err, 0);
+    });
+
+};
+
+var GetCampaignDialCount = function(st, et, campaign, companyId, tenantId, callback)
+{
+    var query = {where :[{CompanyId: companyId, TenantId: tenantId, ObjCategory: 'DIALER'}]};
+
+    if(st && et)
+    {
+        query.where[0].CreatedTime = { gte: st , lt: et}
+    }
+    if(campaign)
+    {
+        query.where[0].CampaignName = campaign;
+    }
+
+    dbModel.CallCDRProcessed.aggregate('*', 'count', query).then(function(callCount)
+    {
+        callback(null, callCount);
+    }).catch(function(err)
+    {
+        callback(err, 0);
+    });
+
+};
 
 var GetIVRCallCount = function(st, et, skill, companyId, tenantId, callback)
 {
@@ -854,10 +921,86 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
     }
 };
 
-var GetCampaignSummary = function(startDate, endDate, companyId, tenantId, campaignId, agent, callback)
+var GetCampaignSummary = function(startDate, endDate, companyId, tenantId, callback)
 {
+    //Get Agent List
+    var emptyArr = [];
+    var query = {where :[{CompanyId: companyId, TenantId: tenantId, ObjCategory: 'DIALER'}], plain: false};
 
-}
+    if(startDate && endDate)
+    {
+        query.where[0].CreatedTime = { gte: startDate , lt: endDate}
+    }
+
+    dbModel.CallCDRProcessed.aggregate('CampaignName', 'DISTINCT', query).then(function(campaigns)
+    {
+        var asyncArr = [];
+
+        campaigns.forEach(function(campaign)
+        {
+            asyncArr.push(GetCampaignAgentSummary.bind(this, startDate, endDate, companyId, tenantId, campaign.DISTINCT));
+        });
+
+        async.parallel(asyncArr, function(err, results){
+
+            if(err)
+            {
+                callback(err, emptyArr);
+            }
+            else
+            {
+                callback(null, results);
+            }
+
+        });
+
+
+
+    }).catch(function(err)
+    {
+        callback(err, emptyArr);
+    });
+    //Loop List
+
+};
+
+var GetCampaignAgentSummary = function(startDate, endDate, companyId, tenantId, campaign, callback)
+{
+    var summaryDetails = {};
+
+    try
+    {
+        var asyncArr = [];
+
+        asyncArr.push(GetCampaignAnsweredCount.bind(this, startDate, endDate, campaign, companyId, tenantId));
+        asyncArr.push(GetCampaignQueuedCount.bind(this, startDate, endDate, campaign, companyId, tenantId));
+        asyncArr.push(GetCampaignDialCount.bind(this, startDate, endDate, campaign, companyId, tenantId));
+
+        async.parallel(asyncArr, function(err, results){
+
+            if(err)
+            {
+                callback(err, summaryDetails);
+            }
+            else
+            {
+                summaryDetails.Campaign = campaign;
+                summaryDetails.AnsweredCount = results[0];
+                summaryDetails.QueuedCount = results[1];
+                summaryDetails.DialedCount = results[2];
+                callback(null, summaryDetails);
+            }
+
+        });
+
+
+    }
+    catch(ex)
+    {
+        callback(ex, summaryDetails);
+    }
+};
+
 
 var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTime, companyId, tenantId, skill, callback)
 {
@@ -2092,3 +2235,4 @@ module.exports.GetProcessedCampaignCDRInDateRange = GetProcessedCampaignCDRInDat
 module.exports.GetProcessedCampaignCDRInDateRangeCount = GetProcessedCampaignCDRInDateRangeCount;
 module.exports.GetResourceStatusListWithACW = GetResourceStatusListWithACW;
 module.exports.GetCOnsolidatedResourceStatusListWithACW = GetCOnsolidatedResourceStatusListWithACW;
+module.exports.GetCampaignSummary = GetCampaignSummary;
