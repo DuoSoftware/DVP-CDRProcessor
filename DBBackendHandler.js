@@ -494,6 +494,7 @@ var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyI
 
 var GetCampaignAnsweredCount = function(st, et, campaign, companyId, tenantId, callback)
 {
+
     var query = {where :[{CompanyId: companyId, TenantId: tenantId, ObjCategory: 'DIALER'}]};
 
     if(st && et)
@@ -512,6 +513,32 @@ var GetCampaignAnsweredCount = function(st, et, campaign, companyId, tenantId, c
     {
         callback(err, 0);
     });
+
+/*
+    var query =
+    {
+        attributes:[[dbModel.SequelizeConn.fn('COUNT', dbModel.SequelizeConn.literal(`case when "ObjCategory" = 'DIALER' then "ObjCategory" end`)), 'Dialed'],
+    [dbModel.SequelizeConn.fn('COUNT', {"ObjCategory": 'DIALER', "IsQueued":true}), 'Queued']],
+        where :[{CompanyId: companyId, TenantId: tenantId}]
+    };
+
+if(st && et)
+{
+    query.where[0].CreatedTime = { gte: st , lt: et}
+}
+if(campaign)
+{
+    query.where[0].CampaignName = campaign;
+}
+
+dbModel.CallCDRProcessed.findAll(query).then(function(callCount)
+{
+    callback(null, callCount);
+}).catch(function(err)
+{
+    callback(err, 0);
+});
+*/
 
 };
 
@@ -941,7 +968,7 @@ var GetCampaignSummary = function(startDate, endDate, companyId, tenantId, callb
             asyncArr.push(GetCampaignAgentSummary.bind(this, startDate, endDate, companyId, tenantId, campaign.DISTINCT));
         });
 
-        async.parallel(asyncArr, function(err, results){
+        async.series(asyncArr, function(err, results){
 
             if(err)
             {

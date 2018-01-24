@@ -2445,7 +2445,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly', jwt({secret: secre
         }
 
 
-        async.parallel(hrFuncArr, function(err, results)
+        async.series(hrFuncArr, function(err, results)
         {
             if(err)
             {
@@ -2537,7 +2537,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly/Download', jwt({secr
                                 res.end(jsonString);
 
 
-                                async.parallel(hrFuncArr, function(err, results)
+                                async.series(hrFuncArr, function(err, results)
                                 {
                                     if(err)
                                     {
@@ -2715,7 +2715,7 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly/GeneratePreviousDay
             hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId, null));
         }
 
-        async.parallel(hrFuncArr, function(err, results)
+        async.series(hrFuncArr, function(err, results)
         {
             if(err)
             {
@@ -2934,7 +2934,7 @@ var getQueueSummaryAsync = function(summaryDate, tz, companyId, tenantId, skill,
 
         hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId, skill));
     }
-    async.parallel(hrFuncArr, function(err, results)
+    async.series(hrFuncArr, function(err, results)
     {
         var obj = {
             skill: skill,
@@ -3021,7 +3021,7 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly/Download', j
 
                                     var summaryData = [];
 
-                                    async.parallel(groupedArr, function(err, results)
+                                    async.series(groupedArr, function(err, results)
                                     {
 
                                         results.forEach(function(grp)
@@ -3207,7 +3207,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Daily', jwt({secret: secret
          }*/
 
 
-        async.parallel(dayFuncArr, function(err, results)
+        async.series(dayFuncArr, function(err, results)
         {
             if(err)
             {
@@ -3362,7 +3362,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Daily/Download', jwt({secre
                                 logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
                                 res.end(jsonString);
 
-                                async.parallel(dayFuncArr, function(err, results)
+                                async.series(dayFuncArr, function(err, results)
                                 {
                                     if(err)
                                     {
@@ -3570,7 +3570,7 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummary/Daily/GeneratePreviousMont
          hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId));
          }*/
 
-        async.parallel(dayFuncArr, function(err, results)
+        async.series(dayFuncArr, function(err, results)
         {
             if(err)
             {
