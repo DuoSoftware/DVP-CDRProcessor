@@ -2394,7 +2394,11 @@ server.get('/DVP/API/:version/CallCDR/GetCampaignCallDetailsByRange/Count', jwt(
 
 var processSummaryData = function(caption, startDate, endDate, companyId, tenantId, skill, callback)
 {
-    if(skill)
+    backendHandler.GetCallSummaryDetailsDateRangeWithSkill(caption, startDate, endDate, companyId, tenantId, skill, function(err, summaryData)
+    {
+        callback(err, summaryData);
+    });
+    /*if(skill)
     {
         backendHandler.GetCallSummaryDetailsDateRangeWithSkill(caption, startDate, endDate, companyId, tenantId, skill, function(err, summaryData)
         {
@@ -2407,7 +2411,7 @@ var processSummaryData = function(caption, startDate, endDate, companyId, tenant
         {
             callback(err, summaryData);
         });
-    }
+    }*/
 
 };
 
