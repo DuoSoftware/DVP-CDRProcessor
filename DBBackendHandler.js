@@ -861,7 +861,7 @@ var GetCampaignSummary = function(startDate, endDate, companyId, tenantId, callb
         attributes:['CampaignName', [dbModel.SequelizeConn.fn('COUNT', dbModel.SequelizeConn.col("CampaignName")), 'DialedCount'],
             [dbModel.SequelizeConn.fn('COUNT', dbModel.SequelizeConn.literal(`case when "IsQueued" = true then "IsQueued" end`)), 'QueuedCount'],
             [dbModel.SequelizeConn.fn('COUNT', dbModel.SequelizeConn.literal(`case when "IsAnswered" = true then "IsAnswered" end`)), 'AnsweredCount'],
-            [dbModel.SequelizeConn.fn('COUNT', dbModel.SequelizeConn.literal(`case when "IsQueued" = true AND "AgentAnswered" = true then "IsQueued" end`)), 'AgentAnsweredCount']],
+            [dbModel.SequelizeConn.fn('COUNT', dbModel.SequelizeConn.literal(`case when "AgentAnswered" = true then "AgentAnswered" end`)), 'AgentAnsweredCount']],
         where :[{CompanyId: companyId, TenantId: tenantId, ObjCategory: 'DIALER'}],
         group: ['CampaignName']
     };

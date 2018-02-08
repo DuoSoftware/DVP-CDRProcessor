@@ -1000,7 +1000,7 @@ var getProcessedCDRPageWise = function(reqId, uniqueId, fileName, tz, startTime,
                     cdrProcessed.BillSec = convertToMMSS(cdrProcessed.BillSec);
                     cdrProcessed.Duration = convertToMMSS(cdrProcessed.Duration);
                     cdrProcessed.AnswerSec = convertToMMSS(cdrProcessed.AnswerSec);
-                    cdrProcessed.QueueSec = convertToMMSS(cdrProcessed.QueueSec);;
+                    cdrProcessed.QueueSec = convertToMMSS(cdrProcessed.QueueSec);
                     cdrProcessed.HoldSec = convertToMMSS(cdrProcessed.HoldSec);
 
                     cdrProcessed.CallAnswered = cdrProcessed.AgentAnswered;
