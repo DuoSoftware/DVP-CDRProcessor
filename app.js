@@ -1279,7 +1279,7 @@ server.get('/DVP/API/:version/CallCDR/PrepareDownload', jwt({secret: secret.Secr
 
                                                 }
 
-                                                async.series(arr, function(err, results)
+                                                async.parallelLimit(arr, 20, function(err, results)
                                                 {
                                                     if(err)
                                                     {
@@ -1480,7 +1480,7 @@ server.get('/DVP/API/:version/CallCDR/PrepareDownloadCampaign', jwt({secret: sec
 
                                                 }
 
-                                                async.series(arr, function(err, results)
+                                                async.parallelLimit(arr, 20, function(err, results)
                                                 {
                                                     if(err)
                                                     {
@@ -2503,7 +2503,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly', jwt({secret: secre
         }
 
 
-        async.series(hrFuncArr, function(err, results)
+        async.parallelLimit(hrFuncArr, 20, function(err, results)
         {
             if(err)
             {
@@ -2595,7 +2595,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly/Download', jwt({secr
                                 res.end(jsonString);
 
 
-                                async.series(hrFuncArr, function(err, results)
+                                async.parallelLimit(hrFuncArr, 20, function(err, results)
                                 {
                                     if(err)
                                     {
@@ -2773,7 +2773,7 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly/GeneratePreviousDay
             hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId, null));
         }
 
-        async.series(hrFuncArr, function(err, results)
+        async.parallelLimit(hrFuncArr, 20, function(err, results)
         {
             if(err)
             {
@@ -2992,7 +2992,7 @@ var getQueueSummaryAsync = function(summaryDate, tz, companyId, tenantId, skill,
 
         hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId, skill));
     }
-    async.series(hrFuncArr, function(err, results)
+    async.parallelLimit(hrFuncArr, 20, function(err, results)
     {
         var obj = {
             skill: skill,
@@ -3079,7 +3079,7 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly/Download', j
 
                                     var summaryData = [];
 
-                                    async.series(groupedArr, function(err, results)
+                                    async.parallelLimit(groupedArr, 20, function(err, results)
                                     {
 
                                         results.forEach(function(grp)
@@ -3265,7 +3265,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Daily', jwt({secret: secret
          }*/
 
 
-        async.series(dayFuncArr, function(err, results)
+        async.parallelLimit(dayFuncArr, 20, function(err, results)
         {
             if(err)
             {
@@ -3370,7 +3370,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Daily/Download', jwt({secre
                                 logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
                                 res.end(jsonString);
 
-                                async.series(dayFuncArr, function(err, results)
+                                async.parallelLimit(dayFuncArr, 20, function(err, results)
                                 {
                                     if(err)
                                     {
@@ -3578,7 +3578,7 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummary/Daily/GeneratePreviousMont
          hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId));
          }*/
 
-        async.series(dayFuncArr, function(err, results)
+        async.parallelLimit(dayFuncArr, 20, function(err, results)
         {
             if(err)
             {
