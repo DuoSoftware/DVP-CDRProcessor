@@ -68,7 +68,7 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
 
         if(limit)
         {
-            var query = {where :[sqlCond], order:'"CreatedTime" DESC', limit: limit};
+            var query = {where :[sqlCond], order:[['CreatedTime','DESC']], limit: limit};
 
             if(offset)
             {
@@ -93,7 +93,7 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
         else
         {
 
-            dbModel.CallCDR.findAll({where :[sqlCond], order:'"CreatedTime" DESC'}).then(function(callLeg)
+            dbModel.CallCDR.findAll({where :[sqlCond], order:[['CreatedTime','DESC']]}).then(function(callLeg)
             {
 
                 logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
@@ -288,7 +288,7 @@ var GetCampaignCallLegsInDateRange = function(startTime, endTime, companyId, ten
 
         if(limit)
         {
-            var query = {where :[sqlCond], order:'"CreatedTime" DESC', limit: limit};
+            var query = {where :[sqlCond], order:[['CreatedTime','DESC']], limit: limit};
 
             if(offset)
             {
@@ -308,7 +308,7 @@ var GetCampaignCallLegsInDateRange = function(startTime, endTime, companyId, ten
         else
         {
 
-            dbModel.CallCDR.findAll({where :[sqlCond], order:'"CreatedTime" DESC'}).then(function(callLeg)
+            dbModel.CallCDR.findAll({where :[sqlCond], order:[['CreatedTime', 'DESC']]}).then(function(callLeg)
             {
                 callback(undefined, callLeg);
 
@@ -427,7 +427,7 @@ var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyI
 
         if(limit)
         {
-            var query = {where :[sqlCond], order:'"CreatedTime" DESC', limit: limit};
+            var query = {where :[sqlCond], order:[['CreatedTime','DESC']], limit: limit};
             if(offset)
             {
                 query.offset = offset;
@@ -449,7 +449,7 @@ var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyI
         }
         else
         {
-            dbModel.CallCDR.findAll({where :[sqlCond], order:'"CreatedTime" DESC'}).then(function(callLeg)
+            dbModel.CallCDR.findAll({where :[sqlCond], order:[['CreatedTime','DESC']]}).then(function(callLeg)
             {
 
                 logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
@@ -1222,7 +1222,7 @@ var GetProcessedCDRInDateRangeCustomer = function(startTime, endTime, companyId,
         sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound'},{DVPCallDirection: 'outbound', ObjCategory: 'GATEWAY'}]});
 
 
-        dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:'"CreatedTime" ASC'}).then(function(callLeg)
+        dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:[['CreatedTime','ASC']]}).then(function(callLeg)
         {
             callback(undefined, callLeg);
 
@@ -1319,7 +1319,7 @@ var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantI
 
         }
 
-        var query = {where :[sqlCond], order:'"CreatedTime" DESC'};
+        var query = {where :[sqlCond], order:[['CreatedTime', 'DESC']]};
 
         if(limit >= 0)
         {
@@ -1389,7 +1389,7 @@ var GetProcessedCampaignCDRInDateRange = function(startTime, endTime, companyId,
 
         }
 
-        var query = {where :[sqlCond], order:'"CreatedTime" DESC'};
+        var query = {where :[sqlCond], order:[['CreatedTime','DESC']]};
 
         if(limit >= 0)
         {
@@ -1606,7 +1606,7 @@ var GetProcessedCDRInDateRangeAbandon = function(startTime, endTime, companyId, 
 
         }
 
-        dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:'"CreatedTime" DESC'}).then(function(callLeg)
+        dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:[['CreatedTime','DESC']]}).then(function(callLeg)
         {
             callback(undefined, callLeg);
 

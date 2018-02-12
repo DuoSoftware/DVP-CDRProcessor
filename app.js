@@ -153,7 +153,72 @@ var ProcessBatchCDR = function(cdrList)
     }
 };
 
+var CollectLegsAsync = function(cdrList, processedCdr, callback)
+{
+    cdrList[processedCdr.Uuid] = [];
+    cdrList[processedCdr.Uuid].push(processedCdr);
+
+    var relatedLegsLength = 0;
+
+    if (processedCdr.RelatedLegs)
+    {
+        relatedLegsLength = Object.keys(processedCdr.RelatedLegs).length;
+    }
+
+    if (processedCdr.RelatedLegs && relatedLegsLength)
+    {
+        CollectOtherLegsCDR(cdrList[processedCdr.Uuid], processedCdr.RelatedLegs, function (err, resp)
+        {
+            callback(null, true);
+
+        })
+    }
+    else
+    {
+        if (processedCdr.ObjType === 'HTTAPI' || processedCdr.ObjType === 'SOCKET' || processedCdr.ObjCategory === 'DIALER')
+        {
+            CollectBLeg(cdrList[processedCdr.Uuid], processedCdr.Uuid, processedCdr.CallUuid, function (err, resp)
+            {
+
+                callback(null, true);
+            })
+
+        }
+        else
+        {
+            callback(null, true);
+        }
+
+
+    }
+}
+
 var ProcessCDRLegs = function(processedCdr, cdrList, callback)
+{
+    var len = processedCdr.length;
+
+    if (len)
+    {
+        var arr = [];
+        for (i = 0; i < processedCdr.length; i++)
+        {
+            arr.push(CollectLegsAsync.bind(this, cdrList, processedCdr[i]));
+        }
+
+        async.parallelLimit(arr, 25, function (err, rslt)
+        {
+            callback(err, cdrList);
+        })
+    }
+    else
+    {
+        callback(null, null);
+    }
+
+};
+
+
+/*var ProcessCDRLegs = function(processedCdr, cdrList, callback)
 {
     var len = processedCdr.length;
     var current = 0;
@@ -220,7 +285,7 @@ var ProcessCDRLegs = function(processedCdr, cdrList, callback)
         callback(null, null);
     }
 
-};
+};*/
 
 var CollectBLeg = function(cdrListArr, uuid, callUuid, callback)
 {
@@ -2438,7 +2503,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly', jwt({secret: secre
         }
 
 
-        async.parallel(hrFuncArr, function(err, results)
+        async.series(hrFuncArr, function(err, results)
         {
             if(err)
             {
@@ -2530,7 +2595,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly/Download', jwt({secr
                                 res.end(jsonString);
 
 
-                                async.parallel(hrFuncArr, function(err, results)
+                                async.series(hrFuncArr, function(err, results)
                                 {
                                     if(err)
                                     {
@@ -2708,7 +2773,7 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly/GeneratePreviousDay
             hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId, null));
         }
 
-        async.parallel(hrFuncArr, function(err, results)
+        async.series(hrFuncArr, function(err, results)
         {
             if(err)
             {
@@ -2927,7 +2992,7 @@ var getQueueSummaryAsync = function(summaryDate, tz, companyId, tenantId, skill,
 
         hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId, skill));
     }
-    async.parallel(hrFuncArr, function(err, results)
+    async.series(hrFuncArr, function(err, results)
     {
         var obj = {
             skill: skill,
@@ -3014,7 +3079,7 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly/Download', j
 
                                     var summaryData = [];
 
-                                    async.parallel(groupedArr, function(err, results)
+                                    async.series(groupedArr, function(err, results)
                                     {
 
                                         results.forEach(function(grp)
@@ -3200,7 +3265,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Daily', jwt({secret: secret
          }*/
 
 
-        async.parallel(dayFuncArr, function(err, results)
+        async.series(dayFuncArr, function(err, results)
         {
             if(err)
             {
@@ -3305,7 +3370,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Daily/Download', jwt({secre
                                 logger.debug('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
                                 res.end(jsonString);
 
-                                async.parallel(dayFuncArr, function(err, results)
+                                async.series(dayFuncArr, function(err, results)
                                 {
                                     if(err)
                                     {
@@ -3513,7 +3578,7 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummary/Daily/GeneratePreviousMont
          hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId));
          }*/
 
-        async.parallel(dayFuncArr, function(err, results)
+        async.series(dayFuncArr, function(err, results)
         {
             if(err)
             {
@@ -4863,6 +4928,8 @@ server.post('/DVP/API/:version/CallCDR/ProcessCDR', function(req,res,next)
             {
                 callUuid = conferenceUuid;
             }
+
+            sipFromUser = decodeURIComponent(sipFromUser);
 
 
             var answeredTimeStamp = timesSec['answered_time'];
