@@ -153,7 +153,72 @@ var ProcessBatchCDR = function(cdrList)
     }
 };
 
+var CollectLegsAsync = function(cdrList, processedCdr, callback)
+{
+    cdrList[processedCdr.Uuid] = [];
+    cdrList[processedCdr.Uuid].push(processedCdr);
+
+    var relatedLegsLength = 0;
+
+    if(processedCdr.RelatedLegs)
+    {
+        relatedLegsLength = Object.keys(processedCdr.RelatedLegs).length;
+    }
+
+    if(processedCdr.RelatedLegs && relatedLegsLength)
+    {
+        CollectOtherLegsCDR(cdrList[processedCdr.Uuid], processedCdr.RelatedLegs, function(err, resp)
+        {
+            callback(null, true);
+
+        })
+    }
+    else
+    {
+        if(processedCdr.ObjType === 'HTTAPI' || processedCdr.ObjType === 'SOCKET' || processedCdr.ObjCategory === 'DIALER')
+        {
+            CollectBLeg(cdrList[processedCdr.Uuid], processedCdr.Uuid, processedCdr.CallUuid, function(err, resp)
+            {
+
+                callback(null, true);
+            })
+
+        }
+        else
+        {
+            callback(null, true);
+        }
+
+
+    }
+}
+
 var ProcessCDRLegs = function(processedCdr, cdrList, callback)
+{
+    var len = processedCdr.length;
+    var current = 0;
+
+    if(len)
+    {
+        var arr = [];
+        for(i=0; i<processedCdr.length; i++)
+        {
+            arr.push(CollectLegsAsync.bind(this, cdrList, processedCdr[i]));
+        }
+
+        async.parallelLimit (arr, 25, function(err, rslt)
+        {
+            callback(err, cdrList);
+        })
+    }
+    else
+    {
+        callback(null, null);
+    }
+
+};
+
+/*var ProcessCDRLegs = function(processedCdr, cdrList, callback)
 {
     var len = processedCdr.length;
     var current = 0;
@@ -220,7 +285,7 @@ var ProcessCDRLegs = function(processedCdr, cdrList, callback)
         callback(null, null);
     }
 
-};
+};*/
 
 var CollectBLeg = function(cdrListArr, uuid, callUuid, callback)
 {
