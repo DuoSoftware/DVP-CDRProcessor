@@ -11,7 +11,7 @@ if(!abandonCallThreshold)
     abandonCallThreshold = 10;
 }
 
-var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, callback)
+var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, bUnitFilter, callback)
 {
     var callLegList = [];
 
@@ -44,6 +44,11 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
 
         }
 
+        if(bUnitFilter)
+        {
+            sqlCond.BusinessUnit = bUnitFilter;
+        }
+
         if(customerFilter)
         {
             if(!sqlCond.$and)
@@ -68,7 +73,7 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
 
         if(limit)
         {
-            var query = {where :[sqlCond], order:'"CreatedTime" DESC', limit: limit};
+            var query = {where :[sqlCond], order:[['CreatedTime','DESC']], limit: limit};
 
             if(offset)
             {
@@ -93,7 +98,7 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
         else
         {
 
-            dbModel.CallCDR.findAll({where :[sqlCond], order:'"CreatedTime" DESC'}).then(function(callLeg)
+            dbModel.CallCDR.findAll({where :[sqlCond], order:[['CreatedTime','DESC']]}).then(function(callLeg)
             {
 
                 logger.info('[DVP-CDRProcessor.GetCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
@@ -116,7 +121,7 @@ var GetCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tena
     }
 };
 
-var GetCallRelatedLegsInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, callback)
+var GetCallRelatedLegsInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, bUnitFilter, callback)
 {
     try
     {
@@ -146,6 +151,11 @@ var GetCallRelatedLegsInDateRangeCount = function(startTime, endTime, companyId,
                 sqlCond.where[0].BillSec = 0
             }
 
+        }
+
+        if(bUnitFilter)
+        {
+            sqlCond.BusinessUnit = bUnitFilter;
         }
 
         if(customerFilter)
@@ -188,7 +198,7 @@ var GetCallRelatedLegsInDateRangeCount = function(startTime, endTime, companyId,
     }
 };
 
-var GetCampaignCallLegsInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, recFilter, customerFilter, campaignFilter, callback)
+var GetCampaignCallLegsInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, recFilter, customerFilter, campaignFilter, callback)
 {
     try
     {
@@ -197,6 +207,10 @@ var GetCampaignCallLegsInDateRangeCount = function(startTime, endTime, companyId
         if(agentFilter)
         {
             sqlCond.where[0].SipResource = agentFilter;
+        }
+        if(skillFilter)
+        {
+            sqlCond.where[0].AgentSkill = skillFilter;
         }
         if(recFilter == 'true' || recFilter == 'false')
         {
@@ -240,7 +254,7 @@ var GetCampaignCallLegsInDateRangeCount = function(startTime, endTime, companyId
     }
 };
 
-var GetCampaignCallLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, recFilter, customerFilter, campaignFilter, callback)
+var GetCampaignCallLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, skillFilter, recFilter, customerFilter, campaignFilter, callback)
 {
     var callLegList = [];
 
@@ -252,6 +266,12 @@ var GetCampaignCallLegsInDateRange = function(startTime, endTime, companyId, ten
         {
             sqlCond.SipResource = agentFilter;
         }
+
+        if(skillFilter)
+        {
+            sqlCond.AgentSkill = skillFilter;
+        }
+
         if(recFilter == 'true' || recFilter == 'false')
         {
             if(recFilter == 'true')
@@ -278,7 +298,7 @@ var GetCampaignCallLegsInDateRange = function(startTime, endTime, companyId, ten
 
         if(limit)
         {
-            var query = {where :[sqlCond], order:'"CreatedTime" DESC', limit: limit};
+            var query = {where :[sqlCond], order:[['CreatedTime','DESC']], limit: limit};
 
             if(offset)
             {
@@ -298,7 +318,7 @@ var GetCampaignCallLegsInDateRange = function(startTime, endTime, companyId, ten
         else
         {
 
-            dbModel.CallCDR.findAll({where :[sqlCond], order:'"CreatedTime" DESC'}).then(function(callLeg)
+            dbModel.CallCDR.findAll({where :[sqlCond], order:[['CreatedTime', 'DESC']]}).then(function(callLeg)
             {
                 callback(undefined, callLeg);
 
@@ -316,7 +336,7 @@ var GetCampaignCallLegsInDateRange = function(startTime, endTime, companyId, ten
     }
 };
 
-var GetAbandonCallRelatedLegsInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, customerFilter, didFilter, callback)
+var GetAbandonCallRelatedLegsInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, customerFilter, didFilter, bUnitFilter, callback)
 {
     try
     {
@@ -343,6 +363,11 @@ var GetAbandonCallRelatedLegsInDateRangeCount = function(startTime, endTime, com
 
             sqlCond.where[0].$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
 
+        }
+
+        if(bUnitFilter)
+        {
+            sqlCond.BusinessUnit = bUnitFilter;
         }
 
         if(didFilter)
@@ -374,7 +399,7 @@ var GetAbandonCallRelatedLegsInDateRangeCount = function(startTime, endTime, com
     }
 };
 
-var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, skillFilter, customerFilter, didFilter, callback)
+var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, skillFilter, customerFilter, didFilter, bUnitFilter, callback)
 {
     var callLegList = [];
 
@@ -415,9 +440,14 @@ var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyI
 
         }
 
+        if(bUnitFilter)
+        {
+            sqlCond.BusinessUnit = bUnitFilter;
+        }
+
         if(limit)
         {
-            var query = {where :[sqlCond], order:'"CreatedTime" DESC', limit: limit};
+            var query = {where :[sqlCond], order:[['CreatedTime','DESC']], limit: limit};
             if(offset)
             {
                 query.offset = offset;
@@ -439,7 +469,7 @@ var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyI
         }
         else
         {
-            dbModel.CallCDR.findAll({where :[sqlCond], order:'"CreatedTime" DESC'}).then(function(callLeg)
+            dbModel.CallCDR.findAll({where :[sqlCond], order:[['CreatedTime','DESC']]}).then(function(callLeg)
             {
 
                 logger.info('[DVP-CDRProcessor.GetAbandonCallRelatedLegsInDateRange] PGSQL Get call cdr records for date range query success');
@@ -821,6 +851,36 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
         callback(ex, summaryDetails);
     }
 };
+
+var GetCampaignSummary = function(startDate, endDate, companyId, tenantId, callback)
+{
+    var emptyArr = [];
+
+    var query =
+    {
+        attributes:['CampaignName', [dbModel.SequelizeConn.fn('COUNT', dbModel.SequelizeConn.col("CampaignName")), 'DialedCount'],
+            [dbModel.SequelizeConn.fn('COUNT', dbModel.SequelizeConn.literal(`case when "IsQueued" = true then "IsQueued" end`)), 'QueuedCount'],
+            [dbModel.SequelizeConn.fn('COUNT', dbModel.SequelizeConn.literal(`case when "IsAnswered" = true then "IsAnswered" end`)), 'AnsweredCount'],
+            [dbModel.SequelizeConn.fn('COUNT', dbModel.SequelizeConn.literal(`case when "AgentAnswered" = true then "AgentAnswered" end`)), 'AgentAnsweredCount']],
+        where :[{CompanyId: companyId, TenantId: tenantId, ObjCategory: 'DIALER'}],
+        group: ['CampaignName']
+    };
+
+    if(startDate && endDate)
+    {
+        query.where[0].CreatedTime = { gte: startDate , lt: endDate}
+    }
+
+    dbModel.CallCDRProcessed.findAll(query).then(function(result)
+    {
+        callback(null, result);
+    }).catch(function(err)
+    {
+        callback(err, emptyArr);
+    });
+
+};
+
 
 var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTime, companyId, tenantId, skill, callback)
 {
@@ -1212,7 +1272,7 @@ var GetProcessedCDRInDateRangeCustomer = function(startTime, endTime, companyId,
         sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound'},{DVPCallDirection: 'outbound', ObjCategory: 'GATEWAY'}]});
 
 
-        dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:'"CreatedTime" ASC'}).then(function(callLeg)
+        dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:[['CreatedTime','ASC']]}).then(function(callLeg)
         {
             callback(undefined, callLeg);
 
@@ -1254,7 +1314,7 @@ var GetProcessedCDRForSessions = function(sessionIdArr, companyId, tenantId, cal
     }
 };
 
-var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, limit, offset, callback)
+var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, limit, offset, bUnitFilter, callback)
 {
     var callLegList = [];
 
@@ -1298,6 +1358,11 @@ var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantI
 
         }
 
+        if(bUnitFilter)
+        {
+            sqlCond.BusinessUnit = bUnitFilter;
+        }
+
         if(didFilter)
         {
             if(!sqlCond.$and)
@@ -1309,7 +1374,7 @@ var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantI
 
         }
 
-        var query = {where :[sqlCond], order:'"CreatedTime" DESC'};
+        var query = {where :[sqlCond], order:[['CreatedTime', 'DESC']]};
 
         if(limit >= 0)
         {
@@ -1338,7 +1403,7 @@ var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantI
     }
 };
 
-var GetProcessedCampaignCDRInDateRange = function(startTime, endTime, companyId, tenantId, agentFilter, recFilter, customerFilter, campaignFilter, limit, offset, callback)
+var GetProcessedCampaignCDRInDateRange = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, recFilter, customerFilter, campaignFilter, limit, offset, callback)
 {
     var callLegList = [];
 
@@ -1349,6 +1414,10 @@ var GetProcessedCampaignCDRInDateRange = function(startTime, endTime, companyId,
         if(agentFilter)
         {
             sqlCond.SipResource = agentFilter;
+        }
+        if(skillFilter)
+        {
+            sqlCond.AgentSkill = skillFilter;
         }
         if(recFilter == 'true' || recFilter == 'false')
         {
@@ -1375,7 +1444,7 @@ var GetProcessedCampaignCDRInDateRange = function(startTime, endTime, companyId,
 
         }
 
-        var query = {where :[sqlCond], order:'"CreatedTime" DESC'};
+        var query = {where :[sqlCond], order:[['CreatedTime','DESC']]};
 
         if(limit >= 0)
         {
@@ -1404,7 +1473,7 @@ var GetProcessedCampaignCDRInDateRange = function(startTime, endTime, companyId,
     }
 };
 
-var GetProcessedCDRInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, callback)
+var GetProcessedCDRInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, bUnitFilter, callback)
 {
     try
     {
@@ -1433,6 +1502,11 @@ var GetProcessedCDRInDateRangeCount = function(startTime, endTime, companyId, te
                 sqlCond.BillSec = 0
             }
 
+        }
+
+        if(bUnitFilter)
+        {
+            sqlCond.BusinessUnit = bUnitFilter;
         }
 
         if(customerFilter)
@@ -1476,7 +1550,7 @@ var GetProcessedCDRInDateRangeCount = function(startTime, endTime, companyId, te
     }
 };
 
-var GetProcessedCampaignCDRInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, recFilter, customerFilter, campaignFilter, callback)
+var GetProcessedCampaignCDRInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, recFilter, customerFilter, campaignFilter, callback)
 {
     try
     {
@@ -1486,6 +1560,12 @@ var GetProcessedCampaignCDRInDateRangeCount = function(startTime, endTime, compa
         {
             sqlCond.SipResource = agentFilter;
         }
+
+        if(skillFilter)
+        {
+            sqlCond.AgentSkill = skillFilter;
+        }
+
         if(recFilter == 'true' || recFilter == 'false')
         {
             if(recFilter == 'true')
@@ -1530,7 +1610,7 @@ var GetProcessedCampaignCDRInDateRangeCount = function(startTime, endTime, compa
     }
 };
 
-var GetProcessedCDRInDateRangeAbandon = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, callback)
+var GetProcessedCDRInDateRangeAbandon = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, bUnitFilter, callback)
 {
     var callLegList = [];
 
@@ -1546,6 +1626,10 @@ var GetProcessedCDRInDateRangeAbandon = function(startTime, endTime, companyId, 
         {
             sqlCond.AgentSkill = skillFilter;
         }
+        if(bUnitFilter)
+        {
+            sqlCond.BusinessUnit = bUnitFilter;
+        }
         if(dirFilter)
         {
             sqlCond.DVPCallDirection = dirFilter;
@@ -1586,7 +1670,7 @@ var GetProcessedCDRInDateRangeAbandon = function(startTime, endTime, companyId, 
 
         }
 
-        dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:'"CreatedTime" DESC'}).then(function(callLeg)
+        dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:[['CreatedTime','DESC']]}).then(function(callLeg)
         {
             callback(undefined, callLeg);
 
@@ -1770,6 +1854,64 @@ var GetResourceStatusListWithACW = function(startTime, endTime, statusList, agen
     }
 };
 
+var GetCOnsolidatedResourceStatusListWithACW = function(startTime, endTime, statusList, agents, companyId, tenantId, callback)
+{
+    var emptyArr = [];
+
+    try
+    {
+        var defaultQuery = {where :[{ TenantId: tenantId,$or:[{StatusType: 'ResourceStatus'},{Reason:"CALL"},{Reason:"CHAT"}], createdAt: {between:[startTime, endTime]}}], order: ['createdAt'], include: [{model: dbModel.ResResource, as: 'ResResource'}]};
+
+
+        if(statusList && statusList.length > 0)
+        {
+            defaultQuery ={where :[{ TenantId: tenantId, createdAt: {between:[startTime, endTime]}}], order: ['createdAt'], include: [{model: dbModel.ResResource, as: 'ResResource'}]};
+            defaultQuery.where[0].$or = [];
+
+            statusList.forEach(function(status)
+            {
+                if(status.Status=="AfterWork" || status.Status=="CALL" || status.Status=="CHAT")
+                {
+                    defaultQuery.where[0].$or.push({StatusType: 'SloatStatus' ,Reason: status.Status});
+                }
+
+                else
+                {
+                    defaultQuery.where[0].$or.push({StatusType: 'ResourceStatus' ,Reason: status.Status});
+                }
+
+
+            });
+        }
+
+        if(agents && agents.length > 0)
+        {
+            defaultQuery.include[0].where = [{$or:[]}];
+
+            var tempOrCondArr = defaultQuery.include[0].where[0].$or;
+            agents.forEach(function(agent)
+            {
+                tempOrCondArr.push({ResourceName: agent.ResourceName});
+
+            });
+        }
+
+
+        dbModel.ResResourceStatusChangeInfo.findAll(defaultQuery).then(function(resourceInfoList)
+        {
+            callback(null, resourceInfoList)
+
+        }).catch(function(err)
+        {
+            callback(err, emptyArr)
+        });
+
+    }
+    catch(ex)
+    {
+        callback(ex, emptyArr);
+    }
+};
 
 
 var GetCallRelatedLegs = function(sessionId, callback)
@@ -1972,3 +2114,5 @@ module.exports.GetCampaignCallLegsInDateRange = GetCampaignCallLegsInDateRange;
 module.exports.GetProcessedCampaignCDRInDateRange = GetProcessedCampaignCDRInDateRange;
 module.exports.GetProcessedCampaignCDRInDateRangeCount = GetProcessedCampaignCDRInDateRangeCount;
 module.exports.GetResourceStatusListWithACW = GetResourceStatusListWithACW;
+module.exports.GetCOnsolidatedResourceStatusListWithACW = GetCOnsolidatedResourceStatusListWithACW;
+module.exports.GetCampaignSummary = GetCampaignSummary;
