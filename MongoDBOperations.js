@@ -145,7 +145,7 @@ var addEmailRecipientRecord = function(recipients, reportType, template, company
 
 var addRawCDRRecord = function(obj)
 {
-    if(config.SaveRawCDRMongo == 'true')
+    if(config.SaveRawCDRMongo === 'true' || config.SaveRawCDRMongo === true)
     {
         var cdr = RawCdr(obj);
 

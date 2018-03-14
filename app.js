@@ -4953,6 +4953,11 @@ server.post('/DVP/API/:version/CallCDR/ProcessCDR', function(req,res,next)
             var sipFromUser = callerProfileSec['caller_id_number'];
             var sipToUser = callerProfileSec['destination_number'];
 
+            if(varSec['is_ivr_transfer'])
+            {
+                sipToUser = decodeURIComponent(varSec['sip_to_user']);
+            }
+
             var direction = varSec['direction'];
             var dvpCallDirection = varSec['DVP_CALL_DIRECTION'];
 
