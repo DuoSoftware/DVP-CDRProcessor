@@ -5044,10 +5044,10 @@ server.post('/DVP/API/:version/CallCDR/ProcessCDR', function(req,res,next)
                 sipToUser = decodeURIComponent(varSec['dialed_user']);
             }
 
-            if(memberuuid)
+            /*if(memberuuid)
             {
                 callUuid = memberuuid;
-            }
+            }*/
 
             if(conferenceUuid)
             {
