@@ -5174,6 +5174,7 @@ server.post('/DVP/API/:version/CallCDR/ProcessCDR', function(req,res,next)
             var cdr = dbModel.CallCDR.build({
                 Uuid: uuid,
                 CallUuid: callUuid,
+                MemberUuid: memberuuid,
                 BridgeUuid: bridgeUuid,
                 SipFromUser: sipFromUser,
                 SipToUser: sipToUser,
