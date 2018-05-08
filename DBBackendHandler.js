@@ -492,12 +492,17 @@ var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyI
     }
 };
 
-var GetIVRCallCount = function(st, et, skill, companyId, tenantId, callback)
+var GetIVRCallCount = function(st, et, skill, companyId, tenantId, bUnit, callback)
 {
     var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]};
     if(skill)
     {
         query.where[0].AgentSkill = skill;
+    }
+
+    if(bUnit)
+    {
+        query.where[0].BusinessUnit = bUnit;
     }
 
     dbModel.CallCDRProcessed.aggregate('*', 'count', query).then(function(callCount)
@@ -510,12 +515,17 @@ var GetIVRCallCount = function(st, et, skill, companyId, tenantId, callback)
 
 };
 
-var GetQueuedCallCount = function(st, et, skill, companyId, tenantId, callback)
+var GetQueuedCallCount = function(st, et, skill, companyId, tenantId, bUnit, callback)
 {
     var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', IsQueued: true, ObjType: 'HTTAPI'}]};
     if(skill)
     {
         query.where[0].AgentSkill = skill;
+    }
+
+    if(bUnit)
+    {
+        query.where[0].BusinessUnit = bUnit;
     }
 
     dbModel.CallCDRProcessed.aggregate('*', 'count', query).then(function(queuedCount)
@@ -528,12 +538,17 @@ var GetQueuedCallCount = function(st, et, skill, companyId, tenantId, callback)
 
 };
 
-var GetAbandonCallsCount = function(st, et, skill, companyId, tenantId, callback)
+var GetAbandonCallsCount = function(st, et, skill, companyId, tenantId, bUnit, callback)
 {
     var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, IsQueued: true, DVPCallDirection: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]};
     if(skill)
     {
         query.where[0].AgentSkill = skill;
+    }
+
+    if(bUnit)
+    {
+        query.where[0].BusinessUnit = bUnit;
     }
 
     dbModel.CallCDRProcessed.aggregate('*', 'count', query).then(function(abandonCount)
@@ -546,7 +561,7 @@ var GetAbandonCallsCount = function(st, et, skill, companyId, tenantId, callback
 
 };
 
-var GetDropCallsCount = function(st, et, skill, companyId, tenantId, callback)
+var GetDropCallsCount = function(st, et, skill, companyId, tenantId, bUnit, callback)
 {
     var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, IsQueued: true, DVPCallDirection: 'inbound', QueueSec: {lte: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]};
     if(skill)
@@ -554,6 +569,10 @@ var GetDropCallsCount = function(st, et, skill, companyId, tenantId, callback)
         query.where[0].AgentSkill = skill;
     }
 
+    if(bUnit)
+    {
+        query.where[0].BusinessUnit = bUnit;
+    }
 
     dbModel.CallCDRProcessed.aggregate('*', 'count', query).then(function(dropCount)
     {
@@ -565,13 +584,18 @@ var GetDropCallsCount = function(st, et, skill, companyId, tenantId, callback)
 
 };
 
-var GetHoldAverage = function(st, et, skill, companyId, tenantId, callback)
+var GetHoldAverage = function(st, et, skill, companyId, tenantId, bUnit, callback)
 {
     var query = {where :[{CreatedTime : { gte: st , lt: et}, HoldSec: {gt: 0}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]};
 
     if(skill)
     {
         query.where[0].AgentSkill = skill;
+    }
+
+    if(bUnit)
+    {
+        query.where[0].BusinessUnit = bUnit;
     }
 
     dbModel.CallCDRProcessed.aggregate('HoldSec', 'avg', query).then(function(holdAvg)
@@ -584,7 +608,7 @@ var GetHoldAverage = function(st, et, skill, companyId, tenantId, callback)
 
 };
 
-var GetIvrAverage = function(st, et, skill, companyId, tenantId, callback)
+var GetIvrAverage = function(st, et, skill, companyId, tenantId, bUnit, callback)
 {
     var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', ObjType: 'HTTAPI'}]};
     if(skill)
@@ -592,6 +616,10 @@ var GetIvrAverage = function(st, et, skill, companyId, tenantId, callback)
         query.where[0].AgentSkill = skill;
     }
 
+    if(bUnit)
+    {
+        query.where[0].BusinessUnit = bUnit;
+    }
 
     dbModel.CallCDRProcessed.aggregate('IvrConnectSec', 'avg', query).then(function(ivrAvg)
     {
@@ -603,12 +631,17 @@ var GetIvrAverage = function(st, et, skill, companyId, tenantId, callback)
 
 };
 
-var GetRingAverage = function(st, et, skill, companyId, tenantId, callback)
+var GetRingAverage = function(st, et, skill, companyId, tenantId, bUnit, callback)
 {
     var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]};
     if(skill)
     {
         query.where[0].AgentSkill = skill;
+    }
+
+    if(bUnit)
+    {
+        query.where[0].BusinessUnit = bUnit;
     }
 
     dbModel.CallCDRProcessed.aggregate('AnswerSec', 'avg', query).then(function(ringAvg)
@@ -621,12 +654,17 @@ var GetRingAverage = function(st, et, skill, companyId, tenantId, callback)
 
 };
 
-var GetTalkAverage = function(st, et, skill, companyId, tenantId, callback)
+var GetTalkAverage = function(st, et, skill, companyId, tenantId, bUnit, callback)
 {
     var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]};
     if(skill)
     {
         query.where[0].AgentSkill = skill;
+    }
+
+    if(bUnit)
+    {
+        query.where[0].BusinessUnit = bUnit;
     }
 
     dbModel.CallCDRProcessed.aggregate('BillSec', 'avg', query).then(function(talkAvg)
@@ -639,12 +677,17 @@ var GetTalkAverage = function(st, et, skill, companyId, tenantId, callback)
 
 };
 
-var GetAnswerCount = function(st, et, skill, companyId, tenantId, callback)
+var GetAnswerCount = function(st, et, skill, companyId, tenantId, bUnit, callback)
 {
     var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]};
     if(skill)
     {
         query.where[0].AgentSkill = skill;
+    }
+
+    if(bUnit)
+    {
+        query.where[0].BusinessUnit = bUnit;
     }
 
 
@@ -882,7 +925,7 @@ var GetCampaignSummary = function(startDate, endDate, companyId, tenantId, callb
 };
 
 
-var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTime, companyId, tenantId, skill, callback)
+var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTime, companyId, tenantId, skill, bUnit, callback)
 {
     var summaryDetails = {};
     try
@@ -892,15 +935,15 @@ var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTi
         var st = startTime.toISOString();
         var et = endTime.toISOString();
 
-        asyncArr.push(GetIVRCallCount.bind(this, st, et, skill, companyId, tenantId));
-        asyncArr.push(GetQueuedCallCount.bind(this, st, et, skill, companyId, tenantId));
-        asyncArr.push(GetAbandonCallsCount.bind(this, st, et, skill, companyId, tenantId));
-        asyncArr.push(GetDropCallsCount.bind(this, st, et, skill, companyId, tenantId));
-        asyncArr.push(GetHoldAverage.bind(this, st, et, skill, companyId, tenantId));
-        asyncArr.push(GetIvrAverage.bind(this, st, et, skill, companyId, tenantId));
-        asyncArr.push(GetRingAverage.bind(this, st, et, skill, companyId, tenantId));
-        asyncArr.push(GetTalkAverage.bind(this, st, et, skill, companyId, tenantId));
-        asyncArr.push(GetAnswerCount.bind(this, st, et, skill, companyId, tenantId));
+        asyncArr.push(GetIVRCallCount.bind(this, st, et, skill, companyId, tenantId, bUnit));
+        asyncArr.push(GetQueuedCallCount.bind(this, st, et, skill, companyId, tenantId, bUnit));
+        asyncArr.push(GetAbandonCallsCount.bind(this, st, et, skill, companyId, tenantId, bUnit));
+        asyncArr.push(GetDropCallsCount.bind(this, st, et, skill, companyId, tenantId, bUnit));
+        asyncArr.push(GetHoldAverage.bind(this, st, et, skill, companyId, tenantId, bUnit));
+        asyncArr.push(GetIvrAverage.bind(this, st, et, skill, companyId, tenantId, bUnit));
+        asyncArr.push(GetRingAverage.bind(this, st, et, skill, companyId, tenantId, bUnit));
+        asyncArr.push(GetTalkAverage.bind(this, st, et, skill, companyId, tenantId, bUnit));
+        asyncArr.push(GetAnswerCount.bind(this, st, et, skill, companyId, tenantId, bUnit));
 
         async.parallel(asyncArr, function(err, results){
 
@@ -1261,13 +1304,19 @@ var GetCallRelatedLegsForAppId = function(appId, companyId, tenantId, startTime,
     }
 };
 
-var GetProcessedCDRInDateRangeCustomer = function(startTime, endTime, companyId, tenantId, callback)
+var GetProcessedCDRInDateRangeCustomer = function(startTime, endTime, companyId, tenantId, bUnit, callback)
 {
     var callLegList = [];
 
     try
     {
         var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId};
+
+        if(bUnit)
+        {
+            sqlCond.BusinessUnit = bUnit;
+        }
+
         sqlCond.$and = [];
         sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound'},{DVPCallDirection: 'outbound', ObjCategory: 'GATEWAY'}]});
 
