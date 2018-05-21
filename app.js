@@ -15,7 +15,7 @@ var nodeUuid = require('node-uuid');
 var mongoose = require('mongoose');
 var Promise = require('bluebird');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
-var mailSender = require('./MailSender.js').PublishToQueue;
+var amqpPublisher = require('./MailSender.js').PublishToQueue;
 var jwt = require('restify-jwt');
 var fs = require('fs');
 var secret = require('dvp-common/Authentication/Secret.js');
@@ -24,6 +24,7 @@ var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJ
 var externalApi = require('./ExternalApiAccess.js');
 var redisHandler = require('./RedisHandler.js');
 var mongoDbOp = require('./MongoDBOperations.js');
+var amqpReceiver = require('./AMQPReceiver.js');
 
 
 var hostIp = config.Host.Ip;
@@ -4918,7 +4919,7 @@ var sendMail = function(reqId, companyId, tenantId, email, username, reportType,
     sendObj.Parameters = {username: username,created_at: new Date()};
     sendObj.attachments = [{name:fileName + '.csv', url:httpUrl}];
 
-    mailSender("EMAILOUT", sendObj);
+    amqpPublisher("EMAILOUT", sendObj);
 
 };
 
@@ -5235,8 +5236,7 @@ server.post('/DVP/API/:version/CallCDR/ProcessCDR', function(req,res,next)
              sipFromUser = ardsResourceName;
              }
              }*/
-
-            var cdr = dbModel.CallCDR.build({
+            var cdr = {
                 Uuid: uuid,
                 CallUuid: callUuid,
                 MemberUuid: memberuuid,
@@ -5277,10 +5277,7 @@ server.post('/DVP/API/:version/CallCDR/ProcessCDR', function(req,res,next)
                 CampaignId: campaignId,
                 CampaignName: campaignName,
                 BusinessUnit: bUnit
-            });
-
-
-
+            };
 
 
             if(actionCat === 'CONFERENCE')
@@ -5312,8 +5309,77 @@ server.post('/DVP/API/:version/CallCDR/ProcessCDR', function(req,res,next)
                 cdr.ObjType = advOpAction;
             }
 
-            backendHandler.AddCDRRecord(cdr, function(err, result)
+
+            var cdrSave = dbModel.CallCDR.build(cdr);
+
+
+            backendHandler.AddCDRRecord(cdrSave, function(err, result)
             {
+                //Add to Queue
+
+                if(cdr.Direction === 'inbound' && cdr.ObjCategory !== 'CONFERENCE' && (cdr.OriginatedLegs !== null || (cdr.OriginatedLegs === null && (cdr.ObjType === 'HTTAPI' || cdr.ObjType === 'SOCKET' || cdr.ObjType === 'REJECTED' || cdr.ObjType === 'FAX_INBOUND' || cdr.ObjCategory === 'DND' || cdr.ObjCategory === 'OUTBOUND_DENIED'))))
+                {
+                    //add to queue
+                    cdr.TryCount = 0;
+
+                    amqpPublisher('CDRQUEUE', cdr);
+                }
+                else
+                {
+                    //Check Redis
+
+                    redisHandler.GetObject('UUID_' + cdr.Uuid, function(err, val1)
+                    {
+                        if(val1)
+                        {
+                            backendHandler.CDRGEN_GetSpecificLegByUuid(val1, function(err, callLeg1)
+                            {
+                                if(callLeg1)
+                                {
+                                    callLeg1.TryCount = 0;
+                                    amqpPublisher('CDRQUEUE', callLeg1);
+                                }
+                            })
+                        }
+                        else
+                        {
+                            redisHandler.GetObject('CALL_UUID_' + cdr.CallUuid, function(err, val2)
+                            {
+                                if(val2)
+                                {
+                                    backendHandler.CDRGEN_GetSpecificLegByUuid(val2, function(err, callLeg2)
+                                    {
+                                        if(callLeg2)
+                                        {
+                                            callLeg2.TryCount = 0;
+                                            amqpPublisher('CDRQUEUE', callLeg2);
+                                        }
+                                    })
+                                }
+                                else
+                                {
+                                    redisHandler.GetObject('CALL_UUID_' + cdr.MemberUuid, function(err, val3)
+                                    {
+                                        if(val3)
+                                        {
+                                            backendHandler.CDRGEN_GetSpecificLegByUuid(val3, function(err, callLeg3)
+                                            {
+                                                if(callLeg3)
+                                                {
+                                                    callLeg3.TryCount = 0;
+                                                    amqpPublisher('CDRQUEUE', callLeg3);
+                                                }
+                                            })
+                                        }
+
+                                    });
+                                }
+
+                            });
+                        }
+                    })
+                }
+
                 if(err)
                 {
                     logger.error('[DVP-CDRProcessor.ProcessCDR] - [%s] - Exception occurred on method AddCDRRecord', reqId, err);

@@ -103,6 +103,78 @@ var SetObject = function(key, value)
 
 };
 
+var SetObjectWithExpire = function(key, value, timeout)
+{
+    try
+    {
+        client.set(key, value, function(err, response)
+        {
+            if(err)
+            {
+                logger.error('[DVP-CDRProcessor.SetObjectWithExpire] - REDIS ERROR', err)
+            }
+            else
+            {
+                client.expire(key, timeout, function(err, reply)
+                {
+                    if (err)
+                    {
+                        logger.error('[DVP-CDRProcessor.ExpireKey] - [%s] - REDIS ERROR', err);
+                    }
+                });
+            }
+        });
+
+    }
+    catch(ex)
+    {
+        logger.error('[DVP-CDRProcessor.SetObjectWithExpire] - REDIS ERROR', ex)
+    }
+
+};
+
+var AddSetWithExpire = function(setId, item, timeout)
+{
+    try
+    {
+        client.sadd(setId, item, function (err, reply)
+        {
+            client.expire(setId, timeout, function(err, reply)
+            {
+                if (err)
+                {
+                    logger.error('[DVP-CDRProcessor.ExpireKey] - [%s] - REDIS ERROR', err);
+                }
+            });
+        });
+
+    }
+    catch(ex)
+    {
+        logger.error('[DVP-CDRProcessor.SetObjectWithExpire] - REDIS ERROR', ex)
+    }
+
+};
+
+var GetSetMembers = function(setId, callback)
+{
+    try
+    {
+        client.smembers(setId, function (err, items)
+        {
+            callback(err, items);
+        });
+
+    }
+    catch(ex)
+    {
+        logger.error('[DVP-CDRProcessor.GetSetMembers] - REDIS ERROR', ex);
+        var emptyArr = [];
+        callback(ex, emptyArr);
+    }
+
+};
+
 var GetSetObject = function(key, value, callback)
 {
     try
@@ -120,6 +192,28 @@ var GetSetObject = function(key, value, callback)
     catch(ex)
     {
         logger.error('[DVP-CDRProcessor.SetObject] - REDIS ERROR', ex)
+        callback(ex, null);
+    }
+
+};
+
+var GetObject = function(key, callback)
+{
+    try
+    {
+        client.get(key, function(err, response)
+        {
+            if(err)
+            {
+                logger.error('[DVP-CDRProcessor.GetObject] - REDIS ERROR', err)
+            }
+            callback(err, response);
+        });
+
+    }
+    catch(ex)
+    {
+        logger.error('[DVP-CDRProcessor.GetObject] - REDIS ERROR', ex)
         callback(ex, null);
     }
 
@@ -154,3 +248,7 @@ client.on('error', function(msg)
 module.exports.SetObject = SetObject;
 module.exports.DeleteObject = DeleteObject;
 module.exports.GetSetObject = GetSetObject;
+module.exports.SetObjectWithExpire = SetObjectWithExpire;
+module.exports.AddSetWithExpire = AddSetWithExpire;
+module.exports.GetObject = GetObject;
+module.exports.GetSetMembers = GetSetMembers;
