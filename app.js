@@ -2457,12 +2457,14 @@ server.get('/DVP/API/:version/CallCDR/GetCampaignCallDetailsByRange/Count', jwt(
 });
 
 
-var processSummaryData = function(caption, startDate, endDate, companyId, tenantId, skill, callback)
+var processSummaryData = function(caption, startDate, endDate, companyId, tenantId, skill, bUnit, callback)
 {
-    backendHandler.GetCallSummaryDetailsDateRangeWithSkill(caption, startDate, endDate, companyId, tenantId, skill, function(err, summaryData)
+    backendHandler.GetCallSummaryDetailsDateRangeWithSkill(caption, startDate, endDate, companyId, tenantId, skill, bUnit, function(err, summaryData)
     {
         callback(err, summaryData);
     });
+
+
     /*if(skill)
     {
         backendHandler.GetCallSummaryDetailsDateRangeWithSkill(caption, startDate, endDate, companyId, tenantId, skill, function(err, summaryData)
@@ -2494,6 +2496,13 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly', jwt({secret: secre
         var companyId = req.user.company;
         var tenantId = req.user.tenant;
 
+        var bUnit = null;
+
+        if(req.query.businessunit)
+        {
+            bUnit = req.query.businessunit;
+        }
+
         if (!companyId || !tenantId)
         {
             throw new Error("Invalid company or tenant");
@@ -2510,7 +2519,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly', jwt({secret: secre
             var sd = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i, 'hours');
             var ed = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i+1, 'hours');
 
-            hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId, null));
+            hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId, null, bUnit));
         }
 
 
@@ -2555,6 +2564,12 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly/Download', jwt({secr
         var companyId = req.user.company;
         var tenantId = req.user.tenant;
 
+        var bUnit = null;
+        if(req.body && req.body.businessunit)
+        {
+            bUnit = req.body.businessunit;
+        }
+
         if (!companyId || !tenantId)
         {
             throw new Error("Invalid company or tenant");
@@ -2578,7 +2593,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly/Download', jwt({secr
             var sd = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i, 'hours');
             var ed = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i+1, 'hours');
 
-            hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId, null));
+            hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId, null, bUnit));
         }
 
         fileCheckAndDelete(reqId, fileName, companyId, tenantId)
@@ -2760,6 +2775,12 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly/GeneratePreviousDay
 
         var summaryDate = prevDay.format("YYYY-MM-DD");
 
+        var bUnit = null;
+        if(req.body && req.body.businessunit)
+        {
+            bUnit = req.body.businessunit;
+        }
+
         if (!companyId || !tenantId)
         {
             throw new Error("Invalid company or tenant");
@@ -2781,7 +2802,7 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly/GeneratePreviousDay
             var sd = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i, 'hours');
             var ed = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i+1, 'hours');
 
-            hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId, null));
+            hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId, null, bUnit));
         }
 
         async.series(hrFuncArr, function(err, results)
@@ -2951,6 +2972,12 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly', jwt({secret
         var companyId = req.user.company;
         var tenantId = req.user.tenant;
 
+        var bUnit = null;
+        if(req.body && req.body.businessunit)
+        {
+            bUnit = req.body.businessunit;
+        }
+
         if (!companyId || !tenantId)
         {
             throw new Error("Invalid company or tenant");
@@ -2963,7 +2990,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly', jwt({secret
         var sd = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(hr - 1, 'hours');
         var ed = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(hr, 'hours');
 
-        processSummaryData(hr, sd, ed, companyId, tenantId, skill, function(err, result)
+        processSummaryData(hr, sd, ed, companyId, tenantId, skill, bUnit, function(err, result)
         {
             if(err)
             {
@@ -2992,7 +3019,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly', jwt({secret
     return next();
 });
 
-var getQueueSummaryAsync = function(summaryDate, tz, companyId, tenantId, skill, callback)
+var getQueueSummaryAsync = function(summaryDate, tz, companyId, tenantId, skill, bUnit, callback)
 {
     var hrFuncArr = [];
 
@@ -3001,7 +3028,7 @@ var getQueueSummaryAsync = function(summaryDate, tz, companyId, tenantId, skill,
         var sd = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i, 'hours');
         var ed = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(i+1, 'hours');
 
-        hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId, skill));
+        hrFuncArr.push(processSummaryData.bind(this, i+1, sd, ed, companyId, tenantId, skill, bUnit));
     }
     async.series(hrFuncArr, function(err, results)
     {
@@ -3027,6 +3054,13 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly/Download', j
 
         var companyId = req.user.company;
         var tenantId = req.user.tenant;
+
+        var bUnit = null;
+
+        if(req.body && req.body.businessunit)
+        {
+            bUnit = req.body.businessunit;
+        }
 
         if (!companyId || !tenantId)
         {
@@ -3061,7 +3095,7 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly/Download', j
         {
             skills.forEach(function(skill)
             {
-                groupedArr.push(getQueueSummaryAsync.bind(this, summaryDate, tz, companyId, tenantId, skill));
+                groupedArr.push(getQueueSummaryAsync.bind(this, summaryDate, tz, companyId, tenantId, skill, bUnit));
             });
 
             fileCheckAndDelete(reqId, fileName, companyId, tenantId)
@@ -3239,6 +3273,12 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Daily', jwt({secret: secret
         var companyId = req.user.company;
         var tenantId = req.user.tenant;
 
+        var bUnit = null;
+        if(req.query.businessunit)
+        {
+            bUnit = req.query.businessunit;
+        }
+
         if (!companyId || !tenantId)
         {
             throw new Error("Invalid company or tenant");
@@ -3260,7 +3300,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Daily', jwt({secret: secret
 
             momentSD = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt+1, 'days');
 
-            dayFuncArr.push(processSummaryData.bind(this, sd.utcOffset(tz).format('YYYY-MM-DD'), sd, ed, companyId, tenantId, null));
+            dayFuncArr.push(processSummaryData.bind(this, sd.utcOffset(tz).format('YYYY-MM-DD'), sd, ed, companyId, tenantId, null, bUnit));
 
             cnt++;
         }
@@ -3372,6 +3412,12 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Daily/Download', jwt({secre
         var companyId = req.user.company;
         var tenantId = req.user.tenant;
 
+        var bUnit = null;
+        if(req.query.businessunit)
+        {
+            bUnit = req.query.businessunit;
+        }
+
         if (!companyId || !tenantId)
         {
             throw new Error("Invalid company or tenant");
@@ -3401,7 +3447,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Daily/Download', jwt({secre
 
             momentSD = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(cnt+1, 'days');
 
-            dayFuncArr.push(processSummaryData.bind(this, sd.utcOffset(tz).format('YYYY-MM-DD'), sd, ed, companyId, tenantId, null));
+            dayFuncArr.push(processSummaryData.bind(this, sd.utcOffset(tz).format('YYYY-MM-DD'), sd, ed, companyId, tenantId, null, bUnit));
 
             cnt++;
         }
@@ -3597,6 +3643,12 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummary/Daily/GeneratePreviousMont
         var companyId = req.user.company;
         var tenantId = req.user.tenant;
 
+        var bUnit = null;
+        if(req.body && req.body.businessunit)
+        {
+            bUnit = req.body.businessunit;
+        }
+
         if (!companyId || !tenantId)
         {
             throw new Error("Invalid company or tenant");
@@ -3624,7 +3676,7 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummary/Daily/GeneratePreviousMont
 
             momentSD = moment(startDay, "YYYY-MM-DD hh:mm:ss Z").add(cnt+1, 'days');
 
-            dayFuncArr.push(processSummaryData.bind(this, sd.utcOffset(tz).format('YYYY-MM-DD'), sd, ed, companyId, tenantId, null));
+            dayFuncArr.push(processSummaryData.bind(this, sd.utcOffset(tz).format('YYYY-MM-DD'), sd, ed, companyId, tenantId, null, bUnit));
 
             cnt++;
         }
@@ -4435,6 +4487,12 @@ server.get('/DVP/API/:version/CallCDR/CallSummaryByCustomerDownload', jwt({secre
 
         var tz = req.query.tz;
 
+        var bUnit = null;
+
+        if(req.query.businessunit)
+        {
+            bUnit = req.query.businessunit;
+        }
 
         if (!companyId || !tenantId)
         {
@@ -4475,7 +4533,7 @@ server.get('/DVP/API/:version/CallCDR/CallSummaryByCustomerDownload', jwt({secre
                                 logger.debug('[DVP-CDRProcessor.CallSummaryByCustomerDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
                                 res.end(jsonString);
 
-                                backendHandler.GetProcessedCDRInDateRangeCustomer(startTime, endTime, companyId, tenantId, function(err, cdrList)
+                                backendHandler.GetProcessedCDRInDateRangeCustomer(startTime, endTime, companyId, tenantId, bUnit, function(err, cdrList)
                                 {
                                     if(err)
                                     {
@@ -4597,11 +4655,18 @@ server.get('/DVP/API/:version/CallCDR/CallSummaryByCustomer', jwt({secret: secre
 
         var tz = req.query.tz;
 
+        var bUnit = null;
+
+        if(req.query.businessunit)
+        {
+            bUnit = req.query.businessunit;
+        }
+
         logger.debug('[DVP-CDRProcessor.CallSummaryByCustomer] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
 
         //Create FILE NAME Key
 
-        backendHandler.GetProcessedCDRInDateRangeCustomer(startTime, endTime, companyId, tenantId, function(err, cdrList)
+        backendHandler.GetProcessedCDRInDateRangeCustomer(startTime, endTime, companyId, tenantId, bUnit, function(err, cdrList)
         {
             if(err)
             {
