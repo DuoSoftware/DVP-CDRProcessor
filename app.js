@@ -2338,6 +2338,65 @@ server.get('/DVP/API/:version/CallCDR/GetCampaignCallDetailsByRange', jwt({secre
     return next();
 });
 
+
+server.get('/DVP/API/:version/CallCDR/GetCampaignCallDetailsByRange/Count', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+{
+    var emptyArr = [];
+    var reqId = nodeUuid.v1();
+    try
+    {
+        var startTime = req.query.startTime;
+        var endTime = req.query.endTime;
+        var agent = req.query.agent;
+        var skill = req.query.skill;
+        var recording = req.query.recording;
+        var custNum = req.query.custnumber;
+        var campaignName = req.query.campaignName;
+
+        var companyId = req.user.company;
+        var tenantId = req.user.tenant;
+
+
+        if (!companyId || !tenantId)
+        {
+            throw new Error("Invalid company or tenant");
+        }
+
+        logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
+
+
+        backendHandler.GetCampaignCallLegsInDateRangeCount(startTime, endTime, companyId, tenantId, agent, skill, recording, custNum, campaignName, function(err, cdrCount)
+        {
+            var jsonString = "";
+            if(err)
+            {
+                logger.error('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - Exception occurred on method GetCallRelatedLegsInDateRange', reqId, err);
+
+                jsonString = messageFormatter.FormatMessage(err, "ERROR", false, 0);
+            }
+            else
+            {
+                logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - Get call cdr details by date success', reqId);
+
+                jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, cdrCount);
+            }
+
+            res.end(jsonString);
+
+        })
+
+    }
+    catch(ex)
+    {
+        logger.error('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - Exception occurred', reqId, ex);
+        var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, 0);
+        logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - API RESPONSE : %s', reqId, jsonString);
+        res.end(jsonString);
+    }
+
+    return next();
+});
+
 server.get('/DVP/API/:version/CallCDR/GetCallDetailsByRange/Count', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
 {
     var emptyArr = [];
@@ -2392,64 +2451,6 @@ server.get('/DVP/API/:version/CallCDR/GetCallDetailsByRange/Count', jwt({secret:
         logger.error('[DVP-CDRProcessor.GetCallDetailsByRangeCount] - [%s] - Exception occurred', reqId, ex);
         var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, 0);
         logger.debug('[DVP-CDRProcessor.GetCallDetailsByRangeCount] - [%s] - API RESPONSE : %s', reqId, jsonString);
-        res.end(jsonString);
-    }
-
-    return next();
-});
-
-server.get('/DVP/API/:version/CallCDR/GetCampaignCallDetailsByRange/Count', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
-{
-    var emptyArr = [];
-    var reqId = nodeUuid.v1();
-    try
-    {
-        var startTime = req.query.startTime;
-        var endTime = req.query.endTime;
-        var agent = req.query.agent;
-        var skill = req.query.skill;
-        var recording = req.query.recording;
-        var custNum = req.query.custnumber;
-        var campaignName = req.query.campaignName;
-
-        var companyId = req.user.company;
-        var tenantId = req.user.tenant;
-
-
-        if (!companyId || !tenantId)
-        {
-            throw new Error("Invalid company or tenant");
-        }
-
-        logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
-
-
-        backendHandler.GetCampaignCallLegsInDateRangeCount(startTime, endTime, companyId, tenantId, agent, skill, recording, custNum, campaignName, function(err, cdrCount)
-        {
-            var jsonString = "";
-            if(err)
-            {
-                logger.error('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - Exception occurred on method GetCallRelatedLegsInDateRange', reqId, err);
-
-                jsonString = messageFormatter.FormatMessage(err, "ERROR", false, 0);
-            }
-            else
-            {
-                logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - Get call cdr details by date success', reqId);
-
-                jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, cdrCount);
-            }
-
-            res.end(jsonString);
-
-        })
-
-    }
-    catch(ex)
-    {
-        logger.error('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - Exception occurred', reqId, ex);
-        var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, 0);
-        logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - API RESPONSE : %s', reqId, jsonString);
         res.end(jsonString);
     }
 
@@ -5345,6 +5346,366 @@ server.post('/DVP/API/:version/CallCDR/ProcessCDR', function(req,res,next)
 
     return next();
 });
+
+
+
+////////////////////////////// NEW ALGORITHM API ///////////////////////////////
+
+server.get('/DVP/API/:version/CallCDR/Processed/GetCallDetailsByRange/Count', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+{
+    var reqId = nodeUuid.v1();
+    try
+    {
+        var startTime = req.query.startTime;
+        var endTime = req.query.endTime;
+        var agent = req.query.agent;
+        var skill = req.query.skill;
+        var direction = req.query.direction;
+        var recording = req.query.recording;
+        var custNum = req.query.custnumber;
+        var didNum = req.query.didnumber;
+        var bUnit = req.query.businessunit;
+
+        var companyId = req.user.company;
+        var tenantId = req.user.tenant;
+
+
+        if (!companyId || !tenantId)
+        {
+            throw new Error("Invalid company or tenant");
+        }
+
+        logger.debug('[DVP-CDRProcessor.GetCallDetailsByRangeCount] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
+
+
+        backendHandler.GetProcessedCDRInDateRangeCount(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, bUnit, function(err, cdrCount)
+        {
+            var jsonString = "";
+            if(err)
+            {
+                logger.error('[DVP-CDRProcessor.GetCallDetailsByRangeCount] - [%s] - Exception occurred on method GetCallRelatedLegsInDateRange', reqId, err);
+
+                jsonString = messageFormatter.FormatMessage(err, "ERROR", false, 0);
+            }
+            else
+            {
+                logger.debug('[DVP-CDRProcessor.GetCallDetailsByRangeCount] - [%s] - Get call cdr details by date success', reqId);
+
+                jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, cdrCount);
+            }
+
+            res.end(jsonString);
+
+        })
+
+    }
+    catch(ex)
+    {
+        logger.error('[DVP-CDRProcessor.GetCallDetailsByRangeCount] - [%s] - Exception occurred', reqId, ex);
+        var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, 0);
+        logger.debug('[DVP-CDRProcessor.GetCallDetailsByRangeCount] - [%s] - API RESPONSE : %s', reqId, jsonString);
+        res.end(jsonString);
+    }
+
+    return next();
+});
+
+server.get('/DVP/API/:version/CallCDR/Processed/GetCallDetailsByRange', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+{
+    var emptyArr = [];
+    var reqId = nodeUuid.v1();
+    try
+    {
+        var startTime = req.query.startTime;
+        var endTime = req.query.endTime;
+        var offset = req.query.offset;
+        var limit = req.query.limit;
+        var agent = req.query.agent;
+        var skill = req.query.skill;
+        var direction = req.query.direction;
+        var recording = req.query.recording;
+        var custNum = req.query.custnumber;
+        var didNum = req.query.didnumber;
+        var bUnit = req.query.businessunit;
+
+        var companyId = req.user.company;
+        var tenantId = req.user.tenant;
+
+        offset = parseInt(offset);
+        limit = parseInt(limit);
+
+        if (!companyId || !tenantId)
+        {
+            throw new Error("Invalid company or tenant");
+        }
+
+        logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s, Offset: %s, Limit : %s', reqId, startTime, endTime, offset, limit);
+
+
+        backendHandler.GetProcessedCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, limit, offset, bUnit, function(err, cdrList)
+        {
+            logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - CDR Processing Done', reqId);
+
+            var jsonString = "";
+
+            if(err)
+            {
+                jsonString = messageFormatter.FormatMessage(err, "ERROR OCCURRED", false, cdrList);
+
+            }
+            else
+            {
+                jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, cdrList);
+            }
+            res.end(jsonString);
+
+
+
+        })
+
+    }
+    catch(ex)
+    {
+        logger.error('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - Exception occurred', reqId, ex);
+        var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+        logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - API RESPONSE : %s', reqId, jsonString);
+        res.end(jsonString);
+    }
+
+    return next();
+});
+
+server.get('/DVP/API/:version/CallCDR/Processed/GetAbandonCallDetailsByRange', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+{
+    var emptyArr = [];
+    var reqId = nodeUuid.v1();
+    try
+    {
+        var startTime = req.query.startTime;
+        var endTime = req.query.endTime;
+        var offset = req.query.offset;
+        var limit = req.query.limit;
+        var agent = req.query.agent;
+        var skill = req.query.skill;
+        var custNum = req.query.custnumber;
+        var didNum = req.query.didnumber;
+        var bUnit = req.query.businessunit;
+
+        offset = parseInt(offset);
+        limit = parseInt(limit);
+
+        var companyId = req.user.company;
+        var tenantId = req.user.tenant;
+
+        if (!companyId || !tenantId)
+        {
+            throw new Error("Invalid company or tenant");
+        }
+
+        logger.debug('[DVP-CDRProcessor.GetAbandonCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s, Offset: %s, Limit : %s', reqId, startTime, endTime, offset, limit);
+
+        backendHandler.GetAbandonCallRelatedLegsInDateRangeProcessed(startTime, endTime, companyId, tenantId, offset, limit, agent, skill, custNum, didNum, bUnit, function(err, cdrList)
+        {
+            var jsonString = "";
+
+            if(err)
+            {
+                jsonString = messageFormatter.FormatMessage(err, "ERROR OCCURRED", false, cdrList);
+
+            }
+            else
+            {
+                jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, cdrList);
+            }
+            res.end(jsonString);
+
+
+
+        })
+
+    }
+    catch(ex)
+    {
+        logger.error('[DVP-CDRProcessor.GetAbandonCallDetailsByRange] - [%s] - Exception occurred', reqId, ex);
+        var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+        logger.debug('[DVP-CDRProcessor.GetAbandonCallDetailsByRange] - [%s] - API RESPONSE : %s', reqId, jsonString);
+        res.end(jsonString);
+    }
+
+    return next();
+});
+
+server.get('/DVP/API/:version/CallCDR/Processed/GetAbandonCallDetailsByRange/Count', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+{
+    var emptyArr = [];
+    var reqId = nodeUuid.v1();
+    try
+    {
+        var startTime = req.query.startTime;
+        var endTime = req.query.endTime;
+        var agent = req.query.agent;
+        var skill = req.query.skill;
+        var custNum = req.query.custnumber;
+        var didNum = req.query.didnumber;
+        var bUnit = req.query.businessunit;
+
+        var companyId = req.user.company;
+        var tenantId = req.user.tenant;
+
+        if (!companyId || !tenantId)
+        {
+            throw new Error("Invalid company or tenant");
+        }
+
+        logger.debug('[DVP-CDRProcessor.GetAbandonCallDetailsByRangeCount] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
+
+        backendHandler.GetAbandonCallRelatedLegsInDateRangeCount(startTime, endTime, companyId, tenantId, agent, skill, custNum, didNum, bUnit, function(err, count)
+        {
+            var jsonString = "";
+
+            if(err)
+            {
+                jsonString = messageFormatter.FormatMessage(err, "ERROR", false, 0);
+
+            }
+            else
+            {
+                jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, count);
+            }
+            res.end(jsonString);
+
+
+        })
+
+    }
+    catch(ex)
+    {
+        logger.error('[DVP-CDRProcessor.GetAbandonCallDetailsByRangeCount] - [%s] - Exception occurred', reqId, ex);
+        var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, 0);
+        logger.debug('[DVP-CDRProcessor.GetAbandonCallDetailsByRangeCount] - [%s] - API RESPONSE : %s', reqId, jsonString);
+        res.end(jsonString);
+    }
+
+    return next();
+});
+
+server.get('/DVP/API/:version/CallCDR/Processed/GetCampaignCallDetailsByRange', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+{
+    var emptyArr = [];
+    var reqId = nodeUuid.v1();
+    try
+    {
+        var startTime = req.query.startTime;
+        var endTime = req.query.endTime;
+        var offset = req.query.offset;
+        var limit = req.query.limit;
+        var agent = req.query.agent;
+        var skill = req.query.skill;
+        var recording = req.query.recording;
+        var custNum = req.query.custnumber;
+        var campaignName = req.query.campaignName;
+
+        var companyId = req.user.company;
+        var tenantId = req.user.tenant;
+
+        offset = parseInt(offset);
+        limit = parseInt(limit);
+
+        if (!companyId || !tenantId)
+        {
+            throw new Error("Invalid company or tenant");
+        }
+
+        logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s, Offset: %s, Limit : %s', reqId, startTime, endTime, offset, limit);
+
+        backendHandler.GetProcessedCampaignCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, recording, custNum, campaignName, limit, offset, function(err, cdrList)
+        {
+            var jsonString = "";
+
+            if(err)
+            {
+                jsonString = messageFormatter.FormatMessage(err, "ERROR OCCURRED", false, cdrList);
+            }
+            else
+            {
+                jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, cdrList);
+            }
+            res.end(jsonString);
+
+
+        })
+
+    }
+    catch(ex)
+    {
+        logger.error('[DVP-CDRProcessor.GetCampaignCallDetailsByRange] - [%s] - Exception occurred', reqId, ex);
+        var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+        logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRange] - [%s] - API RESPONSE : %s', reqId, jsonString);
+        res.end(jsonString);
+    }
+
+    return next();
+});
+
+server.get('/DVP/API/:version/CallCDR/Processed/GetCampaignCallDetailsByRange/Count', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+{
+    var emptyArr = [];
+    var reqId = nodeUuid.v1();
+    try
+    {
+        var startTime = req.query.startTime;
+        var endTime = req.query.endTime;
+        var agent = req.query.agent;
+        var skill = req.query.skill;
+        var recording = req.query.recording;
+        var custNum = req.query.custnumber;
+        var campaignName = req.query.campaignName;
+
+        var companyId = req.user.company;
+        var tenantId = req.user.tenant;
+
+
+        if (!companyId || !tenantId)
+        {
+            throw new Error("Invalid company or tenant");
+        }
+
+        logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
+
+
+
+        backendHandler.GetProcessedCampaignCDRInDateRangeCount(startTime, endTime, companyId, tenantId, agent, skill, recording, custNum, campaignName, function(err, cdrCount)
+        {
+            var jsonString = "";
+            if(err)
+            {
+                logger.error('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - Exception occurred on method GetCallRelatedLegsInDateRange', reqId, err);
+
+                jsonString = messageFormatter.FormatMessage(err, "ERROR", false, 0);
+            }
+            else
+            {
+                logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - Get call cdr details by date success', reqId);
+
+                jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, cdrCount);
+            }
+
+            res.end(jsonString);
+
+        })
+
+    }
+    catch(ex)
+    {
+        logger.error('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - Exception occurred', reqId, ex);
+        var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, 0);
+        logger.debug('[DVP-CDRProcessor.GetCampaignCallDetailsByRangeCount] - [%s] - API RESPONSE : %s', reqId, jsonString);
+        res.end(jsonString);
+    }
+
+    return next();
+});
+////////////////////////////////////////////////////////////////////////////////
 
 function Crossdomain(req,res,next){
 
