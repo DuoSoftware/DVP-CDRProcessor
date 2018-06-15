@@ -4744,6 +4744,7 @@ server.post('/DVP/API/:version/CallCDR/Report/SendMail', jwt({secret: secret.Sec
     var reqId = nodeUuid.v1();
     try
     {
+        logger.debug('[DVP-CDRProcessor.SendMail] - [%s] - HTTP Request Recieved', reqId);
         var body = req.body;
 
         var companyId = req.user.company;
@@ -4764,7 +4765,7 @@ server.post('/DVP/API/:version/CallCDR/Report/SendMail', jwt({secret: secret.Sec
             .then(function(resp)
             {
                 var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, true);
-                logger.debug('[DVP-CDRProcessor.CallSummaryByCustomer] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                logger.debug('[DVP-CDRProcessor.SendMail] - [%s] - API RESPONSE : %s', reqId, jsonString);
                 res.end(jsonString);
                 if(resp && resp.users)
                 {
@@ -4774,17 +4775,22 @@ server.post('/DVP/API/:version/CallCDR/Report/SendMail', jwt({secret: secret.Sec
                     {
                         if(recipient.email && recipient.email.contact && recipient.username)
                         {
+                            logger.debug('[DVP-CDRProcessor.SendMail] - [%s] - Sending mail to : %s, email : %s, template : %s', reqId, recipient.username, recipient.email.contact, template);
                             sendMail(reqId, companyId, tenantId, recipient.email.contact, recipient.username, body.reportType, body.tz, template);
                         }
 
                     })
+                }
+                else
+                {
+                    logger.debug('[DVP-CDRProcessor.SendMail] - [%s] - NO recipients found to send', reqId);
                 }
 
             })
             .catch(function(err)
             {
                 var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, false);
-                logger.debug('[DVP-CDRProcessor.CallSummaryByCustomer] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                logger.debug('[DVP-CDRProcessor.SendMail] - [%s] - API RESPONSE : %s', reqId, jsonString);
                 res.end(jsonString);
 
             })
