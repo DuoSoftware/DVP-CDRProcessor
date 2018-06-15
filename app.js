@@ -1870,7 +1870,7 @@ server.post('/DVP/API/:version/CallCDR/GeneratePreviousDay', jwt({secret: secret
 
         //check file exists
 
-        backendHandler.GetProcessedCDRInDateRange(startDay, endDay, companyId, tenantId, null, null, null, null, null, null, function(err, cdrList)
+        backendHandler.GetProcessedCDRInDateRange(startDay, endDay, companyId, tenantId, null, null, null, null, null, null, 0, 0, function(err, cdrList)
         {
             logger.debug('[DVP-CDRProcessor.GeneratePreviousDay] - [%s] - CDR Processing Done', reqId);
 
