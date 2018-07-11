@@ -3671,7 +3671,7 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummary/Daily/GeneratePreviousMont
         while(momentSD <= momentED)
         {
             var sd = moment(startDay, "YYYY-MM-DD hh:mm:ss Z").add(cnt, 'days');
-            var ed = moment(endDay, "YYYY-MM-DD hh:mm:ss Z").add(cnt+1, 'days');
+            var ed = moment(startDay, "YYYY-MM-DD hh:mm:ss Z").add(cnt+1, 'days');
 
             //fixed momentSD
 
