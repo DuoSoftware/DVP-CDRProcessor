@@ -508,6 +508,24 @@ var GetQueuedCallCount = function(st, et, skill, companyId, tenantId, callback)
 
 };
 
+var GetQueuedCallAverage = function(st, et, skill, companyId, tenantId, callback)
+{
+    var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', IsQueued: true, ObjType: 'HTTAPI'}]};
+    if(skill)
+    {
+        query.where[0].AgentSkill = skill;
+    }
+
+    dbModel.CallCDRProcessed.aggregate('QueueSec', 'avg', query).then(function(queuedAvg)
+    {
+        callback(null, queuedAvg);
+    }).catch(function(err)
+    {
+        callback(err, 0);
+    });
+
+};
+
 var GetAbandonCallsCount = function(st, et, skill, companyId, tenantId, callback)
 {
     var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, IsQueued: true, DVPCallDirection: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]};
@@ -659,7 +677,7 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
 
             dbModel.CallCDRProcessed.aggregate('*', 'count', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', IsQueued: true, ObjType: 'HTTAPI'}]}).then(function(queuedCount)
             {
-                if(callCount)
+                if(queuedCount)
                 {
                     summaryDetails.QueuedCallsCount = queuedCount;
                 }
@@ -776,7 +794,24 @@ var GetCallSummaryDetailsDateRange = function(caption, startTime, endTime, compa
 
                                             summaryDetails.Caption = caption;
 
-                                            callback(null, summaryDetails);
+                                            dbModel.CallCDRProcessed.aggregate('QueueSec', 'avg', {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', IsQueued: true, ObjType: 'HTTAPI'}]}).then(function(qAvg)
+                                            {
+                                                if(qAvg)
+                                                {
+                                                    summaryDetails.QueueAverage = qAvg;
+                                                }
+                                                else
+                                                {
+                                                    summaryDetails.QueueAverage = 0;
+                                                }
+                                                callback(null, summaryDetails);
+
+                                            }).catch(function(err)
+                                            {
+                                                callback(err, summaryDetails);
+                                            })
+
+
 
                                         }).catch(function(err)
                                         {
@@ -851,6 +886,7 @@ var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTi
         asyncArr.push(GetRingAverage.bind(this, st, et, skill, companyId, tenantId));
         asyncArr.push(GetTalkAverage.bind(this, st, et, skill, companyId, tenantId));
         asyncArr.push(GetAnswerCount.bind(this, st, et, skill, companyId, tenantId));
+        asyncArr.push(GetQueuedCallAverage.bind(this, st, et, skill, companyId, tenantId));
 
         async.parallel(asyncArr, function(err, results){
 
@@ -927,6 +963,15 @@ var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTi
                 else
                 {
                     summaryDetails.AnswerCount = 0;
+                }
+
+                if(results[9])
+                {
+                    summaryDetails.QueueAverage = results[9];
+                }
+                else
+                {
+                    summaryDetails.QueueAverage = 0;
                 }
 
                 if(summaryDetails.QueuedCallsCount)

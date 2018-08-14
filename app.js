@@ -2639,9 +2639,9 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly/Download', jwt({secr
 
 
 
-                                            var fieldNames = ['Hour', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandon Calls (Count)', 'Abandon Calls (%)', 'Dropped Calls (Count)', 'Dropped Calls (%)', 'Avg Hold Time (sec)',	'Avg IVR Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answered Calls (Count)', 'Answer Percentage (%)'];
+                                            var fieldNames = ['Hour', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandon Calls (Count)', 'Abandon Calls (%)', 'Dropped Calls (Count)', 'Dropped Calls (%)', 'Avg Hold Time (sec)', 'Avg IVR Time (sec)', 'Avg Queue Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answered Calls (Count)', 'Answer Percentage (%)'];
 
-                                            var fields = ['Caption', 'IVRCallsCount', 'QueuedCallsCount','AbandonCallsCount', 'AbandonPercentage', 'DropCallsCount', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'RingAverage', 'TalkAverage', 'AnswerCount', 'AnswerPercentage'];
+                                            var fields = ['Caption', 'IVRCallsCount', 'QueuedCallsCount','AbandonCallsCount', 'AbandonPercentage', 'DropCallsCount', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'QueueAverage', 'RingAverage', 'TalkAverage', 'AnswerCount', 'AnswerPercentage'];
 
                                             var csvFileData = json2csv({ data: newSummary, fields: fields, fieldNames : fieldNames });
 
@@ -2811,9 +2811,9 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly/GeneratePreviousDay
                         return sumr;
                     });
 
-                    var fieldNames = ['Hour', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandon Calls (Count)', 'Abandon Calls (%)', 'Dropped Calls (Count)', 'Dropped Calls (%)', 'Avg Hold Time (sec)',	'Avg IVR Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answered Calls (Count)', 'Answer Percentage (%)'];
+                    var fieldNames = ['Hour', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandon Calls (Count)', 'Abandon Calls (%)', 'Dropped Calls (Count)', 'Dropped Calls (%)', 'Avg Hold Time (sec)', 'Avg IVR Time (sec)', 'Avg Queue Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answered Calls (Count)', 'Answer Percentage (%)'];
 
-                    var fields = ['Caption', 'IVRCallsCount', 'QueuedCallsCount','AbandonCallsCount', 'AbandonPercentage', 'DropCallsCount', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'RingAverage', 'TalkAverage', 'AnswerCount', 'AnswerPercentage'];
+                    var fields = ['Caption', 'IVRCallsCount', 'QueuedCallsCount','AbandonCallsCount', 'AbandonPercentage', 'DropCallsCount', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'QueueAverage', 'RingAverage', 'TalkAverage', 'AnswerCount', 'AnswerPercentage'];
 
                     var csvFileData = json2csv({ data: newSummary, fields: fields, fieldNames : fieldNames });
 
@@ -3412,9 +3412,9 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Daily/Download', jwt({secre
 
 
 
-                                            var fieldNames = ['Day', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandon Calls (Count)', 'Abandon Calls (%)', 'Dropped Calls (Count)', 'Dropped Calls (%)', 'Avg Hold Time (sec)',	'Avg IVR Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answered Calls (Count)', 'Answer Percentage (%)'];
+                                            var fieldNames = ['Day', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandon Calls (Count)', 'Abandon Calls (%)', 'Dropped Calls (Count)', 'Dropped Calls (%)', 'Avg Hold Time (sec)', 'Avg IVR Time (sec)', 'Avg Queue Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answered Calls (Count)', 'Answer Percentage (%)'];
 
-                                            var fields = ['Caption', 'IVRCallsCount', 'QueuedCallsCount','AbandonCallsCount', 'AbandonPercentage', 'DropCallsCount', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'RingAverage', 'TalkAverage', 'AnswerCount', 'AnswerPercentage'];
+                                            var fields = ['Caption', 'IVRCallsCount', 'QueuedCallsCount','AbandonCallsCount', 'AbandonPercentage', 'DropCallsCount', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'QueueAverage', 'RingAverage', 'TalkAverage', 'AnswerCount', 'AnswerPercentage'];
 
                                             var csvFileData = json2csv({ data: newSummary, fields: fields, fieldNames : fieldNames });
 
@@ -3615,9 +3615,9 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummary/Daily/GeneratePreviousMont
                     });
 
 
-                    var fieldNames = ['Day', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandon Calls (Count)', 'Abandon Calls (%)', 'Dropped Calls (Count)', 'Dropped Calls (%)', 'Avg Hold Time (sec)',	'Avg IVR Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answered Calls (Count)', 'Answer Percentage (%)'];
+                    var fieldNames = ['Day', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandon Calls (Count)', 'Abandon Calls (%)', 'Dropped Calls (Count)', 'Dropped Calls (%)', 'Avg Hold Time (sec)', 'Avg IVR Time (sec)', 'Avg Queue Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answered Calls (Count)', 'Answer Percentage (%)'];
 
-                    var fields = ['Caption', 'IVRCallsCount', 'QueuedCallsCount','AbandonCallsCount', 'AbandonPercentage', 'DropCallsCount', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'RingAverage', 'TalkAverage', 'AnswerCount', 'AnswerPercentage'];
+                    var fields = ['Caption', 'IVRCallsCount', 'QueuedCallsCount','AbandonCallsCount', 'AbandonPercentage', 'DropCallsCount', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'QueueAverage', 'RingAverage', 'TalkAverage', 'AnswerCount', 'AnswerPercentage'];
 
                     var csvFileData = json2csv({ data: newSummary, fields: fields, fieldNames : fieldNames });
 
