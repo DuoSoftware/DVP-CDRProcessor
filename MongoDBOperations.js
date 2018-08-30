@@ -6,8 +6,6 @@ var IntegrationData = require('dvp-mongomodels/model/IntegrationData').Integrati
 var ReportEmail = require('dvp-mongomodels/model/ReportEmailConfig').ReportEmailConfig;
 var RawCdr = require('dvp-mongomodels/model/Cdr').Cdr;
 var User = require('dvp-mongomodels/model/User');
-var mongoose = require('mongoose');
-mongoose.Promise = require('bluebird');
 
 var config = require('config');
 

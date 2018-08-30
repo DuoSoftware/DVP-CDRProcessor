@@ -1,9 +1,8 @@
 var restify = require('restify');
 var backendHandler = require('./DBBackendHandler.js');
-var stringify = require('stringify');
 var dbModel = require('dvp-dbmodels');
+var mongomodels = require('dvp-mongomodels');
 var underscore = require('underscore');
-var deepcopy = require('deepcopy');
 var json2csv = require('json2csv');
 var validator = require('validator');
 var moment = require('moment');
@@ -12,7 +11,6 @@ var async = require('async');
 var util = require('util');
 var config = require('config');
 var nodeUuid = require('node-uuid');
-var mongoose = require('mongoose');
 var Promise = require('bluebird');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var mailSender = require('./MailSender.js').PublishToQueue;
@@ -49,57 +47,6 @@ restify.CORS.ALLOW_HEADERS.push('authorization');
 server.use(restify.acceptParser(server.acceptable));
 server.use(restify.queryParser());
 server.use(restify.bodyParser());
-
-var mongoip=config.Mongo.ip;
-var mongoport=config.Mongo.port;
-var mongodb=config.Mongo.dbname;
-var mongouser=config.Mongo.user;
-var mongopass = config.Mongo.password;
-var mongoreplicaset=config.Mongo.replicaset;
-
-var connectionstring = '';
-mongoip = mongoip.split(',');
-
-if(util.isArray(mongoip)){
-    if(mongoip.length > 1){
-
-        mongoip.forEach(function(item){
-            connectionstring += util.format('%s:%d,',item,mongoport)
-        });
-
-        connectionstring = connectionstring.substring(0, connectionstring.length - 1);
-        connectionstring = util.format('mongodb://%s:%s@%s/%s',mongouser,mongopass,connectionstring,mongodb);
-
-        if(mongoreplicaset){
-            connectionstring = util.format('%s?replicaSet=%s',connectionstring,mongoreplicaset) ;
-            console.log("connectionstring ...   "+connectionstring);
-        }
-    }
-    else
-    {
-        connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip[0],mongoport,mongodb);
-    }
-}else{
-
-    connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip,mongoport,mongodb);
-
-}
-console.log("connectionstring ...   "+connectionstring);
-
-mongoose.connection.on('error', function (err) {
-    throw new Error(err);
-});
-
-mongoose.connection.on('disconnected', function() {
-    throw new Error('Could not connect to database');
-});
-
-mongoose.connection.once('open', function() {
-    console.log("Connected to db");
-});
-
-mongoose.connect(connectionstring);
-
 
 var ProcessBatchCDR = function(cdrList)
 {
