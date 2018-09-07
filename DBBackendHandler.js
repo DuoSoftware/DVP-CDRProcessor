@@ -694,6 +694,29 @@ var GetQueuedCallCount = function(st, et, skill, companyId, tenantId, bUnit, cal
 
 };
 
+var GetQueuedCallAverage = function(st, et, skill, companyId, tenantId, bUnit, callback)
+{
+    var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', IsQueued: true, ObjType: 'HTTAPI'}]};
+    if(skill)
+    {
+        query.where[0].AgentSkill = skill;
+    }
+
+    if(bUnit)
+    {
+        query.where[0].BusinessUnit = bUnit;
+    }
+
+    dbModel.CallCDRProcessed.aggregate('QueueSec', 'avg', query).then(function(queuedCount)
+    {
+        callback(null, queuedCount);
+    }).catch(function(err)
+    {
+        callback(err, 0);
+    });
+
+};
+
 var GetAbandonCallsCount = function(st, et, skill, companyId, tenantId, bUnit, callback)
 {
     var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, IsQueued: true, DVPCallDirection: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, ObjType: 'HTTAPI'}]};
@@ -1100,6 +1123,7 @@ var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTi
         asyncArr.push(GetRingAverage.bind(this, st, et, skill, companyId, tenantId, bUnit));
         asyncArr.push(GetTalkAverage.bind(this, st, et, skill, companyId, tenantId, bUnit));
         asyncArr.push(GetAnswerCount.bind(this, st, et, skill, companyId, tenantId, bUnit));
+        asyncArr.push(GetQueuedCallAverage.bind(this, st, et, skill, companyId, tenantId, bUnit));
 
         async.parallel(asyncArr, function(err, results){
 
@@ -1176,6 +1200,15 @@ var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTi
                 else
                 {
                     summaryDetails.AnswerCount = 0;
+                }
+
+                if(results[9])
+                {
+                    summaryDetails.QueueAverage = results[9];
+                }
+                else
+                {
+                    summaryDetails.QueueAverage = 0;
                 }
 
                 if(summaryDetails.QueuedCallsCount)
