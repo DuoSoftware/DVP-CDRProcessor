@@ -154,3 +154,4 @@ client.on('error', function(msg)
 module.exports.SetObject = SetObject;
 module.exports.DeleteObject = DeleteObject;
 module.exports.GetSetObject = GetSetObject;
+module.exports.client = client;

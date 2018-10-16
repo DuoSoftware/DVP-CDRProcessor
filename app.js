@@ -22,7 +22,7 @@ var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJ
 var externalApi = require('./ExternalApiAccess.js');
 var redisHandler = require('./RedisHandler.js');
 var mongoDbOp = require('./MongoDBOperations.js');
-
+var healthcheck = require('dvp-healthcheck/DBHealthChecker');
 
 var hostIp = config.Host.Ip;
 var hostPort = config.Host.Port;
@@ -47,6 +47,9 @@ restify.CORS.ALLOW_HEADERS.push('authorization');
 server.use(restify.acceptParser(server.acceptable));
 server.use(restify.queryParser());
 server.use(restify.bodyParser());
+
+var hc = new healthcheck(server, {redis: redisHandler.client, pg: dbModel.SequelizeConn, mongo: mongomodels.connection});
+hc.Initiate();
 
 var ProcessBatchCDR = function(cdrList)
 {
