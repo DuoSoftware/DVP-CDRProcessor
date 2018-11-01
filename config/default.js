@@ -1,78 +1,78 @@
 module.exports = {
 
-  "DB": {
-    "Type":"postgres",
-    "User":"",
-    "Password":"",
-    "Port":5432,
-    "Host":"",
-    "Database":""
-  },
+    "DB": {
+        "Type":"postgres",
+        "User":"",
+        "Password":"",
+        "Port":5432,
+        "Host":"",
+        "Database":""
+    },
 
-  "Redis":
-  {
-    "mode":"sentinel",//instance, cluster, sentinel
-    "ip": "",
-    "port": 6389,
-    "user": "",
-    "password": "",
-    "sentinels":{
-      "hosts": "",
-      "port":16389,
-      "name":"redis-cluster"
-    }
+    "Redis":
+        {
+            "mode":"sentinel",//instance, cluster, sentinel
+            "ip": "",
+            "port": 6389,
+            "user": "",
+            "password": "",
+            "sentinels":{
+                "hosts": "",
+                "port":16389,
+                "name":"redis-cluster"
+            }
 
-  },
+        },
 
-  "Security":
-  {
+    "Security":
+        {
 
-    "ip" : "",
-    "port": 6389,
-    "user": "",
-    "password": "",
-    "mode":"sentinel",//instance, cluster, sentinel
-    "sentinels":{
-      "hosts": "",
-      "port":16389,
-      "name":"redis-cluster"
-    }
-  },
+            "ip" : "",
+            "port": 6389,
+            "user": "",
+            "password": "",
+            "mode":"sentinel",//instance, cluster, sentinel
+            "sentinels":{
+                "hosts": "",
+                "port":16389,
+                "name":"redis-cluster"
+            }
+        },
 
-  "RabbitMQ":
-  {
-    "ip": "",
-    "port": 5672,
-    "user": "",
-    "password": "",
-    "vhost":'/'
-  },
+    "RabbitMQ":
+        {
+            "ip": "",
+            "port": 5672,
+            "user": "",
+            "password": "",
+            "vhost":'/'
+        },
 
-  "Mongo":
-  {
-    "ip":"",
-    "port":"27017",
-    "dbname":"",
-    "password":"",
-    "user":"",
-    "replicaset" :""
-  },
+    "Mongo":
+        {
+            "ip":"",
+            "port":"27017",
+            "dbname":"",
+            "password":"",
+            "user":"",
+            "replicaset" :""
+        },
 
-  "Services":
-  {
+    "Services":
+        {
 
-    "fileServiceHost": "",
-    "fileServicePort": 5649,
-    "fileServiceVersion":"1.0.0.0"
+            "fileServiceHost": "",
+            "fileServicePort": 5649,
+            "fileServiceVersion":"1.0.0.0"
 
-  },
+        },
 
-  "Host":{
-    "Ip":"0.0.0.0",
-    "Port":9093,
-    "Version":"1.0.0.0"
-  },
-  "AbandonCallThreshold": 5,
-  "SaveRawCDRMongo": "true",
-  "Token":""
+    "Host":{
+        "Ip":"0.0.0.0",
+        "Port":9093,
+        "Version":"1.0.0.0"
+    },
+    "AbandonCallThreshold": 5,
+    "SaveRawCDRMongo": "true",
+    "Token":""
 };
