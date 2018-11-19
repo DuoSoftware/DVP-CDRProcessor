@@ -2928,6 +2928,10 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly', jwt({secret
         {
             bUnit = req.body.businessunit;
         }
+        if(req.query && req.query.businessunit)
+        {
+            bUnit = req.query.businessunit;
+        }
 
         if (!companyId || !tenantId)
         {
