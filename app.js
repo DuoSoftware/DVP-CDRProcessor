@@ -760,9 +760,9 @@ server.get('/DVP/API/:version/CallCDR/PrepareDownloadAbandon', jwt({secret: secr
 
                                             //Convert to CSV
 
-                                            var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Call Time', 'Total Duration', 'Ring Duration', 'Queue Duration', 'Call Type', 'Call Category', 'Business Unit'];
+                                            var fieldNames = ['Call Direction', 'From', 'To', 'ReceivedBy', 'AgentSkill', 'Call Time', 'Total Duration', 'Ring Duration', 'Queue Duration','Hangup Party', 'Call Type', 'Call Category', 'Business Unit'];
 
-                                            var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CreatedLocalTime', 'Duration', 'AnswerSec', 'QueueSec', 'ObjType', 'ObjCategory', 'BusinessUnit'];
+                                            var fields = ['DVPCallDirection', 'SipFromUser', 'SipToUser', 'RecievedBy', 'AgentSkill', 'CreatedLocalTime', 'Duration', 'AnswerSec', 'QueueSec','HangupParty', 'ObjType', 'ObjCategory', 'BusinessUnit'];
 
                                             var csvFileData = json2csv({ data: cdrList, fields: fields, fieldNames : fieldNames });
 
