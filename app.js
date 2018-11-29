@@ -661,7 +661,7 @@ server.get('/DVP/API/:version/CallCDR/PrepareDownloadAbandon', jwt({secret: secr
         var didNum = req.query.didnumber;
         var fileType = req.query.fileType;
         var bUnit = req.query.businessunit;
-        var tz = req.query.tz;
+        var tz = decodeURIComponent(req.query.tz);
 
         offset = parseInt(offset);
         limit = parseInt(limit);
@@ -1135,7 +1135,7 @@ server.get('/DVP/API/:version/CallCDR/PrepareDownload', jwt({secret: secret.Secr
         var didNum = req.query.didnumber;
         var fileType = req.query.fileType;
         var bUnit = req.query.businessunit;
-        var tz = req.query.tz;
+        var tz = decodeURIComponent(req.query.tz);
 
         var companyId = req.user.company;
         var tenantId = req.user.tenant;
@@ -1346,7 +1346,7 @@ server.get('/DVP/API/:version/CallCDR/PrepareDownloadCampaign', jwt({secret: sec
         var custNum = req.query.custnumber;
         var campaignName = req.query.campaignName;
         var fileType = req.query.fileType;
-        var tz = req.query.tz;
+        var tz = decodeURIComponent(req.query.tz);
 
         var companyId = req.user.company;
         var tenantId = req.user.tenant;
@@ -2442,7 +2442,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly', jwt({secret: secre
     try
     {
         var summaryDate = req.query.date;
-        var tz = req.query.tz;
+        var tz = decodeURIComponent(req.query.tz);
 
         var companyId = req.user.company;
         var tenantId = req.user.tenant;
@@ -2509,7 +2509,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly/Download', jwt({secr
     try
     {
         var summaryDate = req.query.date;
-        var tz = req.query.tz;
+        var tz = decodeURIComponent(req.query.tz);
         var fileType = req.query.fileType;
 
         var companyId = req.user.company;
@@ -2915,7 +2915,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly', jwt({secret
     try
     {
         var summaryDate = req.query.date;
-        var tz = req.query.tz;
+        var tz = decodeURIComponent(req.query.tz);
         var hr = req.query.hour;
 
         var skill = req.query.skill;
@@ -3002,7 +3002,7 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly/Download', j
     try
     {
         var summaryDate = req.query.date;
-        var tz = req.query.tz;
+        var tz = decodeURIComponent(req.query.tz);
         var fileType = req.query.fileType;
 
         var skills = req.body.skills;
@@ -3220,7 +3220,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Daily', jwt({secret: secret
         var startDate = req.query.startDate;
         var endDate = req.query.endDate;
 
-        var tz = req.query.tz;
+        var tz = decodeURIComponent(req.query.tz);
 
         var momentSD = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z");
         var momentED = moment(endDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z");
@@ -3358,7 +3358,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Daily/Download', jwt({secre
         var startDate = req.query.startDate;
         var endDate = req.query.endDate;
 
-        var tz = req.query.tz;
+        var tz = decodeURIComponent(req.query.tz);
         var fileType = req.query.fileType;
 
         var momentSD = moment(startDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z");
@@ -4440,7 +4440,7 @@ server.get('/DVP/API/:version/CallCDR/CallSummaryByCustomerDownload', jwt({secre
 
         var fileType = req.query.fileType;
 
-        var tz = req.query.tz;
+        var tz = decodeURIComponent(req.query.tz);
 
         var bUnit = null;
 
@@ -4608,7 +4608,7 @@ server.get('/DVP/API/:version/CallCDR/CallSummaryByCustomer', jwt({secret: secre
             throw new Error("Invalid company or tenant");
         }
 
-        var tz = req.query.tz;
+        var tz = decodeURIComponent(req.query.tz);
 
         var bUnit = null;
 
