@@ -336,7 +336,7 @@ var GetCampaignCallLegsInDateRange = function(startTime, endTime, companyId, ten
     }
 };
 
-var GetAbandonCallRelatedLegsInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, customerFilter, didFilter, bUnitFilter, callback)
+var GetAbandonCallRelatedLegsInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, customerFilter, didFilter, bUnitFilter, qpriority, callback)
 {
     try
     {
@@ -363,6 +363,11 @@ var GetAbandonCallRelatedLegsInDateRangeCount = function(startTime, endTime, com
 
             sqlCond.where[0].$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
 
+        }
+
+        if(qpriority != null)
+        {
+            sqlCond.QueuePriority = qpriority;
         }
 
         if(bUnitFilter)
@@ -555,7 +560,7 @@ var GetAbandonCallRelatedLegsInDateRange = function(startTime, endTime, companyI
     }
 };
 
-var GetAbandonCallRelatedLegsInDateRangeProcessed = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, skillFilter, customerFilter, didFilter, bUnitFilter, callback)
+var GetAbandonCallRelatedLegsInDateRangeProcessed = function(startTime, endTime, companyId, tenantId, offset, limit, agentFilter, skillFilter, customerFilter, didFilter, bUnitFilter, qpriority, callback)
 {
     var callLegList = [];
 
@@ -583,6 +588,11 @@ var GetAbandonCallRelatedLegsInDateRangeProcessed = function(startTime, endTime,
 
             sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound', SipFromUser: customerFilter},{DVPCallDirection: 'outbound', SipToUser: customerFilter}]})
 
+        }
+
+        if(qpriority != null)
+        {
+            sqlCond.QueuePriority = qpriority;
         }
 
         if(didFilter)
@@ -1552,7 +1562,7 @@ var GetProcessedCDRForSessions = function(sessionIdArr, companyId, tenantId, cal
     }
 };
 
-var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, limit, offset, bUnitFilter, callback)
+var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, limit, offset, bUnitFilter, qpriority, callback)
 {
     var callLegList = [];
 
@@ -1583,6 +1593,11 @@ var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantI
                 sqlCond.BillSec = 0
             }
 
+        }
+
+        if(qpriority != null)
+        {
+            sqlCond.QueuePriority = qpriority
         }
 
         if(customerFilter)
@@ -1711,7 +1726,7 @@ var GetProcessedCampaignCDRInDateRange = function(startTime, endTime, companyId,
     }
 };
 
-var GetProcessedCDRInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, bUnitFilter, callback)
+var GetProcessedCDRInDateRangeCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, bUnitFilter, qpriority, callback)
 {
     try
     {
@@ -1728,6 +1743,10 @@ var GetProcessedCDRInDateRangeCount = function(startTime, endTime, companyId, te
         if(dirFilter)
         {
             sqlCond.DVPCallDirection = dirFilter;
+        }
+        if(qpriority != null)
+        {
+            sqlCond.QueuePriority = qpriority;
         }
         if(recFilter == 'true' || recFilter == 'false')
         {
@@ -1848,7 +1867,7 @@ var GetProcessedCampaignCDRInDateRangeCount = function(startTime, endTime, compa
     }
 };
 
-var GetProcessedCDRInDateRangeAbandon = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, bUnitFilter, callback)
+var GetProcessedCDRInDateRangeAbandon = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, dirFilter, recFilter, customerFilter, didFilter, bUnitFilter, qpriority, callback)
 {
     var callLegList = [];
 
@@ -1871,6 +1890,10 @@ var GetProcessedCDRInDateRangeAbandon = function(startTime, endTime, companyId, 
         if(dirFilter)
         {
             sqlCond.DVPCallDirection = dirFilter;
+        }
+        if(qpriority != null)
+        {
+            sqlCond.QueuePriority = qpriority;
         }
         if(recFilter == 'true' || recFilter == 'false')
         {

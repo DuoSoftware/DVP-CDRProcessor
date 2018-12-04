@@ -661,6 +661,7 @@ server.get('/DVP/API/:version/CallCDR/PrepareDownloadAbandon', jwt({secret: secr
         var didNum = req.query.didnumber;
         var fileType = req.query.fileType;
         var bUnit = req.query.businessunit;
+        var qPriority = req.query.qpriority;
         var tz = decodeURIComponent(req.query.tz);
 
         offset = parseInt(offset);
@@ -723,7 +724,7 @@ server.get('/DVP/API/:version/CallCDR/PrepareDownloadAbandon', jwt({secret: secr
                                 logger.debug('[DVP-CDRProcessor.PrepareDownloadAbandon] - [%s] - API RESPONSE : %s', reqId, jsonString);
                                 res.end(jsonString);
 
-                                backendHandler.GetProcessedCDRInDateRangeAbandon(startTime, endTime, companyId, tenantId, agent, skill, null, null, custNum, didNum, bUnit, function(err, cdrList)
+                                backendHandler.GetProcessedCDRInDateRangeAbandon(startTime, endTime, companyId, tenantId, agent, skill, null, null, custNum, didNum, bUnit, qPriority, function(err, cdrList)
                                 {
                                     logger.debug('[DVP-CDRProcessor.PrepareDownloadAbandon] - [%s] - CDR Processing Done', reqId);
 
@@ -993,10 +994,10 @@ var getProcessedCampaignCDRPageWise = function(reqId, uniqueId, fileName, tz, st
     });
 };
 
-var getProcessedCDRPageWise = function(reqId, uniqueId, fileName, tz, startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, limit, offset, bUnit, callback)
+var getProcessedCDRPageWise = function(reqId, uniqueId, fileName, tz, startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, limit, offset, bUnit, qPriority, callback)
 {
     var newLine= "\r\n";
-    backendHandler.GetProcessedCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, limit, offset, bUnit, function(err, cdrList)
+    backendHandler.GetProcessedCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, limit, offset, bUnit, qPriority, function(err, cdrList)
     {
         if(err)
         {
@@ -1135,6 +1136,7 @@ server.get('/DVP/API/:version/CallCDR/PrepareDownload', jwt({secret: secret.Secr
         var didNum = req.query.didnumber;
         var fileType = req.query.fileType;
         var bUnit = req.query.businessunit;
+        var qPriority = req.query.qpriority;
         var tz = decodeURIComponent(req.query.tz);
 
         var companyId = req.user.company;
@@ -1221,14 +1223,14 @@ server.get('/DVP/API/:version/CallCDR/PrepareDownload', jwt({secret: secret.Secr
                                         var offset = 0;
                                         var limit = 5000;
 
-                                        backendHandler.GetProcessedCDRInDateRangeCount(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, bUnit, function(err, cnt)
+                                        backendHandler.GetProcessedCDRInDateRangeCount(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, bUnit, qPriority, function(err, cnt)
                                         {
                                             if(!err && cnt)
                                             {
                                                 var arr = [];
                                                 while(cnt > offset)
                                                 {
-                                                    arr.push(getProcessedCDRPageWise.bind(this, reqId, uniqueId, fileName, tz, startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, limit, offset, bUnit));
+                                                    arr.push(getProcessedCDRPageWise.bind(this, reqId, uniqueId, fileName, tz, startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, limit, offset, bUnit, qPriority));
                                                     offset = offset + limit;
 
                                                 }
@@ -1963,7 +1965,7 @@ server.post('/DVP/API/:version/CallCDR/Abandon/GeneratePreviousDay', jwt({secret
 
         fileName = fileName.replace(/:/g, "-") + '.' + fileType;
 
-        backendHandler.GetProcessedCDRInDateRangeAbandon(startDay, endDay, companyId, tenantId, null, null, null, null, null, null, null, null, function(err, cdrList)
+        backendHandler.GetProcessedCDRInDateRangeAbandon(startDay, endDay, companyId, tenantId, null, null, null, null, null, null, null, null, null, function(err, cdrList)
         {
             logger.debug('[DVP-CDRProcessor.GeneratePreviousDayAbandon] - [%s] - CDR Processing Done', reqId);
 
@@ -5319,6 +5321,7 @@ server.get('/DVP/API/:version/CallCDR/Processed/GetCallDetailsByRange/Count', jw
         var custNum = req.query.custnumber;
         var didNum = req.query.didnumber;
         var bUnit = req.query.businessunit;
+        var qPriority = req.query.qpriority;
 
         var companyId = req.user.company;
         var tenantId = req.user.tenant;
@@ -5332,7 +5335,7 @@ server.get('/DVP/API/:version/CallCDR/Processed/GetCallDetailsByRange/Count', jw
         logger.debug('[DVP-CDRProcessor.GetCallDetailsByRangeCount] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
 
 
-        backendHandler.GetProcessedCDRInDateRangeCount(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, bUnit, function(err, cdrCount)
+        backendHandler.GetProcessedCDRInDateRangeCount(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, bUnit, qPriority, function(err, cdrCount)
         {
             var jsonString = "";
             if(err)
@@ -5381,6 +5384,7 @@ server.get('/DVP/API/:version/CallCDR/Processed/GetCallDetailsByRange', jwt({sec
         var custNum = req.query.custnumber;
         var didNum = req.query.didnumber;
         var bUnit = req.query.businessunit;
+        var qPriority = req.query.qpriority;
 
         var companyId = req.user.company;
         var tenantId = req.user.tenant;
@@ -5396,7 +5400,7 @@ server.get('/DVP/API/:version/CallCDR/Processed/GetCallDetailsByRange', jwt({sec
         logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s, Offset: %s, Limit : %s', reqId, startTime, endTime, offset, limit);
 
 
-        backendHandler.GetProcessedCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, limit, offset, bUnit, function(err, cdrList)
+        backendHandler.GetProcessedCDRInDateRange(startTime, endTime, companyId, tenantId, agent, skill, direction, recording, custNum, didNum, limit, offset, bUnit, qPriority, function(err, cdrList)
         {
             logger.debug('[DVP-CDRProcessor.GetCallDetailsByRange] - [%s] - CDR Processing Done', reqId);
 
@@ -5444,6 +5448,7 @@ server.get('/DVP/API/:version/CallCDR/Processed/GetAbandonCallDetailsByRange', j
         var custNum = req.query.custnumber;
         var didNum = req.query.didnumber;
         var bUnit = req.query.businessunit;
+        var qPriority = req.query.qpriority;
 
         offset = parseInt(offset);
         limit = parseInt(limit);
@@ -5458,7 +5463,7 @@ server.get('/DVP/API/:version/CallCDR/Processed/GetAbandonCallDetailsByRange', j
 
         logger.debug('[DVP-CDRProcessor.GetAbandonCallDetailsByRange] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s, Offset: %s, Limit : %s', reqId, startTime, endTime, offset, limit);
 
-        backendHandler.GetAbandonCallRelatedLegsInDateRangeProcessed(startTime, endTime, companyId, tenantId, offset, limit, agent, skill, custNum, didNum, bUnit, function(err, cdrList)
+        backendHandler.GetAbandonCallRelatedLegsInDateRangeProcessed(startTime, endTime, companyId, tenantId, offset, limit, agent, skill, custNum, didNum, bUnit, qPriority, function(err, cdrList)
         {
             var jsonString = "";
 
@@ -5502,6 +5507,7 @@ server.get('/DVP/API/:version/CallCDR/Processed/GetAbandonCallDetailsByRange/Cou
         var custNum = req.query.custnumber;
         var didNum = req.query.didnumber;
         var bUnit = req.query.businessunit;
+        var qPriority = req.query.qpriority;
 
         var companyId = req.user.company;
         var tenantId = req.user.tenant;
@@ -5513,7 +5519,7 @@ server.get('/DVP/API/:version/CallCDR/Processed/GetAbandonCallDetailsByRange/Cou
 
         logger.debug('[DVP-CDRProcessor.GetAbandonCallDetailsByRangeCount] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
 
-        backendHandler.GetAbandonCallRelatedLegsInDateRangeCount(startTime, endTime, companyId, tenantId, agent, skill, custNum, didNum, bUnit, function(err, count)
+        backendHandler.GetAbandonCallRelatedLegsInDateRangeCount(startTime, endTime, companyId, tenantId, agent, skill, custNum, didNum, bUnit, qPriority function(err, count)
         {
             var jsonString = "";
 
