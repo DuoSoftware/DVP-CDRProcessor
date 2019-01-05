@@ -1115,7 +1115,6 @@ var GetCampaignSummary = function(startDate, endDate, companyId, tenantId, callb
 
 var GetCallSummaryDetailsDateRangeWithSkillL = function(caption, startTime, endTime, fromHour, toHour, tz, companyId, tenantId, skills, bUnit, callback)
 {
-    var summaryDetails = {};
     try {
         var st = startTime.toISOString();
         var et = endTime.toISOString();
@@ -1123,6 +1122,7 @@ var GetCallSummaryDetailsDateRangeWithSkillL = function(caption, startTime, endT
         console.log(et);
 
         if (fromHour == null && toHour == null) {
+            var summaryDetails = {};
             dbModel.SequelizeConn.query(
                 "SELECT ivrcount, " +
                 "queuedcount, " +
@@ -1201,6 +1201,7 @@ var GetCallSummaryDetailsDateRangeWithSkillL = function(caption, startTime, endT
         }
 
         else {
+            var summaryDetails = [];
             dbModel.SequelizeConn.query(
                 "SELECT ivrcount, " +
                 "queuedcount, " +
@@ -1238,11 +1239,11 @@ var GetCallSummaryDetailsDateRangeWithSkillL = function(caption, startTime, endT
                 }
             ).then(function (result) {
 
-                var skillArray = skills.split(',');
                 for (var i = 0; i < result[0].length; i++) {
 
                     row = {};
 
+                    row.agentskill = result[0][i].agentskill || 'N/A';
                     row.date = result[0][i].s_date;
                     row.hour = result[0][i].s_hour;
                     row.IVRCallsCount = result[0][i].ivrcount || 0;
@@ -1261,16 +1262,7 @@ var GetCallSummaryDetailsDateRangeWithSkillL = function(caption, startTime, endT
                     row.AbandonedQueueAvg = result[0][i].abandonedqueue_avg || 'N/A';
                     row.AnsweredQueueAvg = result[0][i].answeredqueue_avg || 'N/A';
 
-                    if (result[0][i].agentskill !== null) {
-                        summaryDetails[result[0][i].agentskill] = summaryDetails[result[0][i].agentskill] || [];
-                        summaryDetails[result[0][i].agentskill].push(row);
-                    }
-                    else { // If an hourly record doesnot have an agent skill, it implies that no calls have arrived, so assign the row object to all the queues
-                        for (var j = 0; j < skillArray.length; j++) {
-                            summaryDetails[skillArray[j]] = summaryDetails[skillArray[j]] || [];
-                            summaryDetails[skillArray[j]].push(row);
-                        }
-                    }
+                    summaryDetails.push(row);
 
                 }
 
