@@ -2926,7 +2926,7 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly', jwt({secret
 
         if(req.query.todate){
             var toDate = req.query.todate;
-            var ed = moment(toDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z");
+            var ed = moment(toDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(24, 'hours');
         }
         else{
             var ed = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(23, 'hours');
