@@ -1113,6 +1113,173 @@ var GetCampaignSummary = function(startDate, endDate, companyId, tenantId, callb
 
 };
 
+var GetCallSummaryDetailsDateRangeWithSkillL = function(caption, startTime, endTime, fromHour, toHour, tz, companyId, tenantId, skills, bUnit, callback)
+{
+    try {
+        var st = startTime.toISOString();
+        var et = endTime.toISOString();
+        console.log(st);
+        console.log(et);
+
+        if (fromHour == null && toHour == null) {
+            var summaryDetails = {};
+            dbModel.SequelizeConn.query(
+                "SELECT ivrcount, " +
+                "queuedcount, " +
+                "abandonedcount, " +
+                "abandonedpercent, " +
+                "droppedcount, " +
+                "droppedpercent, " +
+                "holdsec_avg, " +
+                "ivrconnect_avg, " +
+                "answersec_avg, " +
+                "billsec_avg, " +
+                "answered_count," +
+                "queuesec_avg, " +
+                "answeredpercent, " +
+                "abandonedqueue_avg, " +
+                "answeredqueue_avg, " +
+                "s_date, " +
+                "s_hour, " +
+                "agentskill, " +
+                "company_id, " +
+                "tenant_id " +
+                "FROM hourly_call_summary(:fromdate, :todate, :skills, :timezone, :bu , :company , :tenant)",
+                {
+                    replacements: {
+                        fromdate: st,
+                        todate: et,
+                        skills: skills,
+                        timezone: tz,
+                        bu: bUnit,
+                        company: companyId,
+                        tenant: tenantId
+                    }
+                }
+            ).then(function (result) {
+
+                var skillArray = skills.split(',');
+                for (var i = 0; i < result[0].length; i++) {
+
+                    row = {};
+
+                    row.date = result[0][i].s_date;
+                    row.hour = result[0][i].s_hour;
+                    row.IVRCallsCount = result[0][i].ivrcount || 0;
+                    row.QueuedCallsCount = result[0][i].queuedcount || 0;
+                    row.AbandonCallsCount = result[0][i].abandonedcount || 0;
+                    row.AbandonPercentage = result[0][i].abandonedpercent || 'N/A';
+                    row.DropCallsCount = result[0][i].droppedcount || 0;
+                    row.DropPercentage = result[0][i].droppedpercent || 'N/A';
+                    row.HoldAverage = result[0][i].holdsec_avg || 'N/A';
+                    row.IvrAverage = result[0][i].ivrconnect_avg || 'N/A';
+                    row.RingAverage = result[0][i].answersec_avg || 'N/A';
+                    row.TalkAverage = result[0][i].billsec_avg || 'N/A';
+                    row.AnswerCount = result[0][i].answered_count || 0;
+                    row.QueueAverage = result[0][i].queuesec_avg || 'N/A';
+                    row.AnswerPercentage = result[0][i].answeredpercent || 'N/A';
+                    row.AbandonedQueueAvg = result[0][i].abandonedqueue_avg || 'N/A';
+                    row.AnsweredQueueAvg = result[0][i].answeredqueue_avg || 'N/A';
+
+                    if (result[0][i].agentskill !== null) {
+                        summaryDetails[result[0][i].agentskill] = summaryDetails[result[0][i].agentskill] || [];
+                        summaryDetails[result[0][i].agentskill].push(row);
+                    }
+                    else { // If an hourly record doesnot have an agent skill, it implies that no calls have arrived, so assign the row object to all the queues
+                        for (var j = 0; j < skillArray.length; j++) {
+                            summaryDetails[skillArray[j]] = summaryDetails[skillArray[j]] || [];
+                            summaryDetails[skillArray[j]].push(row);
+                        }
+                    }
+
+                }
+
+                callback(null, summaryDetails);
+            }).catch(function (err) {
+                callback(err, summaryDetails);
+            });
+        }
+
+        else {
+            var summaryDetails = [];
+            dbModel.SequelizeConn.query(
+                "SELECT ivrcount, " +
+                "queuedcount, " +
+                "abandonedcount, " +
+                "abandonedpercent, " +
+                "droppedcount, " +
+                "droppedpercent, " +
+                "holdsec_avg, " +
+                "ivrconnect_avg, " +
+                "answersec_avg, " +
+                "billsec_avg, " +
+                "answered_count," +
+                "queuesec_avg, " +
+                "answeredpercent, " +
+                "abandonedqueue_avg, " +
+                "answeredqueue_avg, " +
+                "s_date, " +
+                "s_hour, " +
+                "agentskill, " +
+                "company_id, " +
+                "tenant_id " +
+                "FROM hourly_call_summary_w_hour_f(:fromdate, :todate, :fromhour, :tohour, :skills, :timezone, :bu , :company , :tenant)",
+                {
+                    replacements: {
+                        fromdate: st,
+                        todate: et,
+                        fromhour: fromHour,
+                        tohour: toHour,
+                        skills: skills,
+                        timezone: tz,
+                        bu: bUnit,
+                        company: companyId,
+                        tenant: tenantId
+                    }
+                }
+            ).then(function (result) {
+
+                for (var i = 0; i < result[0].length; i++) {
+
+                    row = {};
+
+                    row.agentskill = result[0][i].agentskill || 'N/A';
+                    row.date = result[0][i].s_date;
+                    row.hour = result[0][i].s_hour;
+                    row.IVRCallsCount = result[0][i].ivrcount || 0;
+                    row.QueuedCallsCount = result[0][i].queuedcount || 0;
+                    row.AbandonCallsCount = result[0][i].abandonedcount || 0;
+                    row.AbandonPercentage = result[0][i].abandonedpercent || 'N/A';
+                    row.DropCallsCount = result[0][i].droppedcount || 0;
+                    row.DropPercentage = result[0][i].droppedpercent || 'N/A';
+                    row.HoldAverage = result[0][i].holdsec_avg || 'N/A';
+                    row.IvrAverage = result[0][i].ivrconnect_avg || 'N/A';
+                    row.RingAverage = result[0][i].answersec_avg || 'N/A';
+                    row.TalkAverage = result[0][i].billsec_avg || 'N/A';
+                    row.AnswerCount = result[0][i].answered_count || 0;
+                    row.QueueAverage = result[0][i].queuesec_avg || 'N/A';
+                    row.AnswerPercentage = result[0][i].answeredpercent || 'N/A';
+                    row.AbandonedQueueAvg = result[0][i].abandonedqueue_avg || 'N/A';
+                    row.AnsweredQueueAvg = result[0][i].answeredqueue_avg || 'N/A';
+
+                    summaryDetails.push(row);
+
+                }
+
+                callback(null, summaryDetails);
+            }).catch(function (err) {
+                callback(err, summaryDetails);
+            });
+        }
+
+    }
+    catch(ex)
+    {
+        callback(ex, summaryDetails);
+    }
+
+
+};
 
 var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTime, companyId, tenantId, skill, bUnit, callback)
 {
@@ -2361,6 +2528,7 @@ module.exports.GetBLegForIVRCalls = GetBLegForIVRCalls;
 module.exports.GetAbandonCallRelatedLegsInDateRange = GetAbandonCallRelatedLegsInDateRange;
 module.exports.GetCallSummaryDetailsDateRange = GetCallSummaryDetailsDateRange;
 module.exports.GetCallSummaryDetailsDateRangeWithSkill = GetCallSummaryDetailsDateRangeWithSkill;
+module.exports.GetCallSummaryDetailsDateRangeWithSkillL = GetCallSummaryDetailsDateRangeWithSkillL;
 module.exports.GetResourceStatusList = GetResourceStatusList;
 module.exports.GetMyResourceStatusList = GetMyResourceStatusList;
 module.exports.GetProcessedCDRInDateRange = GetProcessedCDRInDateRange;

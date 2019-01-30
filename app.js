@@ -2416,8 +2416,12 @@ var processSummaryData = function(caption, startDate, endDate, companyId, tenant
     {
         callback(err, summaryData);
     });
-
-
+};
+var processSummaryDataL = function(caption, startDate, endDate, fromHour, toHour, tz, companyId, tenantId, skills, bUnit, callback) {
+    backendHandler.GetCallSummaryDetailsDateRangeWithSkillL(caption, startDate, endDate, fromHour, toHour, tz, companyId, tenantId, skills, bUnit, function (err, summaryData) {
+        callback(err, summaryData);
+    })
+};
     /*if(skill)
     {
         backendHandler.GetCallSummaryDetailsDateRangeWithSkill(caption, startDate, endDate, companyId, tenantId, skill, function(err, summaryData)
@@ -2433,7 +2437,6 @@ var processSummaryData = function(caption, startDate, endDate, companyId, tenant
         });
     }*/
 
-};
 
 
 //query_string : ?startTime=2016-05-09&endTime=2016-05-12
@@ -2916,11 +2919,30 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly', jwt({secret
     var reqId = nodeUuid.v1();
     try
     {
-        var summaryDate = req.query.date;
         var tz = decodeURIComponent(req.query.tz);
+
+        var summaryDate = req.query.fromdate;
+        var sd = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z");
+
+        if(req.query.todate){
+            var toDate = req.query.todate;
+            var ed = moment(toDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(24, 'hours');
+        }
+        else{
+            var ed = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(23, 'hours');
+        }
+
+        var fromHour = null;
+        var toHour = null;
+        if(req.query.fromhour && req.query.tohour){
+            fromHour = req.query.fromhour;
+            toHour = req.query.tohour;
+        }
+
+
         var hr = req.query.hour;
 
-        var skill = req.query.skill;
+        var skills = req.query.skills;
 
         var companyId = req.user.company;
         var tenantId = req.user.tenant;
@@ -2942,12 +2964,10 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly', jwt({secret
 
         logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueue] - [%s] - HTTP Request Received - Params - summaryDate : %s', reqId, summaryDate);
 
-        //Generate 24 hrs moment time array
+       
 
-        var sd = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(hr - 1, 'hours');
-        var ed = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(hr, 'hours');
 
-        processSummaryData(hr, sd, ed, companyId, tenantId, skill, bUnit, function(err, result)
+        processSummaryDataL(hr, sd, ed, fromHour, toHour, tz, companyId, tenantId, skills, bUnit, function(err, result)
         {
             if(err)
             {
