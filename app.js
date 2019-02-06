@@ -3017,14 +3017,240 @@ var getQueueSummaryAsync = function(summaryDate, tz, companyId, tenantId, skill,
     });
 };
 
+// server.post('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly/Download', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
+// {
+//     var emptyArr = [];
+//     var reqId = nodeUuid.v1();
+//     try
+//     {
+//         var summaryDate = req.query.date;
+//         var tz = decodeURIComponent(req.query.tz);
+//         var fileType = req.query.fileType;
+//
+//         var skills = req.body.skills;
+//
+//         var companyId = req.user.company;
+//         var tenantId = req.user.tenant;
+//
+//         var bUnit = null;
+//
+//         if(req.body && req.body.businessunit)
+//         {
+//             bUnit = req.body.businessunit;
+//         }
+//
+//         if (!companyId || !tenantId)
+//         {
+//             throw new Error("Invalid company or tenant");
+//         }
+//
+//         logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueueDownload] - [%s] - HTTP Request Received - Params - summaryDate : %s', reqId, summaryDate);
+//
+//         //Generate 24 hrs moment time array
+//
+//         var dateTimestamp = moment(summaryDate + " 00:00:00 " + tz).unix();
+//
+//         //Create FILE NAME Key
+//         var fileName = 'CALL_SUMMARY_QUEUE_HOURLY_' + tenantId + '_' + companyId + '_' + dateTimestamp;
+//
+//         /*if(skills && skills.length > 0)
+//         {
+//             skills.forEach(function(skill)
+//             {
+//                 if(skill)
+//                 {
+//                     fileName = fileName + '_' + skill;
+//                 }
+//             })
+//         }*/
+//
+//         fileName = fileName.replace(/:/g, "-") + '.' + fileType;
+//
+//         var groupedArr = [];
+//
+//         if(skills && skills.length > 0)
+//         {
+//             skills.forEach(function(skill)
+//             {
+//                 groupedArr.push(getQueueSummaryAsync.bind(this, summaryDate, tz, companyId, tenantId, skill, bUnit));
+//             });
+//
+//             fileCheckAndDelete(reqId, fileName, companyId, tenantId)
+//                 .then(function(chkResult)
+//                 {
+//                     if(chkResult)
+//                     {
+//                         externalApi.FileUploadReserve(reqId, fileName, companyId, tenantId, function(err, fileResResp)
+//                         {
+//                             if (err)
+//                             {
+//                                 var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, null);
+//                                 logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueueDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+//                                 res.end(jsonString);
+//                             }
+//                             else
+//                             {
+//                                 if(fileResResp)
+//                                 {
+//                                     var uniqueId = fileResResp;
+//
+//                                     //should respose end
+//                                     var jsonString = messageFormatter.FormatMessage(null, "SUCCESS", true, fileName);
+//                                     logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueueDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+//                                     res.end(jsonString);
+//
+//                                     var summaryData = [];
+//
+//                                     async.series(groupedArr, function(err, results)
+//                                     {
+//
+//                                         results.forEach(function(grp)
+//                                         {
+//                                             var skillName = grp.skill;
+//
+//                                             grp.data.forEach(function(sumData)
+//                                             {
+//                                                 sumData.Skill = skillName;
+//
+//                                                 if(typeof sumData.IvrAverage === "number")
+//                                                 {
+//                                                     sumData.IvrAverage = convertToMMSS(sumData.IvrAverage);
+//                                                 }
+//
+//                                                 if(typeof sumData.HoldAverage === "number")
+//                                                 {
+//                                                     sumData.HoldAverage = convertToMMSS(sumData.HoldAverage);
+//                                                 }
+//
+//                                                 if(typeof sumData.RingAverage === "number")
+//                                                 {
+//                                                     sumData.RingAverage = convertToMMSS(sumData.RingAverage);
+//                                                 }
+//
+//                                                 if(typeof sumData.TalkAverage === "number")
+//                                                 {
+//                                                     sumData.TalkAverage = convertToMMSS(sumData.TalkAverage);
+//                                                 }
+//
+//                                                 summaryData.push(sumData);
+//                                             })
+//                                         });
+//
+//                                         var fieldNames = ['Skill', 'Hour', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandon Calls (Count)', 'Abandon Calls (%)', 'Dropped Calls (Count)', 'Dropped Calls (%)', 'Avg Hold Time (sec)',	'Avg IVR Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answered Calls (Count)', 'Answer Percentage (%)'];
+//
+//                                         var fields = ['Skill', 'Caption', 'IVRCallsCount', 'QueuedCallsCount','AbandonCallsCount', 'AbandonPercentage', 'DropCallsCount', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'RingAverage', 'TalkAverage', 'AnswerCount', 'AnswerPercentage'];
+//
+//                                         var csvFileData = json2csv({ data: summaryData, fields: fields, fieldNames : fieldNames });
+//
+//                                         fs.writeFile(fileName, csvFileData, function(err)
+//                                         {
+//                                             if (err)
+//                                             {
+//                                                 externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+//                                                     if(err)
+//                                                     {
+//                                                         logger.error('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - Delete Failed : %s', reqId, err);
+//                                                     }
+//                                                 });
+//                                             }
+//                                             else
+//                                             {
+//                                                 externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
+//                                                 {
+//                                                     fs.unlink(fileName);
+//                                                     if(!err && uploadResp)
+//                                                     {
+//
+//                                                     }
+//                                                     else
+//                                                     {
+//                                                         externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+//                                                             if(err)
+//                                                             {
+//                                                                 logger.error('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - Delete Failed : %s', reqId, err);
+//                                                             }
+//                                                         });
+//                                                     }
+//
+//                                                 });
+//
+//                                             }
+//                                         });
+//
+//                                     });
+//
+//
+//                                 }
+//                                 else
+//                                 {
+//                                     var jsonString = messageFormatter.FormatMessage(new Error('Failed to reserve file'), "ERROR", false, null);
+//                                     logger.debug('[DVP-CDRProcessor.PrepareDownloadAbandon] - [%s] - API RESPONSE : %s', reqId, jsonString);
+//                                     res.end(jsonString);
+//                                 }
+//
+//
+//
+//
+//                             }
+//                         });
+//                     }
+//                     else
+//                     {
+//                         var jsonString = messageFormatter.FormatMessage(new Error('Error deleting file'), "ERROR", false, null);
+//                         logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueueDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+//                         res.end(jsonString);
+//                     }
+//                 })
+//                 .catch(function(err)
+//                 {
+//                     var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, null);
+//                     logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueueDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
+//                     res.end(jsonString);
+//                 });
+//
+//
+//
+//         }
+//         else
+//         {
+//             var jsonString = messageFormatter.FormatMessage(new Error('No skills provided'), "Fail", false, null);
+//             logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueue] - [%s] - API RESPONSE : %s', reqId, jsonString);
+//             res.end(jsonString);
+//         }
+//
+//
+//
+//
+//
+//     }
+//     catch(ex)
+//     {
+//         var jsonString = messageFormatter.FormatMessage(ex, "ERROR", false, emptyArr);
+//         logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueue] - [%s] - API RESPONSE : %s', reqId, jsonString);
+//         res.end(jsonString);
+//     }
+//
+//     return next();
+// });
+
 server.post('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly/Download', jwt({secret: secret.Secret}), authorization({resource:"cdr", action:"read"}), function(req, res, next)
 {
     var emptyArr = [];
     var reqId = nodeUuid.v1();
+    var tz = decodeURIComponent(req.query.tz);
     try
     {
-        var summaryDate = req.query.date;
-        var tz = decodeURIComponent(req.query.tz);
+        var summaryDate = req.query.fromdate;
+        var sd = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z");
+
+        if(req.query.todate){
+            var toDate = req.query.todate;
+            var ed = moment(toDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(24, 'hours');
+        }
+        else{
+            var ed = moment(summaryDate + " 00:00:00 " + tz, "YYYY-MM-DD hh:mm:ss Z").add(23, 'hours');
+        }
+
         var fileType = req.query.fileType;
 
         var skills = req.body.skills;
@@ -3044,36 +3270,27 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly/Download', j
             throw new Error("Invalid company or tenant");
         }
 
+        var fromHour = null;
+        var toHour = null;
+        if(req.query.fromhour && req.query.tohour){
+            fromHour = req.query.fromhour;
+            toHour = req.query.tohour;
+            var fileName = 'HOURLY_BAND_REPORT_' + tenantId + '_' + companyId + '_' + sd + '_' + ed + '_' + fromHour + '_' +toHour; // only hourly band report has from_hour and to_hour params
+
+        }
+        else{
+            var fileName = 'CALL_SUMMARY_QUEUE_HOURLY_' + tenantId + '_' + companyId + '_' + sd;
+
+        }
+
+        var hr = req.query.hour;
+
         logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueueDownload] - [%s] - HTTP Request Received - Params - summaryDate : %s', reqId, summaryDate);
-
-        //Generate 24 hrs moment time array
-
-        var dateTimestamp = moment(summaryDate + " 00:00:00 " + tz).unix();
-
-        //Create FILE NAME Key
-        var fileName = 'CALL_SUMMARY_QUEUE_HOURLY_' + tenantId + '_' + companyId + '_' + dateTimestamp;
-
-        /*if(skills && skills.length > 0)
-        {
-            skills.forEach(function(skill)
-            {
-                if(skill)
-                {
-                    fileName = fileName + '_' + skill;
-                }
-            })
-        }*/
 
         fileName = fileName.replace(/:/g, "-") + '.' + fileType;
 
-        var groupedArr = [];
-
         if(skills && skills.length > 0)
         {
-            skills.forEach(function(skill)
-            {
-                groupedArr.push(getQueueSummaryAsync.bind(this, summaryDate, tz, companyId, tenantId, skill, bUnit));
-            });
 
             fileCheckAndDelete(reqId, fileName, companyId, tenantId)
                 .then(function(chkResult)
@@ -3099,83 +3316,67 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly/Download', j
                                     logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueueDownload] - [%s] - API RESPONSE : %s', reqId, jsonString);
                                     res.end(jsonString);
 
-                                    var summaryData = [];
-
-                                    async.series(groupedArr, function(err, results)
+                                    processSummaryDataL(hr, sd, ed, fromHour, toHour, tz, companyId, tenantId, skills, bUnit, function(err, result)
                                     {
-
-                                        results.forEach(function(grp)
+                                        if(err)
                                         {
-                                            var skillName = grp.skill;
-
-                                            grp.data.forEach(function(sumData)
-                                            {
-                                                sumData.Skill = skillName;
-
-                                                if(typeof sumData.IvrAverage === "number")
-                                                {
-                                                    sumData.IvrAverage = convertToMMSS(sumData.IvrAverage);
-                                                }
-
-                                                if(typeof sumData.HoldAverage === "number")
-                                                {
-                                                    sumData.HoldAverage = convertToMMSS(sumData.HoldAverage);
-                                                }
-
-                                                if(typeof sumData.RingAverage === "number")
-                                                {
-                                                    sumData.RingAverage = convertToMMSS(sumData.RingAverage);
-                                                }
-
-                                                if(typeof sumData.TalkAverage === "number")
-                                                {
-                                                    sumData.TalkAverage = convertToMMSS(sumData.TalkAverage);
-                                                }
-
-                                                summaryData.push(sumData);
-                                            })
-                                        });
-
-                                        var fieldNames = ['Skill', 'Hour', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandon Calls (Count)', 'Abandon Calls (%)', 'Dropped Calls (Count)', 'Dropped Calls (%)', 'Avg Hold Time (sec)',	'Avg IVR Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answered Calls (Count)', 'Answer Percentage (%)'];
-
-                                        var fields = ['Skill', 'Caption', 'IVRCallsCount', 'QueuedCallsCount','AbandonCallsCount', 'AbandonPercentage', 'DropCallsCount', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'RingAverage', 'TalkAverage', 'AnswerCount', 'AnswerPercentage'];
-
-                                        var csvFileData = json2csv({ data: summaryData, fields: fields, fieldNames : fieldNames });
-
-                                        fs.writeFile(fileName, csvFileData, function(err)
+                                            var jsonString = messageFormatter.FormatMessage(err, "ERROR", false, null);
+                                            logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueue] - [%s] - API RESPONSE : %s', reqId, jsonString);
+                                            res.end(jsonString);
+                                        }
+                                        else
                                         {
-                                            if (err)
-                                            {
-                                                externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
-                                                    if(err)
-                                                    {
-                                                        logger.error('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - Delete Failed : %s', reqId, err);
-                                                    }
-                                                });
+
+                                            var flatJsonArr = [];
+
+                                            for (var key in result){
+                                                flatJsonArr.push(result[key])
                                             }
-                                            else
+
+                                            var resultArr = [].concat.apply([], flatJsonArr);
+
+                                            var fieldNames = ['Skill', 'Hour', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandoned Calls (Count)', 'Abandoned Calls (%)', 'Avg Abandoned Queue Time (sec)', 'Dropped Calls (Count)', 'Dropped Calls (%)', 'Avg Hold Time (sec)', 'Avg IVR Time (sec)', 'Avg Queue Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answered Calls (Count)', 'Answer Percentage (%)', 'Avg Answer Queue Time (sec)'];
+
+                                            var fields = ['agentskill', 'hour', 'IVRCallsCount', 'QueuedCallsCount','AbandonCallsCount', 'AbandonPercentage','AbandonedQueueAvg', 'DropCallsCount', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'QueueAverage', 'RingAverage', 'TalkAverage', 'AnswerCount', 'AnswerPercentage','AnsweredQueueAvg'];
+
+                                            var csvFileData = json2csv({ data: resultArr, fields: fields, fieldNames : fieldNames });
+
+                                            fs.writeFile(fileName, csvFileData, function(err)
                                             {
-                                                externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
+                                                if (err)
                                                 {
-                                                    fs.unlink(fileName);
-                                                    if(!err && uploadResp)
+                                                    externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                        if(err)
+                                                        {
+                                                            logger.error('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - Delete Failed : %s', reqId, err);
+                                                        }
+                                                    });
+                                                }
+                                                else
+                                                {
+                                                    externalApi.UploadFile(reqId, uniqueId, fileName, companyId, tenantId, function(err, uploadResp)
                                                     {
+                                                        fs.unlink(fileName);
+                                                        if(!err && uploadResp)
+                                                        {
 
-                                                    }
-                                                    else
-                                                    {
-                                                        externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
-                                                            if(err)
-                                                            {
-                                                                logger.error('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - Delete Failed : %s', reqId, err);
-                                                            }
-                                                        });
-                                                    }
+                                                        }
+                                                        else
+                                                        {
+                                                            externalApi.DeleteFile(reqId, uniqueId, companyId, tenantId, function(err, delData){
+                                                                if(err)
+                                                                {
+                                                                    logger.error('[DVP-CDRProcessor.GetCallCDRSummaryHourlyDownload] - [%s] - Delete Failed : %s', reqId, err);
+                                                                }
+                                                            });
+                                                        }
 
-                                                });
+                                                    });
 
-                                            }
-                                        });
+                                                }
+                                            });
+
+                                        }
 
                                     });
 
