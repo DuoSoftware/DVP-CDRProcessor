@@ -3275,15 +3275,21 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly/Download', j
         if(req.query.fromhour && req.query.tohour){
             fromHour = req.query.fromhour;
             toHour = req.query.tohour;
-            var fileName = 'HOURLY_BAND_REPORT_' + tenantId + '_' + companyId + '_' + sd + '_' + ed + '_' + fromHour + '_' +toHour; // only hourly band report has from_hour and to_hour params
+            var reportType = 'HOURLY_BAND_REPORT'; // only hourly band report has from_hour and to_hour params
 
         }
         else{
-            var fileName = 'CALL_SUMMARY_QUEUE_HOURLY_' + tenantId + '_' + companyId + '_' + sd;
-
+            var reportType = 'CALL_SUMMARY_QUEUE_HOURLY';
         }
 
         var hr = req.query.hour;
+
+        if (reportType === 'CALL_SUMMARY_QUEUE_HOURLY'){
+            var fileName = reportType + '_' + tenantId + '_' + companyId + '_' + sd;
+        }
+        else{
+            var fileName = reportType + '_' + tenantId + '_' + companyId + '_' + sd + '_' + ed + '_' + fromHour + '_' + toHour; // only hourly band report has from_hour and to_hour params
+        }
 
         logger.debug('[DVP-CDRProcessor.CallCDRSummaryByQueueDownload] - [%s] - HTTP Request Received - Params - summaryDate : %s', reqId, summaryDate);
 
@@ -3335,9 +3341,15 @@ server.post('/DVP/API/:version/CallCDR/CallCDRSummaryByQueue/Hourly/Download', j
 
                                             var resultArr = [].concat.apply([], flatJsonArr);
 
-                                            var fieldNames = ['Skill', 'Hour', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandoned Calls (Count)', 'Abandoned Calls (%)', 'Avg Abandoned Queue Time (sec)', 'Dropped Calls (Count)', 'Dropped Calls (%)', 'Avg Hold Time (sec)', 'Avg IVR Time (sec)', 'Avg Queue Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answered Calls (Count)', 'Answer Percentage (%)', 'Avg Answer Queue Time (sec)'];
+                                            if (reportType === 'CALL_SUMMARY_QUEUE_HOURLY'){
+                                                var fieldNames = ['Skill', 'Hour', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandoned Calls (Count)', 'Abandoned Calls (%)', 'Avg Abandoned Queue Time (sec)', 'Dropped Calls (Count)', 'Dropped Calls (%)', 'Avg Hold Time (sec)', 'Avg IVR Time (sec)', 'Avg Queue Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answered Calls (Count)', 'Answer Percentage (%)', 'Avg Answer Queue Time (sec)'];
+                                                var fields = ['agentskill', 'hour', 'IVRCallsCount', 'QueuedCallsCount','AbandonCallsCount', 'AbandonPercentage','AbandonedQueueAvg', 'DropCallsCount', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'QueueAverage', 'RingAverage', 'TalkAverage', 'AnswerCount', 'AnswerPercentage','AnsweredQueueAvg'];
 
-                                            var fields = ['agentskill', 'hour', 'IVRCallsCount', 'QueuedCallsCount','AbandonCallsCount', 'AbandonPercentage','AbandonedQueueAvg', 'DropCallsCount', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'QueueAverage', 'RingAverage', 'TalkAverage', 'AnswerCount', 'AnswerPercentage','AnsweredQueueAvg'];
+                                            }
+                                            else{
+                                                var fieldNames = ['Date', 'Hour', 'Skill', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandoned Calls (Count)', 'Abandoned Calls (%)', 'Avg Abandoned Queue Time (sec)', 'Dropped Calls (Count)', 'Dropped Calls (%)', 'Avg Hold Time (sec)', 'Avg IVR Time (sec)', 'Avg Queue Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answered Calls (Count)', 'Answer Percentage (%)', 'Avg Answer Queue Time (sec)'];
+                                                var fields = ['date', 'hour', 'agentskill', 'IVRCallsCount', 'QueuedCallsCount','AbandonCallsCount', 'AbandonPercentage','AbandonedQueueAvg', 'DropCallsCount', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'QueueAverage', 'RingAverage', 'TalkAverage', 'AnswerCount', 'AnswerPercentage','AnsweredQueueAvg'];
+                                            }
 
                                             var csvFileData = json2csv({ data: resultArr, fields: fields, fieldNames : fieldNames });
 
