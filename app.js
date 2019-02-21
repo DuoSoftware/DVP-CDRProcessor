@@ -4308,8 +4308,8 @@ server.get('/DVP/API/:version/CallCDR/MyAgentStatus', jwt({secret: secret.Secret
         if(!startDate && !endDate){
 
             var currentDate = new Date();
-            startDate = new Date(currentDate.setHours(0));
-            endDate =  new Date(currentDate.setHours(24));
+            startDate = new Date(currentDate.setHours(0,0,0,0));
+            endDate =  new Date(currentDate.setHours(23,59,59,999));
         }
 
         var companyId = req.user.company;
