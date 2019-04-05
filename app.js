@@ -2521,9 +2521,9 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly/Download', jwt({secr
         var tenantId = req.user.tenant;
 
         var bUnit = null;
-        if(req.body && req.body.businessunit)
+        if(req.query && req.query.businessunit)
         {
-            bUnit = req.body.businessunit;
+            bUnit = req.query.businessunit;
         }
 
         if (!companyId || !tenantId)
