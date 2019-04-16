@@ -1163,6 +1163,7 @@ var GetCallSummaryDetailsDateRangeWithSkillL = function(caption, startTime, endT
 
                     row = {};
 
+                    row.agentskill = result[0][i].agentskill || 'N/A';
                     row.date = result[0][i].s_date;
                     row.hour = result[0][i].s_hour;
                     row.IVRCallsCount = result[0][i].ivrcount || 0;
