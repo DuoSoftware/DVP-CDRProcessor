@@ -1685,7 +1685,7 @@ var GetProcessedCDRInDateRangeCustomer = function(startTime, endTime, companyId,
         }
 
         sqlCond.$and = [];
-        sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound'},{DVPCallDirection: 'outbound', ObjCategory: 'GATEWAY'}]});
+        sqlCond.$and.push({$or : [{DVPCallDirection: 'inbound'},{DVPCallDirection: 'outbound', ObjType: 'GATEWAY'}]});
 
 
         dbModel.CallCDRProcessed.findAll({where :[sqlCond], order:[['CreatedTime','ASC']]}).then(function(callLeg)
