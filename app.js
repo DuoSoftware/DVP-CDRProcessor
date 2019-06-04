@@ -4637,6 +4637,7 @@ var generateCDRListByCustomer = function(cdrList, tz)
                 }
                 else if(cdr.DVPCallDirection === 'outbound')
                 {
+                    var obj = cdrGroupList[custNumber];
                     obj.OutboundCalls++;
 
                     if(cdr.IsAnswered === true)
