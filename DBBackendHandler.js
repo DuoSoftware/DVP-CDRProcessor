@@ -367,12 +367,12 @@ var GetAbandonCallRelatedLegsInDateRangeCount = function(startTime, endTime, com
 
         if(qpriority != null)
         {
-            sqlCond.QueuePriority = qpriority;
+            sqlCond.where[0].QueuePriority = qpriority;
         }
 
         if(bUnitFilter)
         {
-            sqlCond.BusinessUnit = bUnitFilter;
+            sqlCond.where[0].BusinessUnit = bUnitFilter;
         }
 
         if(didFilter)
