@@ -367,12 +367,12 @@ var GetAbandonCallRelatedLegsInDateRangeCount = function(startTime, endTime, com
 
         if(qpriority != null)
         {
-            sqlCond.QueuePriority = qpriority;
+            sqlCond.where[0].QueuePriority = qpriority;
         }
 
         if(bUnitFilter)
         {
-            sqlCond.BusinessUnit = bUnitFilter;
+            sqlCond.where[0].BusinessUnit = bUnitFilter;
         }
 
         if(didFilter)
@@ -2282,6 +2282,65 @@ var GetResourceStatusListWithACW = function(startTime, endTime, statusList, agen
     }
 };
 
+var GetResourceStatusListWithACWDownload = function(startTime, endTime, statusList, agents, companyId, tenantId, callback)
+{
+    var emptyArr = [];
+
+    try
+    {
+        var defaultQuery = {where :[{CompanyId: companyId, TenantId: tenantId,$or:[{StatusType: 'ResourceStatus'},{Reason:"CALL"},{Reason:"CHAT"}], createdAt: {between:[startTime, endTime]}}], order: ['ResourceId','createdAt'], include: [{model: dbModel.ResResource, as: 'ResResource'}]};
+
+
+        if(statusList && statusList.length > 0)
+        {
+            defaultQuery ={where :[{CompanyId: companyId, TenantId: tenantId, createdAt: {between:[startTime, endTime]}}], order: ['ResourceId','createdAt'], include: [{model: dbModel.ResResource, as: 'ResResource'}]};
+            defaultQuery.where[0].$or = [];
+
+            statusList.forEach(function(status)
+            {
+                if(status.Status=="AfterWork" || status.Status=="CALL" || status.Status=="CHAT")
+                {
+                    defaultQuery.where[0].$or.push({StatusType: 'SloatStatus' ,Reason: status.Status});
+                }
+
+                else
+                {
+                    defaultQuery.where[0].$or.push({StatusType: 'ResourceStatus' ,Reason: status.Status});
+                }
+
+
+            });
+        }
+
+        if(agents && agents.length > 0)
+        {
+            defaultQuery.include[0].where = [{$or:[]}];
+
+            var tempOrCondArr = defaultQuery.include[0].where[0].$or;
+            agents.forEach(function(agent)
+            {
+                tempOrCondArr.push({ResourceName: agent.ResourceName});
+
+            });
+        }
+
+
+        dbModel.ResResourceStatusChangeInfo.findAll(defaultQuery).then(function(resourceInfoList)
+        {
+            callback(null, resourceInfoList)
+
+        }).catch(function(err)
+        {
+            callback(err, emptyArr)
+        });
+
+    }
+    catch(ex)
+    {
+        callback(ex, emptyArr);
+    }
+};
+
 var GetCOnsolidatedResourceStatusListWithACW = function(startTime, endTime, statusList, agents, companyId, tenantId, callback)
 {
     var emptyArr = [];
@@ -2547,3 +2606,4 @@ module.exports.GetCOnsolidatedResourceStatusListWithACW = GetCOnsolidatedResourc
 module.exports.GetCampaignSummary = GetCampaignSummary;
 module.exports.GetAbandonCallRelatedLegsInDateRangeProcessedCount = GetAbandonCallRelatedLegsInDateRangeProcessedCount;
 module.exports.GetAbandonCallRelatedLegsInDateRangeProcessed = GetAbandonCallRelatedLegsInDateRangeProcessed;
+module.exports.GetResourceStatusListWithACWDownload = GetResourceStatusListWithACWDownload;
