@@ -408,7 +408,7 @@ var GetAbandonCallRelatedLegsInDateRangeProcessedCount = function(startTime, end
 {
     try
     {
-        var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, AgentAnswered: false, QueueSec: {gt: abandonCallThreshold}};
+        var sqlCond = {where :[{CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, AgentAnswered: false, QueueSec: {gt: abandonCallThreshold}}]};
 
         //var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjType: 'HTTAPI', Direction: 'inbound', QueueSec: {gt: abandonCallThreshold}, AgentAnswered: false, ObjCategory: {ne: 'CONFERENCE'}, $or: [{OriginatedLegs: {ne: null}}, {OriginatedLegs: null, $or:[{ObjType: 'HTTAPI'},{ObjType: 'SOCKET'},{ObjType: 'REJECTED'},{ObjCategory: 'DND'},{ObjCategory: 'OUTBOUND_DENIED'}]}]};
 
