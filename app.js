@@ -5804,7 +5804,7 @@ server.get('/DVP/API/:version/CallCDR/Processed/GetAbandonCallDetailsByRange/Cou
 
         logger.debug('[DVP-CDRProcessor.GetAbandonCallDetailsByRangeCount] - [%s] - HTTP Request Received - Params - StartTime : %s, EndTime : %s', reqId, startTime, endTime);
 
-        backendHandler.GetAbandonCallRelatedLegsInDateRangeCount(startTime, endTime, companyId, tenantId, agent, skill, custNum, didNum, bUnit, qPriority, function(err, count)
+        backendHandler.GetAbandonCallRelatedLegsInDateRangeProcessedCount(startTime, endTime, companyId, tenantId, agent, skill, custNum, didNum, bUnit, qPriority, function(err, count)
         {
             var jsonString = "";
 

@@ -404,7 +404,7 @@ var GetAbandonCallRelatedLegsInDateRangeCount = function(startTime, endTime, com
     }
 };
 
-var GetAbandonCallRelatedLegsInDateRangeProcessedCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, customerFilter, didFilter, bUnitFilter, callback)
+var GetAbandonCallRelatedLegsInDateRangeProcessedCount = function(startTime, endTime, companyId, tenantId, agentFilter, skillFilter, customerFilter, didFilter, bUnitFilter, qpriority, callback)
 {
     try
     {
@@ -420,6 +420,11 @@ var GetAbandonCallRelatedLegsInDateRangeProcessedCount = function(startTime, end
         if(skillFilter)
         {
             sqlCond.where[0].AgentSkill = skillFilter;
+        }
+
+        if(qpriority != null)
+        {
+            sqlCond.where[0].QueuePriority = qpriority;
         }
 
         if(customerFilter)
