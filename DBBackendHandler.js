@@ -440,7 +440,7 @@ var GetAbandonCallRelatedLegsInDateRangeProcessedCount = function(startTime, end
 
         if(bUnitFilter)
         {
-            sqlCond.BusinessUnit = bUnitFilter;
+            sqlCond.where[0].BusinessUnit = bUnitFilter;
         }
 
         if(didFilter)
