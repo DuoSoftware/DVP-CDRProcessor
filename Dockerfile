@@ -7,11 +7,21 @@
 
 #EXPOSE 8809
 
-FROM node:9.9.0
-ARG VERSION_TAG
-RUN git clone -b $VERSION_TAG https://github.com/DuoSoftware/DVP-CDRProcessor.git /usr/local/src/cdrprocessor
-RUN cd /usr/local/src/cdrprocessor;
+# FROM node:9.9.0
+# ARG VERSION_TAG
+# RUN git clone -b $VERSION_TAG https://github.com/DuoSoftware/DVP-CDRProcessor.git /usr/local/src/cdrprocessor
+# RUN cd /usr/local/src/cdrprocessor;
+# WORKDIR /usr/local/src/cdrprocessor
+# RUN npm install
+# EXPOSE 8809
+# CMD [ "node --expose-gc", "/usr/local/src/cdrprocessor/app.js" ]
+
+FROM node:10-alpine
 WORKDIR /usr/local/src/cdrprocessor
+COPY package*.json ./
 RUN npm install
+COPY . .
 EXPOSE 8809
-CMD [ "node --expose-gc", "/usr/local/src/cdrprocessor/app.js" ]
+CMD [ "node", "app.js" ]
+
+
