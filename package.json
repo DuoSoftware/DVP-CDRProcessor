@@ -12,7 +12,7 @@
     "dvp-common": "1.3.0",
     "dvp-dbmodels": "3.3.1",
     "dvp-healthcheck": "^1.0.3",
-    "dvp-mongomodels": "^5.2.3",
+    "dvp-mongomodels": "^6.1.0",
     "ioredis": "^3.1.1",
     "json2csv": "^3.7.0",
     "moment": "^2.14.1",
