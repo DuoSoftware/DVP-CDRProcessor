@@ -10,6 +10,7 @@
     "config": "^1.12.0",
     "deepcopy": "^0.6.3",
     "dvp-common": "1.3.0",
+    "dvp-common-lite": "^1.1.0",
     "dvp-dbmodels": "3.3.1",
     "dvp-healthcheck": "^1.0.6",
     "dvp-mongomodels": "^6.1.0",
