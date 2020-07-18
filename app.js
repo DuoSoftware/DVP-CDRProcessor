@@ -1370,14 +1370,26 @@ var getProcessedCDRPageWise = function (
                         `Try to append the file  ${fileName} failed - ${err.message}`
                       );
                       cdrList = null;
+                      logger.debug(
+                        `Try to append the file  ${fileName} GC clear start`
+                      );
                       global.gc();
+                      logger.debug(
+                        `Try to append the file  ${fileName} GC clear end`
+                      );
                       callback(err, false);
                     } else {
                       logger.debug(
                         `Try to append the file  ${fileName} success`
                       );
                       cdrList = null;
+                      logger.debug(
+                        `Try to append the file  ${fileName} GC clear start`
+                      );
                       global.gc();
+                      logger.debug(
+                        `Try to append the file  ${fileName} GC clear end`
+                      );
                       callback(null, true);
                     }
                   });
@@ -1388,7 +1400,9 @@ var getProcessedCDRPageWise = function (
         } else {
           logger.debug(`Try to append the file  ${fileName} success`);
           cdrList = null;
+          logger.debug(`Try to append the file  ${fileName} GC clear start`);
           global.gc();
+          logger.debug(`Try to append the file  ${fileName} GC clear end`);
           callback(null, true);
         }
       }
