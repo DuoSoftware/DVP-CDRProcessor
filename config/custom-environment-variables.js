@@ -9,7 +9,7 @@ module.exports = {
     Password: "SYS_DATABASE_POSTGRES_PASSWORD",
     Port: "SYS_SQL_PORT",
     Host: "SYS_DATABASE_HOST",
-    Database: "SYS_DATABASE_POSTGRES_USER",
+    Database: "SYS_DATABASE_NAME",
   },
 
   Redis: {
