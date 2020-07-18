@@ -18,9 +18,7 @@ var RemoteGetFileMetadata = function (
     securityToken = "bearer " + securityToken;
 
     logger.debug(
-      "[DVP-CDRProcessor.RemoteGetFileMetadata] - [%s] -  Trying to get file meta data from api - Params - filename : %s",
-      reqId,
-      filename
+      `[DVP-CDRProcessor.RemoteGetFileMetadata] - [${reqId}] -  Trying to get file meta data from api - Params - filename : ${filename}`
     );
 
     var fileServiceHost = config.Services.fileServiceHost;
@@ -55,9 +53,7 @@ var RemoteGetFileMetadata = function (
       };
 
       logger.debug(
-        "[DVP-CDRProcessor.RemoteGetFileMetadata] - [%s] - Creating Api Url : %s",
-        reqId,
-        httpUrl
+        `[DVP-CDRProcessor.RemoteGetFileMetadata] - [${reqId}] - Creating Api Url : ${httpUrl}`
       );
 
       httpReq(options, function (error, response, body) {
@@ -65,9 +61,7 @@ var RemoteGetFileMetadata = function (
           var apiResp = JSON.parse(body);
 
           logger.debug(
-            "[DVP-CDRProcessor.RemoteGetFileMetadata] - [%s] - file service returned : %s",
-            reqId,
-            body
+            "[DVP-CDRProcessor.RemoteGetFileMetadata] - [${apiResp}] - file service returned : ${body}"
           );
 
           callback(apiResp.Exception, apiResp.Result);

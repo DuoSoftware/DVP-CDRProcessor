@@ -425,6 +425,9 @@ var convertToMMSS = function (sec) {
 
 var fileCheckAndDelete = function (reqId, filename, companyId, tenantId) {
   return new Promise(function (fulfill, reject) {
+    logger.debug(
+      `Request file service to check and delete the file ${filename}`
+    );
     externalApi.RemoteGetFileMetadata(
       reqId,
       filename,
@@ -1459,6 +1462,7 @@ server.get(
         ":" +
         etInReadableFormat;
 
+      logger.debug(`The Redis checking key for upload file ${fileCheckKey}`);
       redisHandler.GetSetObject(fileCheckKey, true, function (err, redisResp) {
         if (redisResp) {
           jsonString = messageFormatter.FormatMessage(
@@ -1474,6 +1478,9 @@ server.get(
           );
           res.end(jsonString);
         } else {
+          logger.debug(
+            `The Redis checking key for upload file ${fileCheckKey} - No Objet found proceed to Check and Delete`
+          );
           fileCheckAndDelete(reqId, fileName, companyId, tenantId)
             .then(function (chkResult) {
               if (chkResult) {
@@ -1532,6 +1539,9 @@ server.get(
                           bUnit,
                           qPriority,
                           function (err, cnt) {
+                            logger.debug(
+                              `Number of records found for ${fileName} - ${cnt} `
+                            );
                             if (!err && cnt) {
                               var arr = [];
                               while (cnt > offset) {
@@ -1561,8 +1571,15 @@ server.get(
                                 offset = offset + limit;
                               }
 
+                              logger.debug(
+                                `CDR processing is ready - ${fileName} `
+                              );
+
                               async.series(arr, function (err, results) {
                                 if (err) {
+                                  logger.error(
+                                    `Error in executing the asyn function ${filename} - ${err.message}`
+                                  );
                                   redisHandler.DeleteObject(fileCheckKey);
                                   externalApi.DeleteFile(
                                     reqId,
@@ -1580,6 +1597,9 @@ server.get(
                                     }
                                   );
                                 } else {
+                                  logger.debug(
+                                    `File ${fileName} Ready to upload`
+                                  );
                                   externalApi.UploadFile(
                                     reqId,
                                     uniqueId,
@@ -1589,7 +1609,10 @@ server.get(
                                     function (err, uploadResp) {
                                       fs.unlink(fileName);
                                       redisHandler.DeleteObject(fileCheckKey);
-                                      if (!(!err && uploadResp)) {
+                                      if (err) {
+                                        logger.debug(
+                                          `Upload ${fileName} failed due to error ${err.message}`
+                                        );
                                         externalApi.DeleteFile(
                                           reqId,
                                           uniqueId,
