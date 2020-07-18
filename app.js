@@ -1153,11 +1153,11 @@ var getProcessedCampaignCDRPageWise = function (
               fs.appendFile(fileName, csv, function (err) {
                 if (err) {
                   cdrList = null;
-                  global.gc();
+                  //global.gc();
                   callback(err, false);
                 } else {
                   cdrList = null;
-                  global.gc();
+                  //global.gc();
                   callback(null, true);
                 }
               });
@@ -1167,7 +1167,7 @@ var getProcessedCampaignCDRPageWise = function (
               fs.writeFile(fileName, headerFields, function (err, stat) {
                 if (err) {
                   cdrList = null;
-                  global.gc();
+                  //global.gc();
                   callback(err, false);
                 } else {
                   var csv =
@@ -1180,11 +1180,11 @@ var getProcessedCampaignCDRPageWise = function (
                   fs.appendFile(fileName, csv, function (err) {
                     if (err) {
                       cdrList = null;
-                      global.gc();
+                      //global.gc();
                       callback(err, false);
                     } else {
                       cdrList = null;
-                      global.gc();
+                      //global.gc();
                       callback(null, true);
                     }
                   });
@@ -1194,7 +1194,7 @@ var getProcessedCampaignCDRPageWise = function (
           });
         } else {
           cdrList = null;
-          global.gc();
+          //global.gc();
           callback(null, true);
         }
       }
@@ -1333,11 +1333,11 @@ var getProcessedCDRPageWise = function (
               fs.appendFile(fileName, csv, function (err) {
                 if (err) {
                   cdrList = null;
-                  global.gc();
+                  //global.gc();
                   callback(err, false);
                 } else {
                   cdrList = null;
-                  global.gc();
+                  //global.gc();
                   logger.debug(`Try to append the file  ${fileName} success`);
                   callback(null, true);
                 }
@@ -1354,7 +1354,7 @@ var getProcessedCDRPageWise = function (
                     `Try to save the file  ${fileName} failed - ${err.message}`
                   );
                   cdrList = null;
-                  global.gc();
+                  //global.gc();
                   callback(err, false);
                 } else {
                   var csv =
@@ -1373,7 +1373,7 @@ var getProcessedCDRPageWise = function (
                       logger.debug(
                         `Try to append the file  ${fileName} GC clear start`
                       );
-                      global.gc();
+                      //global.gc();
                       logger.debug(
                         `Try to append the file  ${fileName} GC clear end`
                       );
@@ -1386,7 +1386,7 @@ var getProcessedCDRPageWise = function (
                       logger.debug(
                         `Try to append the file  ${fileName} GC clear start`
                       );
-                      global.gc();
+                      //global.gc();
                       logger.debug(
                         `Try to append the file  ${fileName} GC clear end`
                       );
@@ -1401,7 +1401,7 @@ var getProcessedCDRPageWise = function (
           logger.debug(`Try to append the file  ${fileName} success`);
           cdrList = null;
           logger.debug(`Try to append the file  ${fileName} GC clear start`);
-          global.gc();
+          //global.gc();
           logger.debug(`Try to append the file  ${fileName} GC clear end`);
           callback(null, true);
         }
