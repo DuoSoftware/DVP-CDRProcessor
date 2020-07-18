@@ -1322,6 +1322,7 @@ var getProcessedCDRPageWise = function (
           fs.stat(fileName, function (err) {
             if (!err) {
               //write the actual data and end with newline
+              logger.debug(`Try to get stats of the file  ${fileName} success`);
               var csv =
                 json2csv({
                   data: cdrList,
@@ -1337,12 +1338,13 @@ var getProcessedCDRPageWise = function (
                 } else {
                   cdrList = null;
                   global.gc();
+                  logger.debug(`Try to append the file  ${fileName} success`);
                   callback(null, true);
                 }
               });
             } else {
               logger.error(
-                `Try to save the file  ${fileName} failed - ${err.message}`
+                `Try to get stats the file  ${fileName} failed - ${err.message}`
               );
               var headerFields = fieldNames + newLine;
 
