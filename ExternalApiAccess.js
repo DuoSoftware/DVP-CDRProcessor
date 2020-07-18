@@ -1,257 +1,370 @@
-var httpReq = require('request');
-var config = require('config');
-var util = require('util');
-var logger = require('dvp-common-lite/LogHandler/CommonLogHandler.js').logger;
-var validator = require('validator');
-var fs = require('fs');
+var httpReq = require("request");
+var config = require("config");
+var util = require("util");
+var logger = require("dvp-common-lite/LogHandler/CommonLogHandler.js").logger;
+var validator = require("validator");
+var fs = require("fs");
 
-var RemoteGetFileMetadata = function(reqId, filename, companyId, tenantId, callback)
-{
-    try
-    {
-        var securityToken = config.Token;
+var RemoteGetFileMetadata = function (
+  reqId,
+  filename,
+  companyId,
+  tenantId,
+  callback
+) {
+  try {
+    var securityToken = config.Token;
 
-        securityToken = 'bearer ' + securityToken;
+    securityToken = "bearer " + securityToken;
 
-        logger.debug('[DVP-CDRProcessor.RemoteGetFileMetadata] - [%s] -  Trying to get file meta data from api - Params - filename : %s', reqId, filename);
+    logger.debug(
+      "[DVP-CDRProcessor.RemoteGetFileMetadata] - [%s] -  Trying to get file meta data from api - Params - filename : %s",
+      reqId,
+      filename
+    );
 
-        var fileServiceHost = config.Services.fileServiceHost;
-        var fileServicePort = config.Services.fileServicePort;
-        var fileServiceVersion = config.Services.fileServiceVersion;
-        var compInfo = tenantId + ':' + companyId;
+    var fileServiceHost = config.Services.fileServiceHost;
+    var fileServicePort = config.Services.fileServicePort;
+    var fileServiceVersion = config.Services.fileServiceVersion;
+    var compInfo = tenantId + ":" + companyId;
 
-        if(fileServiceHost && fileServicePort && fileServiceVersion)
-        {
-            var httpUrl = util.format('http://%s/DVP/API/%s/FileService/File/%s/MetaData', fileServiceHost, fileServiceVersion, filename);
+    if (fileServiceHost && fileServicePort && fileServiceVersion) {
+      var httpUrl = util.format(
+        "http://%s/DVP/API/%s/FileService/File/%s/MetaData",
+        fileServiceHost,
+        fileServiceVersion,
+        filename
+      );
 
-            if(validator.isIP(fileServiceHost))
-            {
-                httpUrl = util.format('http://%s:%s/DVP/API/%s/FileService/File/%s/MetaData', fileServiceHost, fileServicePort, fileServiceVersion, filename);
-            }
+      if (config.Services.dynamicPort || validator.isIP(fileServiceHost)) {
+        httpUrl = util.format(
+          "http://%s:%s/DVP/API/%s/FileService/File/%s/MetaData",
+          fileServiceHost,
+          fileServicePort,
+          fileServiceVersion,
+          filename
+        );
+      }
 
-            var options = {
-                url: httpUrl,
-                headers: {
-                    'authorization': securityToken,
-                    'companyinfo': compInfo
-                }
-            };
+      var options = {
+        url: httpUrl,
+        headers: {
+          authorization: securityToken,
+          companyinfo: compInfo,
+        },
+      };
 
-            logger.debug('[DVP-CDRProcessor.RemoteGetFileMetadata] - [%s] - Creating Api Url : %s', reqId, httpUrl);
+      logger.debug(
+        "[DVP-CDRProcessor.RemoteGetFileMetadata] - [%s] - Creating Api Url : %s",
+        reqId,
+        httpUrl
+      );
 
+      httpReq(options, function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+          var apiResp = JSON.parse(body);
 
-            httpReq(options, function (error, response, body)
-            {
-                if (!error && response.statusCode == 200)
-                {
-                    var apiResp = JSON.parse(body);
+          logger.debug(
+            "[DVP-CDRProcessor.RemoteGetFileMetadata] - [%s] - file service returned : %s",
+            reqId,
+            body
+          );
 
-                    logger.debug('[DVP-CDRProcessor.RemoteGetFileMetadata] - [%s] - file service returned : %s', reqId, body);
-
-                    callback(apiResp.Exception, apiResp.Result);
-                }
-                else
-                {
-                    logger.error('[DVP-CDRProcessor.RemoteGetFileMetadata] - [%s] - file service call failed', reqId, error);
-                    callback(error, undefined);
-                }
-            })
+          callback(apiResp.Exception, apiResp.Result);
+        } else {
+          logger.error(
+            "[DVP-CDRProcessor.RemoteGetFileMetadata] - [%s] - file service call failed",
+            reqId,
+            error
+          );
+          callback(error, undefined);
         }
-        else
-        {
-            logger.error('[DVP-CDRProcessor.RemoteGetFileMetadata] - [%s] - File host, port or version not found', reqId);
-            callback(new Error('File host, port or version not found'), undefined)
-        }
+      });
+    } else {
+      logger.error(
+        "[DVP-CDRProcessor.RemoteGetFileMetadata] - [%s] - File host, port or version not found",
+        reqId
+      );
+      callback(new Error("File host, port or version not found"), undefined);
     }
-    catch(ex)
-    {
-        logger.error('[DVP-CDRProcessor.RemoteGetFileMetadata] - [%s] - Exception occurred', reqId, ex);
-        callback(ex, undefined);
-    }
+  } catch (ex) {
+    logger.error(
+      "[DVP-CDRProcessor.RemoteGetFileMetadata] - [%s] - Exception occurred",
+      reqId,
+      ex
+    );
+    callback(ex, undefined);
+  }
 };
 
-var FileUploadReserve = function(reqId, filename, companyId, tenantId, callback)
-{
-    try
-    {
-        var securityToken = config.Token;
+var FileUploadReserve = function (
+  reqId,
+  filename,
+  companyId,
+  tenantId,
+  callback
+) {
+  try {
+    var securityToken = config.Token;
 
-        securityToken = 'bearer ' + securityToken;
+    securityToken = "bearer " + securityToken;
 
-        logger.debug('[DVP-CDRProcessor.FileUploadReserve] - [%s] -  Trying to get file meta data from api - Params - filename : %s', reqId, filename);
+    logger.debug(
+      "[DVP-CDRProcessor.FileUploadReserve] - [%s] -  Trying to get file meta data from api - Params - filename : %s",
+      reqId,
+      filename
+    );
 
-        var fileServiceHost = config.Services.fileServiceHost;
-        var fileServicePort = config.Services.fileServicePort;
-        var fileServiceVersion = config.Services.fileServiceVersion;
-        var compInfo = tenantId + ':' + companyId;
+    var fileServiceHost = config.Services.fileServiceHost;
+    var fileServicePort = config.Services.fileServicePort;
+    var fileServiceVersion = config.Services.fileServiceVersion;
+    var compInfo = tenantId + ":" + companyId;
 
-        if(fileServiceHost && fileServicePort && fileServiceVersion)
+    if (fileServiceHost && fileServicePort && fileServiceVersion) {
+      var httpUrl = util.format(
+        "http://%s/DVP/API/%s/FileService/File/Reserve",
+        fileServiceHost,
+        fileServiceVersion
+      );
+
+      if (config.Services.dynamicPort || validator.isIP(fileServiceHost)) {
+        httpUrl = util.format(
+          "http://%s:%s/DVP/API/%s/FileService/File/Reserve",
+          fileServiceHost,
+          fileServicePort,
+          fileServiceVersion
+        );
+      }
+
+      var reqBody = {
+        class: "CDR",
+        fileCategory: "REPORTS",
+        display: filename,
+        filename: filename,
+      };
+
+      var bodyJson = JSON.stringify(reqBody);
+
+      httpReq(
         {
-            var httpUrl = util.format('http://%s/DVP/API/%s/FileService/File/Reserve', fileServiceHost, fileServiceVersion);
+          url: httpUrl,
+          method: "POST",
+          headers: {
+            authorization: securityToken,
+            companyinfo: compInfo,
+            "content-type": "application/json",
+          },
+          body: bodyJson,
+        },
+        function (error, response, body) {
+          if (!error && response.statusCode == 200) {
+            var apiResp = JSON.parse(body);
 
-            if(validator.isIP(fileServiceHost))
-            {
-                httpUrl = util.format('http://%s:%s/DVP/API/%s/FileService/File/Reserve', fileServiceHost, fileServicePort, fileServiceVersion);
-            }
+            logger.debug(
+              "[DVP-CDRProcessor.FileUploadReserve] - [%s] - file service returned : %s",
+              reqId,
+              body
+            );
 
-            var reqBody = {class: 'CDR', fileCategory:'REPORTS', display: filename, filename: filename};
-
-            var bodyJson = JSON.stringify(reqBody);
-
-            httpReq({url:httpUrl, method: 'POST', headers: {'authorization': securityToken, 'companyinfo': compInfo, 'content-type': 'application/json'}, body: bodyJson}, function(error, response, body)
-            {
-                if (!error && response.statusCode == 200)
-                {
-                    var apiResp = JSON.parse(body);
-
-                    logger.debug('[DVP-CDRProcessor.FileUploadReserve] - [%s] - file service returned : %s', reqId, body);
-
-                    callback(apiResp.Exception, apiResp.Result);
-                }
-                else
-                {
-                    logger.error('[DVP-CDRProcessor.FileUploadReserve] - [%s] - file service call failed', reqId, error);
-                    callback(error, undefined);
-                }
-            });
+            callback(apiResp.Exception, apiResp.Result);
+          } else {
+            logger.error(
+              "[DVP-CDRProcessor.FileUploadReserve] - [%s] - file service call failed",
+              reqId,
+              error
+            );
+            callback(error, undefined);
+          }
         }
-        else
-        {
-            logger.error('[DVP-CDRProcessor.FileUploadReserve] - [%s] - File host, port or version not found', reqId);
-            callback(new Error('File host, port or version not found'), undefined)
-        }
+      );
+    } else {
+      logger.error(
+        "[DVP-CDRProcessor.FileUploadReserve] - [%s] - File host, port or version not found",
+        reqId
+      );
+      callback(new Error("File host, port or version not found"), undefined);
     }
-    catch(ex)
-    {
-        logger.error('[DVP-CDRProcessor.FileUploadReserve] - [%s] - Exception occurred', reqId, ex);
-        callback(ex, undefined);
-    }
+  } catch (ex) {
+    logger.error(
+      "[DVP-CDRProcessor.FileUploadReserve] - [%s] - Exception occurred",
+      reqId,
+      ex
+    );
+    callback(ex, undefined);
+  }
 };
 
-var UploadFile = function(reqId, uniqueId, filename, companyId, tenantId, callback)
-{
-    try
-    {
-        var securityToken = config.Token;
+var UploadFile = function (
+  reqId,
+  uniqueId,
+  filename,
+  companyId,
+  tenantId,
+  callback
+) {
+  try {
+    var securityToken = config.Token;
 
-        securityToken = 'bearer ' + securityToken;
+    securityToken = "bearer " + securityToken;
 
-        logger.debug('[DVP-CDRProcessor.UploadFile] - [%s] -  Trying to get file meta data from api - Params - filename : %s', reqId, filename);
+    logger.debug(
+      "[DVP-CDRProcessor.UploadFile] - [%s] -  Trying to get file meta data from api - Params - filename : %s",
+      reqId,
+      filename
+    );
 
-        var fileServiceHost = config.Services.fileServiceHost;
-        var fileServicePort = config.Services.fileServicePort;
-        var fileServiceVersion = config.Services.fileServiceVersion;
-        var compInfo = tenantId + ':' + companyId;
+    var fileServiceHost = config.Services.fileServiceHost;
+    var fileServicePort = config.Services.fileServicePort;
+    var fileServiceVersion = config.Services.fileServiceVersion;
+    var compInfo = tenantId + ":" + companyId;
 
-        if(fileServiceHost && fileServicePort && fileServiceVersion)
+    if (fileServiceHost && fileServicePort && fileServiceVersion) {
+      var httpUrl = util.format(
+        "http://%s/DVP/API/%s/FileService/File/Upload",
+        fileServiceHost,
+        fileServiceVersion
+      );
+
+      if (config.Services.dynamicPort || validator.isIP(fileServiceHost)) {
+        httpUrl = util.format(
+          "http://%s:%s/DVP/API/%s/FileService/File/Upload",
+          fileServiceHost,
+          fileServicePort,
+          fileServiceVersion
+        );
+      }
+
+      var formData = {
+        class: "CDR",
+        fileCategory: "REPORTS",
+        display: filename,
+        filename: filename,
+        attachments: [fs.createReadStream(filename)],
+      };
+
+      if (uniqueId) {
+        formData.reservedId = uniqueId;
+      }
+
+      httpReq.post(
         {
-            var httpUrl = util.format('http://%s/DVP/API/%s/FileService/File/Upload', fileServiceHost, fileServiceVersion);
+          url: httpUrl,
+          headers: { authorization: securityToken, companyinfo: compInfo },
+          formData: formData,
+        },
+        function (error, response, body) {
+          if (!error && response.statusCode == 200) {
+            var apiResp = JSON.parse(body);
 
-            if(validator.isIP(fileServiceHost))
-            {
-                httpUrl = util.format('http://%s:%s/DVP/API/%s/FileService/File/Upload', fileServiceHost, fileServicePort, fileServiceVersion);
-            }
+            logger.debug(
+              "[DVP-CDRProcessor.UploadFile] - [%s] - file service returned : %s",
+              reqId,
+              body
+            );
 
-
-            var formData = {
-                class: 'CDR',
-                fileCategory:'REPORTS',
-                display: filename,
-                filename: filename,
-                attachments: [
-                    fs.createReadStream(filename)
-                ]
-
-            };
-
-            if(uniqueId)
-            {
-                formData.reservedId = uniqueId
-            }
-
-            httpReq.post({url:httpUrl, headers: {'authorization': securityToken, 'companyinfo': compInfo}, formData: formData}, function(error, response, body)
-            {
-                if (!error && response.statusCode == 200)
-                {
-                    var apiResp = JSON.parse(body);
-
-                    logger.debug('[DVP-CDRProcessor.UploadFile] - [%s] - file service returned : %s', reqId, body);
-
-                    callback(apiResp.Exception, apiResp.Result);
-                }
-                else
-                {
-                    logger.error('[DVP-CDRProcessor.UploadFile] - [%s] - file service call failed', reqId, error);
-                    callback(error, undefined);
-                }
-            });
+            callback(apiResp.Exception, apiResp.Result);
+          } else {
+            logger.error(
+              "[DVP-CDRProcessor.UploadFile] - [%s] - file service call failed",
+              reqId,
+              error
+            );
+            callback(error, undefined);
+          }
         }
-        else
-        {
-            logger.error('[DVP-CDRProcessor.UploadFile] - [%s] - File host, port or version not found', reqId);
-            callback(new Error('File host, port or version not found'), undefined)
-        }
+      );
+    } else {
+      logger.error(
+        "[DVP-CDRProcessor.UploadFile] - [%s] - File host, port or version not found",
+        reqId
+      );
+      callback(new Error("File host, port or version not found"), undefined);
     }
-    catch(ex)
-    {
-        logger.error('[DVP-CDRProcessor.UploadFile] - [%s] - Exception occurred', reqId, ex);
-        callback(ex, undefined);
-    }
+  } catch (ex) {
+    logger.error(
+      "[DVP-CDRProcessor.UploadFile] - [%s] - Exception occurred",
+      reqId,
+      ex
+    );
+    callback(ex, undefined);
+  }
 };
 
-var DeleteFile = function(reqId, uniqueId, companyId, tenantId, callback)
-{
-    try
-    {
-        var securityToken = config.Token;
+var DeleteFile = function (reqId, uniqueId, companyId, tenantId, callback) {
+  try {
+    var securityToken = config.Token;
 
-        securityToken = 'bearer ' + securityToken;
+    securityToken = "bearer " + securityToken;
 
-        logger.debug('[DVP-CDRProcessor.DeleteFile] - [%s] -  Trying to get file meta data from api', reqId);
+    logger.debug(
+      "[DVP-CDRProcessor.DeleteFile] - [%s] -  Trying to get file meta data from api",
+      reqId
+    );
 
-        var fileServiceHost = config.Services.fileServiceHost;
-        var fileServicePort = config.Services.fileServicePort;
-        var fileServiceVersion = config.Services.fileServiceVersion;
-        var compInfo = tenantId + ':' + companyId;
+    var fileServiceHost = config.Services.fileServiceHost;
+    var fileServicePort = config.Services.fileServicePort;
+    var fileServiceVersion = config.Services.fileServiceVersion;
+    var compInfo = tenantId + ":" + companyId;
 
-        if(fileServiceHost && fileServicePort && fileServiceVersion)
+    if (fileServiceHost && fileServicePort && fileServiceVersion) {
+      var httpUrl = util.format(
+        "http://%s/DVP/API/%s/FileService/File/%s",
+        fileServiceHost,
+        fileServiceVersion,
+        uniqueId
+      );
+
+      if (config.Services.dynamicPort || validator.isIP(fileServiceHost)) {
+        httpUrl = util.format(
+          "http://%s:%s/DVP/API/%s/FileService/File/%s",
+          fileServiceHost,
+          fileServicePort,
+          fileServiceVersion,
+          uniqueId
+        );
+      }
+
+      httpReq.del(
         {
-            var httpUrl = util.format('http://%s/DVP/API/%s/FileService/File/%s', fileServiceHost, fileServiceVersion, uniqueId);
+          url: httpUrl,
+          headers: { authorization: securityToken, companyinfo: compInfo },
+        },
+        function (error, response, body) {
+          if (!error && response.statusCode == 200) {
+            var apiResp = JSON.parse(body);
 
-            if(validator.isIP(fileServiceHost))
-            {
-                httpUrl = util.format('http://%s:%s/DVP/API/%s/FileService/File/%s', fileServiceHost, fileServicePort, fileServiceVersion, uniqueId);
-            }
+            logger.debug(
+              "[DVP-CDRProcessor.DeleteFile] - [%s] - file service returned : %s",
+              reqId,
+              body
+            );
 
-
-            httpReq.del({url:httpUrl, headers: {'authorization': securityToken, 'companyinfo': compInfo}}, function(error, response, body)
-            {
-                if (!error && response.statusCode == 200)
-                {
-                    var apiResp = JSON.parse(body);
-
-                    logger.debug('[DVP-CDRProcessor.DeleteFile] - [%s] - file service returned : %s', reqId, body);
-
-                    callback(apiResp.Exception, apiResp.Result);
-                }
-                else
-                {
-                    logger.error('[DVP-CDRProcessor.DeleteFile] - [%s] - file service call failed', reqId, error);
-                    callback(error, undefined);
-                }
-            });
+            callback(apiResp.Exception, apiResp.Result);
+          } else {
+            logger.error(
+              "[DVP-CDRProcessor.DeleteFile] - [%s] - file service call failed",
+              reqId,
+              error
+            );
+            callback(error, undefined);
+          }
         }
-        else
-        {
-            logger.error('[DVP-CDRProcessor.DeleteFile] - [%s] - File host, port or version not found', reqId);
-            callback(new Error('File host, port or version not found'), undefined)
-        }
+      );
+    } else {
+      logger.error(
+        "[DVP-CDRProcessor.DeleteFile] - [%s] - File host, port or version not found",
+        reqId
+      );
+      callback(new Error("File host, port or version not found"), undefined);
     }
-    catch(ex)
-    {
-        logger.error('[DVP-CDRProcessor.DeleteFile] - [%s] - Exception occurred', reqId, ex);
-        callback(ex, undefined);
-    }
+  } catch (ex) {
+    logger.error(
+      "[DVP-CDRProcessor.DeleteFile] - [%s] - Exception occurred",
+      reqId,
+      ex
+    );
+    callback(ex, undefined);
+  }
 };
 
 module.exports.RemoteGetFileMetadata = RemoteGetFileMetadata;
