@@ -1242,10 +1242,14 @@ var getProcessedCDRPageWise = function (
     function (err, cdrList) {
       if (err) {
         //can delete file reserve
+        logger.error(`Error on Get processing records ${fileName}`);
         callback(err, false);
       } else {
         //Convert CDR LIST TO FILE AND UPLOAD
 
+        logger.debug(
+          `Records Found for processing ${fileName} - ${cdrList.length}`
+        );
         if (cdrList && cdrList.length > 0) {
           cdrList.forEach(function (cdrProcessed) {
             cdrProcessed.BillSec = convertToMMSS(cdrProcessed.BillSec);
@@ -1314,8 +1318,9 @@ var getProcessedCDRPageWise = function (
             "BusinessUnit",
           ];
 
+          logger.debug(`Try to save the file  ${fileName}`);
           fs.stat(fileName, function (err) {
-            if (err == null) {
+            if (!err) {
               //write the actual data and end with newline
               var csv =
                 json2csv({
@@ -1336,10 +1341,16 @@ var getProcessedCDRPageWise = function (
                 }
               });
             } else {
+              logger.error(
+                `Try to save the file  ${fileName} failed - ${err.message}`
+              );
               var headerFields = fieldNames + newLine;
 
               fs.writeFile(fileName, headerFields, function (err, stat) {
                 if (err) {
+                  logger.error(
+                    `Try to save the file  ${fileName} failed - ${err.message}`
+                  );
                   cdrList = null;
                   global.gc();
                   callback(err, false);
@@ -1353,10 +1364,16 @@ var getProcessedCDRPageWise = function (
 
                   fs.appendFile(fileName, csv, function (err) {
                     if (err) {
+                      logger.error(
+                        `Try to append the file  ${fileName} failed - ${err.message}`
+                      );
                       cdrList = null;
                       global.gc();
                       callback(err, false);
                     } else {
+                      logger.debug(
+                        `Try to append the file  ${fileName} success`
+                      );
                       cdrList = null;
                       global.gc();
                       callback(null, true);
@@ -1367,6 +1384,7 @@ var getProcessedCDRPageWise = function (
             }
           });
         } else {
+          logger.debug(`Try to append the file  ${fileName} success`);
           cdrList = null;
           global.gc();
           callback(null, true);
