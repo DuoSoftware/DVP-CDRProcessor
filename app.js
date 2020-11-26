@@ -1019,13 +1019,13 @@ var getProcessedCDRPageWise = function(reqId, uniqueId, fileName, tz, startTime,
                     cdrProcessed.QueueSec = convertToMMSS(cdrProcessed.QueueSec);
                     cdrProcessed.HoldSec = convertToMMSS(cdrProcessed.HoldSec);
 
-                    cdrProcessed.CallAnswered = cdrProcessed.AgentAnswered;
+                    //cdrProcessed.CallAnswered = cdrProcessed.AgentAnswered;
 
-                    if(!cdrProcessed.AgentAnswered && cdrProcessed.ObjType !== 'HTTAPI')
-                    {
+                    //if(!cdrProcessed.AgentAnswered && cdrProcessed.ObjType !== 'HTTAPI')
+                    //{
                         cdrProcessed.CallAnswered = cdrProcessed.IsAnswered;
 
-                    }
+                    //}
 
                     var localTime = moment(cdrProcessed.CreatedTime).utcOffset(tz).format("YYYY-MM-DD HH:mm:ss");
 
@@ -2601,9 +2601,12 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly/Download', jwt({secr
                                                     sumr.IvrAverage = convertToMMSS(sumr.IvrAverage);
                                                 }
 
-                                                if(typeof sumr.HoldAverage === "number")
-                                                {
-                                                    sumr.HoldAverage = convertToMMSS(sumr.HoldAverage);
+                                                if (typeof sumr.InboundHoldAverage === "number") {
+                                                    sumr.InboundHoldAverage = convertToMMSS(sumr.InboundHoldAverage);
+                                                }
+
+                                                if (typeof sumr.OutboundHoldAverage === "number") {
+                                                    sumr.OutboundHoldAverage = convertToMMSS(sumr.OutboundHoldAverage);
                                                 }
 
                                                 if(typeof sumr.RingAverage === "number")
@@ -2611,9 +2614,12 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly/Download', jwt({secr
                                                     sumr.RingAverage = convertToMMSS(sumr.RingAverage);
                                                 }
 
-                                                if(typeof sumr.TalkAverage === "number")
-                                                {
-                                                    sumr.TalkAverage = convertToMMSS(sumr.TalkAverage);
+                                                if (typeof sumr.InboundTalkAverage === "number") {
+                                                    sumr.InboundTalkAverage = convertToMMSS(sumr.InboundTalkAverage);
+                                                }
+
+                                                if (typeof sumr.OutboundTalkAverage === "number") {
+                                                    sumr.OutboundTalkAverage = convertToMMSS(sumr.OutboundTalkAverage);
                                                 }
 
                                                 return sumr;
@@ -2621,9 +2627,9 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Hourly/Download', jwt({secr
 
 
 
-                                            var fieldNames = ['Hour', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandon Calls (Count)', 'Abandon Calls (%)', 'Dropped Calls (Count)', 'Dropped Calls (%)', 'Avg Hold Time (sec)', 'Avg IVR Time (sec)', 'Avg Queue Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answered Calls (Count)', 'Answer Percentage (%)'];
+                                            var fieldNames = ['Hour', 'IVR Calls (Count)', 'Outbound Calls (Count)', 'Queued Calls (Count)', 'Abandon Calls (Count)', 'Abandon Calls (%)', 'Dropped Calls (Count)', 'Dropped Calls (%)', 'Inbound Avg Hold Time (sec)', 'Outbound Avg Hold Time (sec)', 'Avg IVR Time (sec)', 'Avg Queue Time (sec)', 'Avg Answer Speed (sec)', 'Inbound Avg Talk Time (sec)', 'Outbound Avg Talk Time (sec)', 'Inbound Answered Calls (Count)', 'Outbound Answered Calls (Count)', 'Answer Percentage Inbound(%)'];
 
-                                            var fields = ['Caption', 'IVRCallsCount', 'QueuedCallsCount','AbandonCallsCount', 'AbandonPercentage', 'DropCallsCount', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'QueueAverage', 'RingAverage', 'TalkAverage', 'AnswerCount', 'AnswerPercentage'];
+                                            var fields = ['Caption', 'IVRCallsCount', 'OutboundCallCount', 'QueuedCallsCount','AbandonCallsCount', 'AbandonPercentage', 'DropCallsCount', 'DropPercentage', 'InboundHoldAverage',  'OutboundHoldAverage', 'IvrAverage', 'QueueAverage', 'RingAverage', 'InboundTalkAverage', 'OutboundTalkAverage', 'AnswerCountInbound', 'AnswerCountOutbound', 'AnswerPercentageInbound'];
 
                                             var csvFileData = json2csv({ data: newSummary, fields: fields, fieldNames : fieldNames });
 
@@ -3689,9 +3695,12 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Daily/Download', jwt({secre
                                                     sumr.IvrAverage = convertToMMSS(sumr.IvrAverage);
                                                 }
 
-                                                if(typeof sumr.HoldAverage === "number")
-                                                {
-                                                    sumr.HoldAverage = convertToMMSS(sumr.HoldAverage);
+                                                if (typeof sumr.InboundHoldAverage === "number") {
+                                                    sumr.InboundHoldAverage = convertToMMSS(sumr.InboundHoldAverage);
+                                                }
+
+                                                if (typeof sumr.OutboundHoldAverage === "number") {
+                                                    sumr.OutboundHoldAverage = convertToMMSS(sumr.OutboundHoldAverage);
                                                 }
 
                                                 if(typeof sumr.RingAverage === "number")
@@ -3699,9 +3708,12 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Daily/Download', jwt({secre
                                                     sumr.RingAverage = convertToMMSS(sumr.RingAverage);
                                                 }
 
-                                                if(typeof sumr.TalkAverage === "number")
-                                                {
-                                                    sumr.TalkAverage = convertToMMSS(sumr.TalkAverage);
+                                                if (typeof sumr.InboundTalkAverage === "number") {
+                                                    sumr.InboundTalkAverage = convertToMMSS(sumr.InboundTalkAverage);
+                                                }
+
+                                                if (typeof sumr.OutboundTalkAverage === "number") {
+                                                    sumr.OutboundTalkAverage = convertToMMSS(sumr.OutboundTalkAverage);
                                                 }
 
                                                 return sumr;
@@ -3709,9 +3721,9 @@ server.get('/DVP/API/:version/CallCDR/CallCDRSummary/Daily/Download', jwt({secre
 
 
 
-                                            var fieldNames = ['Day', 'IVR Calls (Count)', 'Queued Calls (Count)', 'Abandon Calls (Count)', 'Abandon Calls (%)', 'Dropped Calls (Count)', 'Dropped Calls (%)', 'Avg Hold Time (sec)', 'Avg IVR Time (sec)', 'Avg Queue Time (sec)', 'Avg Answer Speed (sec)', 'Avg Talk Time (sec)', 'Answered Calls (Count)', 'Answer Percentage (%)'];
+                                            var fieldNames = ['Day', 'IVR Calls (Count)', 'Outbound Calls (Count)', 'Queued Calls (Count)', 'Abandon Calls (Count)', 'Abandon Calls (%)', 'Dropped Calls (Count)', 'Dropped Calls (%)', 'Inbound Avg Hold Time (sec)', 'Outbound Avg Hold Time (sec)', 'Avg IVR Time (sec)', 'Avg Queue Time (sec)', 'Avg Answer Speed (sec)', 'Inbound Avg Talk Time (sec)', 'Outbound Avg Talk Time (sec)', 'Inbound Answered Calls (Count)', 'Outbound Answered Calls (Count)', 'Answer Percentage Inbound(%)'];
 
-                                            var fields = ['Caption', 'IVRCallsCount', 'QueuedCallsCount','AbandonCallsCount', 'AbandonPercentage', 'DropCallsCount', 'DropPercentage', 'HoldAverage', 'IvrAverage', 'QueueAverage', 'RingAverage', 'TalkAverage', 'AnswerCount', 'AnswerPercentage'];
+                                            var fields = ['Caption', 'IVRCallsCount', 'OutboundCallCount', 'QueuedCallsCount','AbandonCallsCount', 'AbandonPercentage', 'DropCallsCount', 'DropPercentage', 'InboundHoldAverage',  'OutboundHoldAverage', 'IvrAverage', 'QueueAverage', 'RingAverage', 'InboundTalkAverage', 'OutboundTalkAverage', 'AnswerCountInbound', 'AnswerCountOutbound', 'AnswerPercentageInbound'];
 
                                             var csvFileData = json2csv({ data: newSummary, fields: fields, fieldNames : fieldNames });
 
