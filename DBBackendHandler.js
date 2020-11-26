@@ -686,6 +686,24 @@ var GetIVRCallCount = function(st, et, skill, companyId, tenantId, bUnit, callba
 
 };
 
+var GetOutboundCallCount = function(st, et, companyId, tenantId, bUnit, callback)
+{
+    var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'outbound', ObjType: 'GATEWAY'}]};
+    if(bUnit)
+    {
+        query.where[0].BusinessUnit = bUnit;
+    }
+
+    dbModel.CallCDRProcessed.aggregate('*', 'count', query).then(function(callCount)
+    {
+        callback(null, callCount);
+    }).catch(function(err)
+    {
+        callback(err, 0);
+    });
+
+};
+
 var GetQueuedCallCount = function(st, et, skill, companyId, tenantId, bUnit, callback)
 {
     var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', IsQueued: true, ObjType: 'HTTAPI'}]};
@@ -778,7 +796,7 @@ var GetDropCallsCount = function(st, et, skill, companyId, tenantId, bUnit, call
 
 };
 
-var GetHoldAverage = function(st, et, skill, companyId, tenantId, bUnit, callback)
+var GetOutboundHoldAverage = function(st, et, skill, companyId, tenantId, bUnit, callback)
 {
     var query = {where :[{CreatedTime : { gte: st , lt: et}, HoldSec: {gt: 0}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]};
 
@@ -786,6 +804,25 @@ var GetHoldAverage = function(st, et, skill, companyId, tenantId, bUnit, callbac
     {
         query.where[0].AgentSkill = skill;
     }
+
+    if(bUnit)
+    {
+        query.where[0].BusinessUnit = bUnit;
+    }
+
+    dbModel.CallCDRProcessed.aggregate('HoldSec', 'avg', query).then(function(holdAvg)
+    {
+        callback(null, holdAvg);
+    }).catch(function(err)
+    {
+        callback(err, 0);
+    });
+
+};
+
+var GetInboundHoldAverage = function(st, et, companyId, tenantId, bUnit, callback)
+{
+    var query = {where :[{CreatedTime : { gte: st , lt: et}, HoldSec: {gt: 0}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'outbound', IsAnswered: true, ObjType: 'GATEWAY'}]};
 
     if(bUnit)
     {
@@ -848,7 +885,7 @@ var GetRingAverage = function(st, et, skill, companyId, tenantId, bUnit, callbac
 
 };
 
-var GetTalkAverage = function(st, et, skill, companyId, tenantId, bUnit, callback)
+var GetInboundTalkAverage = function(st, et, skill, companyId, tenantId, bUnit, callback)
 {
     var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]};
     if(skill)
@@ -871,13 +908,50 @@ var GetTalkAverage = function(st, et, skill, companyId, tenantId, bUnit, callbac
 
 };
 
-var GetAnswerCount = function(st, et, skill, companyId, tenantId, bUnit, callback)
+var GetOutboundTalkAverage = function(st, et, companyId, tenantId, bUnit, callback)
+{
+    var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'outbound', IstAnswered: true, ObjType: 'GATEWAY'}]};
+    if(bUnit)
+    {
+        query.where[0].BusinessUnit = bUnit;
+    }
+
+    dbModel.CallCDRProcessed.aggregate('BillSec', 'avg', query).then(function(talkAvg)
+    {
+        callback(null, talkAvg);
+    }).catch(function(err)
+    {
+        callback(err, 0);
+    });
+};
+
+var GetAnswerCountInbound = function(st, et, skill, companyId, tenantId, bUnit, callback)
 {
     var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'inbound', AgentAnswered: true, ObjType: 'HTTAPI'}]};
     if(skill)
     {
         query.where[0].AgentSkill = skill;
     }
+
+    if(bUnit)
+    {
+        query.where[0].BusinessUnit = bUnit;
+    }
+
+
+    dbModel.CallCDRProcessed.aggregate('*', 'count', query).then(function(answerCount)
+    {
+        callback(null, answerCount);
+    }).catch(function(err)
+    {
+        callback(err, 0);
+    });
+
+};
+
+var GetAnswerCountOutbound = function(st, et, companyId, tenantId, bUnit, callback)
+{
+    var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'outbound', IsAnswered: true, ObjType: 'GATEWAY'}]};
 
     if(bUnit)
     {
@@ -1301,12 +1375,16 @@ var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTi
         asyncArr.push(GetQueuedCallCount.bind(this, st, et, skill, companyId, tenantId, bUnit));
         asyncArr.push(GetAbandonCallsCount.bind(this, st, et, skill, companyId, tenantId, bUnit));
         asyncArr.push(GetDropCallsCount.bind(this, st, et, skill, companyId, tenantId, bUnit));
-        asyncArr.push(GetHoldAverage.bind(this, st, et, skill, companyId, tenantId, bUnit));
+        asyncArr.push(GetInboundHoldAverage.bind(this, st, et, skill, companyId, tenantId, bUnit));
         asyncArr.push(GetIvrAverage.bind(this, st, et, skill, companyId, tenantId, bUnit));
         asyncArr.push(GetRingAverage.bind(this, st, et, skill, companyId, tenantId, bUnit));
-        asyncArr.push(GetTalkAverage.bind(this, st, et, skill, companyId, tenantId, bUnit));
-        asyncArr.push(GetAnswerCount.bind(this, st, et, skill, companyId, tenantId, bUnit));
+        asyncArr.push(GetInboundTalkAverage.bind(this, st, et, skill, companyId, tenantId, bUnit));
+        asyncArr.push(GetAnswerCountInbound.bind(this, st, et, skill, companyId, tenantId, bUnit));
         asyncArr.push(GetQueuedCallAverage.bind(this, st, et, skill, companyId, tenantId, bUnit));
+        asyncArr.push(GetOutboundCallCount.bind(this, st, et, companyId, tenantId, bUnit));
+        asyncArr.push(GetOutboundHoldAverage.bind(this, st, et, companyId, tenantId, bUnit));
+        asyncArr.push(GetOutboundTalkAverage.bind(this, st, et, companyId, tenantId, bUnit));
+        asyncArr.push(GetAnswerCountOutbound.bind(this, st, et, companyId, tenantId, bUnit));
 
         async.parallel(asyncArr, function(err, results){
 
@@ -1342,11 +1420,11 @@ var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTi
 
                 if(results[4])
                 {
-                    summaryDetails.HoldAverage = results[4];
+                    summaryDetails.InboundHoldAverage = results[4];
                 }
                 else
                 {
-                    summaryDetails.HoldAverage = 'N/A';
+                    summaryDetails.InboundHoldAverage = 'N/A';
                 }
 
                 if(results[5])
@@ -1369,20 +1447,20 @@ var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTi
 
                 if(results[7])
                 {
-                    summaryDetails.TalkAverage = results[7];
+                    summaryDetails.InboundTalkAverage = results[7];
                 }
                 else
                 {
-                    summaryDetails.TalkAverage = 'N/A';
+                    summaryDetails.InboundTalkAverage = 'N/A';
                 }
 
                 if(results[8])
                 {
-                    summaryDetails.AnswerCount = results[8];
+                    summaryDetails.AnswerCountInbound = results[8];
                 }
                 else
                 {
-                    summaryDetails.AnswerCount = 0;
+                    summaryDetails.AnswerCountInbound = 0;
                 }
 
                 if(results[9])
@@ -1396,11 +1474,40 @@ var GetCallSummaryDetailsDateRangeWithSkill = function(caption, startTime, endTi
 
                 if(summaryDetails.QueuedCallsCount)
                 {
-                    summaryDetails.AnswerPercentage = Math.round((summaryDetails.AnswerCount / summaryDetails.QueuedCallsCount) * 100);
+                    summaryDetails.AnswerPercentageInbound = Math.round((summaryDetails.AnswerCountInbound / summaryDetails.QueuedCallsCount) * 100);
                 }
                 else
                 {
-                    summaryDetails.AnswerPercentage = 'N/A';
+                    summaryDetails.AnswerPercentageInbound = 'N/A';
+                }
+
+                summaryDetails.OutboundCallCount = results[10];
+
+                if(results[11])
+                {
+                    summaryDetails.OutboundHoldAverage = results[11];
+                }
+                else
+                {
+                    summaryDetails.OutboundHoldAverage = 'N/A';
+                }
+
+                if(results[12])
+                {
+                    summaryDetails.OutboundTalkAverage = results[12];
+                }
+                else
+                {
+                    summaryDetails.OutboundTalkAverage = 'N/A';
+                }
+
+                if(results[13])
+                {
+                    summaryDetails.AnswerCountOutbound = results[13];
+                }
+                else
+                {
+                    summaryDetails.AnswerCountOutbound = 0;
                 }
 
                 summaryDetails.Caption = caption;
@@ -1744,8 +1851,8 @@ var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantI
         var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjCategory: {ne: 'DIALER'}};
         if(agentFilter)
         {
-            sqlCond.$and = [];
-            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', RecievedBy: agentFilter},{DVPCallDirection: 'outbound', SipFromUser: agentFilter}]});
+            sqlCond.$or = [];
+            sqlCond.$or.push({ RecievedBy: agentFilter}, {SipFromUser: agentFilter});
         }
         if(skillFilter)
         {
@@ -1906,8 +2013,8 @@ var GetProcessedCDRInDateRangeCount = function(startTime, endTime, companyId, te
         var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjCategory: {ne: 'DIALER'}};
         if(agentFilter)
         {
-            sqlCond.$and = [];
-            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', RecievedBy: agentFilter},{DVPCallDirection: 'outbound', SipFromUser: agentFilter}]});
+            sqlCond.$or = [];
+            sqlCond.$or.push({ RecievedBy: agentFilter}, {SipFromUser: agentFilter});
         }
         if(skillFilter)
         {
