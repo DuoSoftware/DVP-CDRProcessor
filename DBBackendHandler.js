@@ -910,7 +910,7 @@ var GetInboundTalkAverage  = function(st, et, skill, companyId, tenantId, bUnit,
 
 var GetOutboundTalkAverage = function(st, et, companyId, tenantId, bUnit, callback)
 {
-    var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'outbound', IstAnswered: true, ObjType: 'GATEWAY'}]};
+    var query = {where :[{CreatedTime : { gte: st , lt: et}, CompanyId: companyId, TenantId: tenantId, DVPCallDirection: 'outbound', IsAnswered: true, ObjType: 'GATEWAY'}]};
     if(bUnit)
     {
         query.where[0].BusinessUnit = bUnit;
