@@ -1744,8 +1744,8 @@ var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantI
         var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjCategory: {ne: 'DIALER'}};
         if(agentFilter)
         {
-            sqlCond.$and = [];
-            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', RecievedBy: agentFilter},{DVPCallDirection: 'outbound', SipFromUser: agentFilter}]});
+            sqlCond.$or = [];
+            sqlCond.$or.push({ RecievedBy: agentFilter}, {SipFromUser: agentFilter});
         }
         if(skillFilter)
         {
@@ -1906,8 +1906,8 @@ var GetProcessedCDRInDateRangeCount = function(startTime, endTime, companyId, te
         var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjCategory: {ne: 'DIALER'}};
         if(agentFilter)
         {
-            sqlCond.$and = [];
-            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', RecievedBy: agentFilter},{DVPCallDirection: 'outbound', SipFromUser: agentFilter}]});
+            sqlCond.$or = [];
+            sqlCond.$or.push({ RecievedBy: agentFilter}, {SipFromUser: agentFilter});
         }
         if(skillFilter)
         {
