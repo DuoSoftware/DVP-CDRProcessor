@@ -1744,8 +1744,8 @@ var GetProcessedCDRInDateRange = function(startTime, endTime, companyId, tenantI
         var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjCategory: {ne: 'DIALER'}};
         if(agentFilter)
         {
-            sqlCond.$or = [];
-            sqlCond.$or.push({ RecievedBy: agentFilter}, {SipFromUser: agentFilter});
+            sqlCond.$and = [];
+            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', RecievedBy: agentFilter},{DVPCallDirection: 'outbound', SipFromUser: agentFilter}]});
         }
         if(skillFilter)
         {
@@ -1906,8 +1906,8 @@ var GetProcessedCDRInDateRangeCount = function(startTime, endTime, companyId, te
         var sqlCond = {CreatedTime : {between:[startTime, endTime]}, CompanyId: companyId, TenantId: tenantId, ObjCategory: {ne: 'DIALER'}};
         if(agentFilter)
         {
-            sqlCond.$or = [];
-            sqlCond.$or.push({ RecievedBy: agentFilter}, {SipFromUser: agentFilter});
+            sqlCond.$and = [];
+            sqlCond.$and.push({$or :[{DVPCallDirection: 'inbound', RecievedBy: agentFilter},{DVPCallDirection: 'outbound', SipFromUser: agentFilter}]});
         }
         if(skillFilter)
         {
@@ -2136,6 +2136,28 @@ var GetSpecificLegByUuid = function(uuid, callback)
         callback(ex, null);
     }
 }
+
+//getting CDR record from CallCDRProcessed
+
+var GetSpecificRecordByUuid = function(uuid, callback)
+{
+    try
+    {
+        dbModel.CallCDRProcessed.find({where :[{Uuid: uuid}]}).then(function(callLeg)
+        {
+            
+            logger.debug('[DVP-CDRProcessor.GetSpecificRecordByUuid] - [%s] - [PGSQL] - Query completed successfully',uuid);
+            callback(null, callLeg);
+        });
+
+    }
+    catch(ex)
+    {
+        logger.error('[DVP-CDRProcessor.GetSpecificRecordByUuid] - [%s] - Method call failed ',uuid, ex);
+        callback(ex, null);
+    }
+}
+
 
 var GetBLegForIVRCalls = function(uuid, callUuid, callback)
 {
@@ -2589,6 +2611,7 @@ module.exports.GetCallRelatedLegsInDateRangeCount = GetCallRelatedLegsInDateRang
 module.exports.GetConferenceRelatedLegsInDateRange = GetConferenceRelatedLegsInDateRange;
 module.exports.GetCallRelatedLegsForAppId = GetCallRelatedLegsForAppId;
 module.exports.GetSpecificLegByUuid = GetSpecificLegByUuid;
+module.exports.GetSpecificRecordByUuid = GetSpecificRecordByUuid;
 module.exports.GetBLegForIVRCalls = GetBLegForIVRCalls;
 module.exports.GetAbandonCallRelatedLegsInDateRange = GetAbandonCallRelatedLegsInDateRange;
 module.exports.GetCallSummaryDetailsDateRange = GetCallSummaryDetailsDateRange;
