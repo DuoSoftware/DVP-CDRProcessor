@@ -3390,6 +3390,59 @@ var processSummaryDataL = function (
     }*/
 
 //query_string : ?startTime=2016-05-09&endTime=2016-05-12
+
+//GetSpecific Record By Uuid
+server.get(
+  "/DVP/API/:version/CallCDR/GetSpecificRecordByUuid/:uuid",
+  jwt({ secret: secret.Secret }),
+  authorization({ resource: "cdr", action: "read" }),
+  function (req, res, next) {
+    var reqId='';
+
+    try
+    {
+        reqId = uuid.v1();
+    }
+    catch(ex)
+    {
+
+    }
+    var uuid = req.params.uuid;
+
+
+    try {
+            
+      
+      logger.debug('[DVP-CDRProcessor.GetSpecificRecordByUuid] - [%s] - [HTTP]  - Request received -  Uuid - %s ',reqId,uuid);
+      backendHandler.GetSpecificRecordByUuid(reqId, uuid, function (err, callLeg) {      
+        if(err)
+        {
+            var jsonString = messageFormatter.FormatMessage(err, "ERROR/Exception", false, undefined);
+            logger.debug('[DVP-CDRProcessor.GetSpecificRecordByUuid] - [%s] - Request response : %s ',reqId,jsonString);
+            res.end(jsonString);
+        }
+        else
+        {
+            var jsonString = messageFormatter.FormatMessage(undefined, "Success", true, callLeg);
+            logger.debug('[DVP-CDRProcessor.GetSpecificRecordByUuid] - [%s] - Request response : %s ',reqId,jsonString);
+            res.end(jsonString);
+        }
+        });
+
+
+    } 
+    catch(ex)
+    {
+        logger.error('[DVP-CDRProcessor.GetSpecificRecordByUuid] - [%s] - [HTTP]  - Exception in Request',reqId, ex);
+        var jsonString = messageFormatter.FormatMessage(ex, "Exception", false, undefined);
+        logger.debug('[DVP-CDRProcessor.GetSpecificRecordByUuid] - [%s] - Request response : %s ',reqId, jsonString);
+        res.end(jsonString);
+    }
+      return next();
+    
+}); 
+
+
 server.get(
   "/DVP/API/:version/CallCDR/CallCDRSummary/Hourly",
   jwt({ secret: secret.Secret }),
