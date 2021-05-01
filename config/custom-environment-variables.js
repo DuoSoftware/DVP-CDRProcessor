@@ -42,6 +42,20 @@ module.exports = {
     fileServiceHost: "SYS_FILESERVICE_HOST",
     fileServicePort: "SYS_FILESERVICE_PORT",
     fileServiceVersion: "SYS_FILESERVICE_VERSION",
+
+    interactionurl: "SYS_INTERACTIONS_HOST",
+    interactionport: "SYS_INTERACTIONS_PORT",
+    interactionversion:"SYS_INTERACTIONS_VERSION",
+
+
+    cronurl: "SYS_SCHEDULEWORKER_HOST",
+    cronport: "SYS_SCHEDULEWORKER_PORT",
+    cronversion:"SYS_SCHEDULEWORKER_VERSION",
+
+
+    ticketServiceHost: "SYS_LITETICKET_HOST",
+    ticketServicePort:  "SYS_LITETICKET_PORT",
+    ticketServiceVersion:  "SYS_LITETICKET_VERSION"
   },
 
   Mongo: {
@@ -51,6 +65,7 @@ module.exports = {
     password: "SYS_MONGO_PASSWORD",
     user: "SYS_MONGO_USER",
     replicaset: "SYS_MONGO_REPLICASETNAME",
+    type: "SYS_MONGO_TYPE",
   },
 
   RabbitMQ: {
@@ -64,6 +79,9 @@ module.exports = {
   Host: {
     Port: "HOST_CDRPROCESSOR_PORT",
     Version: "HOST_VERSION",
+    emailQueueName:"SYS_EMAIL_QUEUE_NAME",
+    smsQueueName: "SYS_SMS_QUEUE_NAME",
+    defaultMailHost: "SYS_DEFAULT_MAIL_HOST",
   },
 
   Token: "HOST_TOKEN",
