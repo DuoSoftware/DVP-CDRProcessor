@@ -6661,7 +6661,7 @@ var generateCDRListByCustomer = function (cdrList, tz) {
           obj.OutboundCalls++;
 
           if (cdr.IsAnswered === true) {
-            obj.InboundAnswered++;
+            obj.OutboundAnswered++;
           }
         }
 
@@ -6691,7 +6691,7 @@ var generateCDRListByCustomer = function (cdrList, tz) {
           obj.OutboundAnswered = 0;
 
           if (cdr.IsAnswered === true) {
-            obj.InboundAnswered = 1;
+            obj.OutboundAnswered = 1;
           }
         } else {
           obj.InboundCalls = 0;
